@@ -4,6 +4,7 @@ import TwoFAVerify from "../../components/TwoFAVerify";
 import styles from "./styles.module.scss";
 import { loginUser } from "../../services/login"; // Adjust the import path as needed
 import { toast } from "react-toastify";
+import LoginWrapper from "@/components/loginWrapper";
 
 export default function LoginPage() {
   const [username, setUsername] = useState("");
@@ -64,7 +65,12 @@ export default function LoginPage() {
   }
 
   return (
-    <div
+   <LoginWrapper 
+   
+    gradientColor={{ start: "#003366", end: "#00cccc" }}>
+      
+
+   <div
       className={`${styles.loginContainer} ${theme === "dark" ? styles.darkTheme : styles.lightTheme
         }`}
     >
@@ -99,5 +105,7 @@ export default function LoginPage() {
       />
       <button onClick={handleLogin}>Login</button>
     </div>
+   </LoginWrapper> 
+ 
   );
 }
