@@ -28,11 +28,11 @@ export const get2FASetup = async (token) => {
 };
 
 // === 3. Verify 2FA Code During Setup ===
-export const verify2FASetup = async (otp, token) => {
+export const verify2FASetup = async (payload, token) => {
   try {
     const response = await axios.post(
       `${getBaseUrl("common")}/RMSAuthenticator/VerifyCode?UserID=${token}`,
-      { otp }
+       payload 
     );
     return response.data;
   } catch (error) {

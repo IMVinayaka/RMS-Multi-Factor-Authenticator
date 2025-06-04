@@ -13,8 +13,7 @@ export default function TwoFASetup({ tempToken }) {
     async function setup2FA() {
       try {
         const res = await get2FASetup(tempToken);
-        console.log(res, '2FA Setup Response');
-        const secret = res.data;
+        const secret = res;
         let issuer = "RMSAuth"; // Default issuer
         let userid = tempToken;
 
@@ -37,10 +36,12 @@ export default function TwoFASetup({ tempToken }) {
   }, [tempToken]);
 
   const verifyOtp = async () => {
+    let obj ={
+  "otp": otp
+}
     try {
-      const res = await verify2FASetup(otp, tempToken);
+      const res = await verify2FASetup(obj, tempToken);
       toast.success("2FA setup complete! You are logged in.");
-      localStorage.setItem("accessToken", res.data.accessToken);
       window.location.href = "/";
     } catch {
       setError("Invalid OTP. Please try again.");
