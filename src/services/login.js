@@ -57,7 +57,6 @@ export const verify2FALogin = async (otp, token) => {
 export const reset2FA = async (token) => {
   return axios.post(
     "/api/auth/2fa/reset",
-    {},
     {
       headers: { Authorization: `Bearer ${token}` },
     }

@@ -42,10 +42,10 @@ export default function LoginPage() {
       console.log(data, '>>>>>>>>>>>>>>>>>>>>>')
 
       if (!data.secretKeyYN) {
-        setTempToken(data.userID);
+        setTempToken(data);
         setNeeds2FASetup(true);
       } else {
-        setTempToken(data.userID
+        setTempToken(data
         );
         setNeeds2FAVerify(true);
       }

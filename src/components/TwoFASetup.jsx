@@ -15,12 +15,12 @@ export default function TwoFASetup({ tempToken }) {
         const res = await get2FASetup(tempToken);
         const secret = res;
         let issuer = "RMSAuth"; // Default issuer
-        let userid = tempToken;
+        let userName = tempToken?.userName;
 
-        // Format: otpauth://totp/{issuer}:{userid}?secret={secret}&issuer={issuer}
+        // Format: otpauth://totp/{issuer}:{userName}?secret={secret}&issuer={issuer}
         const otpAuthUrl = `otpauth://totp/${encodeURIComponent(
           issuer
-        )}:${encodeURIComponent(userid)}?secret=${secret}&issuer=${encodeURIComponent(
+        )}:${encodeURIComponent(userName)}?secret=${secret}&issuer=${encodeURIComponent(
           issuer
         )}&algorithm=SHA1&digits=6&period=30`;
 
@@ -40,7 +40,7 @@ export default function TwoFASetup({ tempToken }) {
   "otp": otp
 }
     try {
-      const res = await verify2FASetup(obj, tempToken);
+      const res = await verify2FASetup(obj, tempToken?.userID);
       toast.success("2FA setup complete! You are logged in.");
       window.location.href = "/";
     } catch {
