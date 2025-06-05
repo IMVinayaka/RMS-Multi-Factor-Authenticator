@@ -2,33 +2,51 @@ import { useState } from "react";
 import styles from "./TwoFAVerify.module.scss";
 import { verify2FALogin, reset2FA } from "../services/login";
 import { toast } from "react-toastify";
+import { generateAuthUrl } from "@/utils/helper";
+import FullScreenLoader from "./Loader";
 
-export default function TwoFAVerify({ tempToken }) {
+export default function TwoFAVerify({ tempToken, issuer, baseUrl }) {
   const [otp, setOtp] = useState("");
   const [error, setError] = useState("");
+   const [loading, setLoading] = useState(false);
 
   const verifyOtp = async () => {
     try {
-      const res = await verify2FALogin(otp, tempToken?.userID);
-      toast.success("2FA verified! You are logged in.");
-      localStorage.setItem("accessToken", res.data.accessToken);
-      window.location.href = "/";
+      setLoading(true);
+      const resp = await verify2FALogin({ submittedCode: otp }, tempToken?.userID);
+      if (resp === true) {
+        toast.success("2FA verified! You will be rediercted to the application.");
+        const url = generateAuthUrl(baseUrl, tempToken.userID);
+        window.location.href = url;
+      } else {
+        setError("Invalid OTP. Please try again.");
+      }
     } catch {
       setError("Invalid OTP. Please try again.");
+    }finally{
+      setLoading(false);
+
     }
   };
 
   const handleReset = async () => {
     try {
-      await reset2FA(tempToken?.userID);
+        setLoading(true);
+      await reset2FA(tempToken?.userID, issuer);
       toast.success("2FA has been reset. Please log in again to reconfigure.");
       window.location.href = "/login";
     } catch (err) {
       toast.error("Failed to reset 2FA. Please try again later.");
     }
+    finally{
+      setLoading(false);
+    }
   };
 
   return (
+<>
+
+     {loading && <FullScreenLoader />}
     <div className={styles.container}>
       <h2 className="font-bold text-2xl">Enter your 2FA code</h2>
       {error && <p className={styles.error}>{error}</p>}
@@ -45,5 +63,7 @@ export default function TwoFAVerify({ tempToken }) {
         Reset Authenticator
       </button>
     </div>
+</>
+
   );
 }

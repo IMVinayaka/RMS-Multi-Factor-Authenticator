@@ -3,35 +3,44 @@ import QRCode from "qrcode";
 import styles from "./TwoFASetup.module.scss";
 import { get2FASetup, verify2FASetup } from "../services/login";
 import { toast } from "react-toastify";
+import { generateAuthUrl } from "@/utils/helper";
 
-export default function TwoFASetup({ tempToken, issuer }) {
+export default function TwoFASetup({ tempToken, issuer, baseUrl }) {
   const [qrCodeUrl, setQrCodeUrl] = useState("");
   const [otp, setOtp] = useState("");
-  const [error, setError] = useState("");
+   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     async function setup2FA() {
       try {
-        const res = await get2FASetup(tempToken.userID);
+        setLoading(true);
+        const res = await get2FASetup(tempToken.userID, issuer);
         if (!res) {
-          setError("Failed to retrieve 2FA setup data");
+          toast.error("Failed to retrieve 2FA setup data");
+
           return;
         }
-        const secret = res;
         let userName = tempToken?.userName;
+        const cleanIssuer = issuer.replace(/_/g, " ").trim();
+        const accountLabel = `${cleanIssuer}:${userName}`; // Must include colon between Issuer and UserName
 
-        // Format: otpauth://totp/{issuer}:{userName}?secret={secret}&issuer={issuer}
-        const otpAuthUrl = `otpauth://totp/${encodeURIComponent(
-          issuer
-        )}:${encodeURIComponent(userName)}?secret=${secret}&issuer=${encodeURIComponent(
-          issuer
-        )}&algorithm=SHA1&digits=6&period=30`;
-
+        const otpAuthUrl = `otpauth://totp/${encodeURIComponent(accountLabel)}?secret=${res}&issuer=${encodeURIComponent(cleanIssuer)}&algorithm=SHA1&digits=6&period=30`;
         // Generate QR code
-        const qr = await QRCode.toDataURL(otpAuthUrl);
+        const qr = await QRCode.toDataURL(otpAuthUrl, {
+          type: "image/png",
+          width: 250,
+          margin: 2,
+          color: {
+            dark: "#000000",
+            light: "#FFFFFF",
+          },
+        });
         setQrCodeUrl(qr);
       } catch (err) {
-        setError("Failed to load QR code");
+        toast.error("Failed to load QR code");
+      }
+      finally {
+        setLoading(false);
       }
     }
 
@@ -40,33 +49,46 @@ export default function TwoFASetup({ tempToken, issuer }) {
 
   const verifyOtp = async () => {
     let obj = {
-      "otp": otp
-    }
+      submittedCode: otp,
+      userInstance: issuer,
+    };
     try {
+      setLoading(true);
       const res = await verify2FASetup(obj, tempToken?.userID);
+      if (!res) {
+        toast.error("Failed to verify OTP. Please try again.");
+        return;
+      }
       toast.success("2FA setup complete! You are logged in.");
-      window.location.href = "/";
-    } catch {
-      setError("Invalid OTP. Please try again.");
+      const url = generateAuthUrl(baseUrl, tempToken.userID);
+      window.location.href = url;
+    } catch (err) {
+      toast.error("Invalid OTP. Please try again.");
+    }
+    finally {
+      setLoading(false);
     }
   };
 
   return (
+    <>
+        {loading && <FullScreenLoader />}
+
     <div c className={styles.container}>
-      <h2 className="font-bold text-white text-center text-2xl">Scan from Authenticator</h2>
-      {error && <p className={styles.error}>{error}</p>}
+      <h2 className="font-bold text-white text-center text-2xl">
+        Scan from Authenticator
+      </h2>
+
       {qrCodeUrl ? (
         <>
           <img
             src={qrCodeUrl}
             alt="Scan this QR code with your Authenticator app"
             className={styles.qrCode}
-
           />
           <input
             placeholder="Enter code from app"
             value={otp}
-
             onChange={(e) => setOtp(e.target.value)}
             className={styles.input}
           />
@@ -78,5 +100,7 @@ export default function TwoFASetup({ tempToken, issuer }) {
         <p>Loading QR code...</p>
       )}
     </div>
+    </>
+ 
   );
 }
