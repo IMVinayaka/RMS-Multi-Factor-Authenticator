@@ -1,7 +1,7 @@
 import Image from "next/image";
 import React from "react";
 
-const LoginWrapper = ({ logo, flag, gradientColor,bgImage, children,aboutus,privacyAndTerms }) => {
+const LoginWrapper = ({ logo, flag, gradientColor,bgImage, children,aboutus,privacyAndTerms ,companyName}) => {
   return (
     <div
       className="min-h-screen flex flex-col items-center justify-center"
@@ -51,7 +51,7 @@ const LoginWrapper = ({ logo, flag, gradientColor,bgImage, children,aboutus,priv
           <a href={aboutus} target="_blank" className="underline">About</a>
           <a href={privacyAndTerms} target="_blank"  className="underline">Privacy Statement</a>
         </div>
-        <p className="mt-2">&copy; {new Date().getFullYear()} Your Company. All rights reserved.</p>
+        <p className="mt-2">&copy; {new Date().getFullYear()} {companyName}. All rights reserved.</p>
       </footer>
       </div>
   

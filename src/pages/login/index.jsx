@@ -40,6 +40,7 @@ export default function LoginPage() {
     aboutus: "https://www.radiants.com/about-us",
     privacyAndTerms: "https://www.radiants.com/privacy-policy",
     baseUrl: "https://intranet.radiants.com/RadInd/",
+    companyName: "Radiant India",
   });
 
 
@@ -109,7 +110,8 @@ export default function LoginPage() {
       bgImage: RadGovbg,
       aboutus: "https://www.radgov.com/aboutus",
       privacyAndTerms: "https://www.radgov.com/privacy-policy",
-      baseUrl: "https://intranet.radgov.com/RadUS/"
+      baseUrl: "https://intranet.radgov.com/RadUS/",
+      companyName: "RadGov.INC",
     },
     {
       instance: "Ateeca_USA",
@@ -119,7 +121,8 @@ export default function LoginPage() {
       bgImage: AteecaBg,
       aboutus: "https://ateeca.com/about-us",
       privacyAndTerms: "https://ateeca.com/privacy",
-      baseUrl: "https://intranet.radgov.com/RadUS/"
+      baseUrl: "https://intranet.radgov.com/RadUS/",
+      companyName: "Ateeca",
     },
     {
       instance: "Orbit",
@@ -130,6 +133,7 @@ export default function LoginPage() {
       aboutus: "https://www.radiants.com/about-us",
       privacyAndTerms: "https://www.radiants.com/privacy-policy",
       baseUrl: "https://intranet.radiants.com/Orbit/",
+      companyName: "Radiants",
     },
     {
       instance: "Radiant_India",
@@ -140,6 +144,7 @@ export default function LoginPage() {
       aboutus: "https://www.radiants.com/about-us",
       privacyAndTerms: "https://www.radiants.com/privacy-policy",
       baseUrl: "https://intranet.radiants.com/RadInd/",
+      companyName: "Radiants",
     },
     {
       instance: "Radiant_Canada",
@@ -150,6 +155,7 @@ export default function LoginPage() {
       aboutus: "https://www.radiants.com/about-us",
       privacyAndTerms: "https://www.radiants.com/privacy-policy",
       baseUrl: "https://intranet.radiants.com/RadCA/",
+      companyName: "Radiants",
     },
     {
       instance: "Radiant_USA",
@@ -160,6 +166,7 @@ export default function LoginPage() {
       aboutus: "https://www.radiants.com/about-us",
       privacyAndTerms: "https://www.radiants.com/privacy-policy",
       baseUrl: "https://intranet.radiants.com/RadUS/",
+      companyName: "Radiants",
 
     },
     {
@@ -170,7 +177,8 @@ export default function LoginPage() {
       bgImage: radiantBg,
       aboutus: "https://www.radiants.com/about-us",
       privacyAndTerms: "https://www.radiants.com/about-us",
-      baseUrl: "https://intranet.radiants.uk/RmsUKWeb/"
+      baseUrl: "https://intranet.radiants.uk/RmsUKWeb/",
+      companyName: "Radiants",
     },
   ];
 
@@ -196,7 +204,7 @@ export default function LoginPage() {
         // Set favicon
         const link = document.querySelector("link[rel~='icon']") || document.createElement("link");
         link.rel = "icon";
-        link.href = selected.favicon;
+        link.href = selected.logo;
         document.head.appendChild(link);
       }
 
@@ -217,6 +225,8 @@ export default function LoginPage() {
         gradientColor={wrapperDetails.gradientColor}
         aboutus={wrapperDetails.aboutus}
         privacyAndTerms={wrapperDetails.privacyAndTerms}
+        companyName={wrapperDetails.companyName}
+
       >
 
         {!needs2FASetup && !needs2FAVerify && (
