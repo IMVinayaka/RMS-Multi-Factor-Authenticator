@@ -7,7 +7,6 @@ import FullScreenLoader from "./Loader";
 
 export default function TwoFAVerify({ tempToken, issuer, baseUrl }) {
   const [otp, setOtp] = useState("");
-  const [error, setError] = useState("");
    const [loading, setLoading] = useState(false);
 
   const verifyOtp = async () => {
@@ -19,10 +18,10 @@ export default function TwoFAVerify({ tempToken, issuer, baseUrl }) {
         const url = generateAuthUrl(baseUrl, tempToken.userID);
         window.location.href = url;
       } else {
-        setError("Invalid OTP. Please try again.");
+        toast.error("Invalid OTP. Please try again.");
       }
     } catch {
-      setError("Invalid OTP. Please try again.");
+      toast.error("Invalid OTP. Please try again.");
     }finally{
       setLoading(false);
 
@@ -49,14 +48,14 @@ export default function TwoFAVerify({ tempToken, issuer, baseUrl }) {
      {loading && <FullScreenLoader />}
     <div className={styles.container}>
       <h2 className="font-bold text-2xl">Enter your 2FA code</h2>
-      {error && <p className={styles.error}>{error}</p>}
+
       <input
         placeholder="Enter code from app"
         value={otp}
         onChange={(e) => setOtp(e.target.value)}
         className={styles.input}
       />
-      <button onClick={verifyOtp} className={styles.button}>
+      <button disabled={!otp.trim()}  onClick={verifyOtp} className={styles.button}>
         Verify
       </button>
       <button onClick={handleReset} className={styles.resetButton}>

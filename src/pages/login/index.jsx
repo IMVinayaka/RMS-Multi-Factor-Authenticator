@@ -20,6 +20,7 @@ import AteecaLogo from "@/assets/ateeca-logo.png";
 import AteecaBg from "@/assets/ateeca_bg.gif";
 import radiantBg from "@/assets/radiant_bg.gif";
 import FullScreenLoader from "@/components/Loader";
+import { generateAuthUrl } from "@/utils/helper";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -74,15 +75,23 @@ export default function LoginPage() {
         userInstance: issuer,
       }
       setLoading(true);
-      const data = await loginUser(obj);
 
-      if (!data.secretKeyYN) {
-        setTempToken(data);
-        setNeeds2FASetup(true);
+      const data = await loginUser(obj);
+      if (data?.TwoFAYN) {
+        const url = generateAuthUrl(wrapperDetails.baseUrl, data.userId);
+        window.location.href = url;
+        setLoading(false);
       } else {
-        setTempToken(data);
-        setNeeds2FAVerify(true);
+        if (!data.secretKeyYN) {
+          setTempToken(data);
+          setNeeds2FASetup(true);
+        } else {
+          setTempToken(data);
+          setNeeds2FAVerify(true);
+        }
       }
+
+
     } catch (error) {
       toast.error(error?.response?.data?.message || "Login failed");
     }
@@ -228,7 +237,7 @@ export default function LoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />
-              <button onClick={handleLogin}>Login</button>
+              <button disabled={!username.trim() || !password.trim() }  onClick={handleLogin}>Login</button>
             </div>
 
 

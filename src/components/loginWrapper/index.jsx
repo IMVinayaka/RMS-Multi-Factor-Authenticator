@@ -18,7 +18,7 @@ const LoginWrapper = ({ logo, flag, gradientColor,bgImage, children,aboutus,priv
       }} className="w-full border-b-0  gap-10  flex items-center  overflow-hidden justify-between p-6">
         <Image width={100} className="h-16" src={logo} alt="Logo"/>
        
-       <h2 className="text-white  text-4xl col-span-10 font-bold text-center w-full">Resource Mangement System</h2>
+       <h2 className="text-white  text-4xl col-span-10 font-bold text-center w-full">Resource Management System</h2>
 
          <Image width={100} src={flag} alt="Country Flag" className="h-12" />
       </div>

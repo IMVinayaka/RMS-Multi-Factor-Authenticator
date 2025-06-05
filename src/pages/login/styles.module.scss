@@ -16,9 +16,7 @@
     color: white;
     border: none;
 
-    &:hover {
-      background-color: $primary-color-dark;
-    }
+
   }
 }
 
@@ -38,8 +36,10 @@
     border: none;
     font-weight: bold;
 
-    &:hover {
-      background-color: $primary-color-light;
+ 
+     &:disabled {
+      background-color: lighten($primary-color-light, 20%);
+      cursor: not-allowed;
     }
   }
 }
@@ -72,7 +72,12 @@
     cursor: pointer;
     border-radius: 4px;
     font-weight: bold;
+    &:disabled {
+      background-color: lighten($primary-color-light, 20%);
+      cursor: not-allowed;
+    }
   }
+
 }
 
 .lightTheme {

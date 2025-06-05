@@ -57,7 +57,8 @@
   cursor: pointer;
   font-weight: bold;
 
-  &:hover {
-    background-color: #005bb5;
-  }
+    &:disabled {
+      background-color: lighten($primary-color-light, 20%);
+      cursor: not-allowed;
+    }
 }

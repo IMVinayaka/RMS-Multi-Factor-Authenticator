@@ -48,10 +48,10 @@
   border-radius: 4px;
   cursor: pointer;
    font-weight: bold;
-
-  &:hover {
-    background-color:$primary-color-light
-  }
+    &:disabled {
+      background-color: lighten($primary-color-light, 20%);
+      cursor: not-allowed;
+    }
 }
 
 
