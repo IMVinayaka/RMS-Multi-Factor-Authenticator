@@ -12,7 +12,11 @@ export default function TwoFASetup({ tempToken }) {
   useEffect(() => {
     async function setup2FA() {
       try {
-        const res = await get2FASetup(tempToken);
+        const res = await get2FASetup(tempToken.userID);
+        if (!res) {
+          setError("Failed to retrieve 2FA setup data");
+          return;
+        }
         const secret = res;
         let issuer = "RMSAuth"; // Default issuer
         let userName = tempToken?.userName;
@@ -49,8 +53,8 @@ export default function TwoFASetup({ tempToken }) {
   };
 
   return (
-    <div className={styles.container}>
-      <h2>Set up Two-Factor Authentication</h2>
+    <div c className={styles.container}>
+      <h2 className="font-bold text-white text-center text-2xl">Scan from Authenticator</h2>
       {error && <p className={styles.error}>{error}</p>}
       {qrCodeUrl ? (
         <>
@@ -58,10 +62,12 @@ export default function TwoFASetup({ tempToken }) {
             src={qrCodeUrl}
             alt="Scan this QR code with your Authenticator app"
             className={styles.qrCode}
+            
           />
           <input
             placeholder="Enter code from app"
             value={otp}
+           
             onChange={(e) => setOtp(e.target.value)}
             className={styles.input}
           />

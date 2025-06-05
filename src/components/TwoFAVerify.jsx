@@ -30,7 +30,7 @@ export default function TwoFAVerify({ tempToken }) {
 
   return (
     <div className={styles.container}>
-      <h2>Enter your 2FA code</h2>
+      <h2 className="font-bold text-2xl">Enter your 2FA code</h2>
       {error && <p className={styles.error}>{error}</p>}
       <input
         placeholder="Enter code from app"

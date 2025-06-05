@@ -2,7 +2,7 @@
 @import "../../styles/variables.scss";
 
 @mixin theme-light {
-  background-color: $bg-light;
+  // background-color: $bg-light;
   color: $text-light;
   font-family: "Poppins", sans-serif;
   input {
@@ -23,7 +23,7 @@
 }
 
 @mixin theme-dark {
-  background-color: $bg-dark;
+  // background-color: $bg-dark;
   color: $text-dark;
   font-family: "Poppins", sans-serif;
   input {
@@ -36,6 +36,7 @@
     background-color: $primary-color-dark;
     color: white;
     border: none;
+    font-weight: bold;
 
     &:hover {
       background-color: $primary-color-light;
@@ -50,7 +51,6 @@
   padding: 20px;
   border-radius: 6px;
     font-family: "Poppins", sans-serif;
-    border: 1px solid $border-color;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 
   h2 {
@@ -63,6 +63,7 @@
     padding: 8px;
     border-radius: 4px;
     font-size: 16px;
+
   }
 
   button {
@@ -71,6 +72,7 @@
     font-size: 16px;
     cursor: pointer;
     border-radius: 4px;
+    font-weight: bold;
   }
 }
 
