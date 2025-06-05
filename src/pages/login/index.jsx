@@ -1,31 +1,44 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import TwoFASetup from "../../components/TwoFASetup";
 import TwoFAVerify from "../../components/TwoFAVerify";
 import styles from "./styles.module.scss";
-import { loginUser } from "../../services/login"; 
+import { loginUser } from "../../services/login";
 import { toast } from "react-toastify";
 import LoginWrapper from "@/components/loginWrapper";
-
+import { useRouter } from "next/router";
 
 import RadiantsLogo from "@/assets/radiants.png";
-import IndainFlag from "@/assets/india.png"; 
+import IndainFlag from "@/assets/india.png";
 import CandaFlag from "@/assets/canda.webp";
-import USFlag from "@/assets/us.png"; 
+import USFlag from "@/assets/us.png";
 import EuropeFlag from "@/assets/europe.webp";
 import RadgovLogo from "@/assets/radGov.png";
 import Orbitlogo from "@/assets/Orbit.png";
 
 import RadGovbg from "@/assets/Radgov_Bg.jpg";
 import AteecaLogo from "@/assets/ateeca-logo.png";
+import AteecaBg from "@/assets/ateeca_bg.gif";
+import radiantBg from "@/assets/radiant_bg.gif";
 
 export default function LoginPage() {
+  const router = useRouter();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [tempToken, setTempToken] = useState(null);
   const [needs2FASetup, setNeeds2FASetup] = useState(false);
   const [needs2FAVerify, setNeeds2FAVerify] = useState(false);
-  const [theme, setTheme] = useState("light"); // light or dark
-  const [wrapperDetails, setWrapperDetails] = useState({ logo: RadgovLogo, flag: USFlag, gradientColor: { start: "#06127a", end: "#2558b5" } ,bgImage: RadGovbg});
+  const [issuer, setIssuer] = useState("Radiant_India");
+  const [wrapperDetails, setWrapperDetails] = useState({
+    logo: RadiantsLogo,
+    flag: IndainFlag,
+    gradientColor: { start: "#003366", end: "#00cccc" },
+    bgImage: radiantBg,
+       aboutus: "https://www.radiants.com/about-us",
+      privacyAndTerms: "https://www.radiants.com/privacy-policy",
+      baseUrl: "https://intranet.radiants.com/RadInd/",
+  });
+
+
 
   const handleLogin = async () => {
     // Validate email (used as username)
@@ -58,8 +71,7 @@ export default function LoginPage() {
         setTempToken(data);
         setNeeds2FASetup(true);
       } else {
-        setTempToken(data
-        );
+        setTempToken(data);
         setNeeds2FAVerify(true);
       }
     } catch (error) {
@@ -67,53 +79,124 @@ export default function LoginPage() {
     }
   };
 
+  const data = [
+    {
+      instance: "RadGov_USA",
+      logo: RadgovLogo,
+      flag: USFlag,
+      gradientColor: { start: "#06127a", end: "#2558b5" },
+      bgImage: RadGovbg,
+      aboutus: "https://www.radgov.com/aboutus",
+      privacyAndTerms: "https://www.radgov.com/privacy-policy",
+      baseUrl: "https://intranet.radgov.com/RadUS/"
+    },
+    {
+      instance: "Ateeca_USA",
+      logo: AteecaLogo,
+      flag: USFlag,
+      gradientColor: { start: "#d17f0b", end: "#f5ad46" },
+      bgImage: AteecaBg,
+      aboutus: "https://ateeca.com/about-us",
+      privacyAndTerms: "https://ateeca.com/privacy",
+      baseUrl: "https://intranet.radgov.com/RadUS/"
+    },
+    {
+      instance: "Orbit",
+      logo: Orbitlogo,
+      flag: USFlag,
+      gradientColor: { start: "#003366", end: "#00cccc" },
+      bgImage: radiantBg,
+      aboutus: "https://www.radiants.com/about-us",
+      privacyAndTerms: "https://www.radiants.com/privacy-policy",
+      baseUrl: "https://intranet.radiants.com/Orbit/",
+    },
+    {
+      instance: "Radiant_India",
+      logo: RadiantsLogo,
+      flag: IndainFlag,
+      gradientColor: { start: "#003366", end: "#00cccc" },
+      bgImage: radiantBg,
+      aboutus: "https://www.radiants.com/about-us",
+      privacyAndTerms: "https://www.radiants.com/privacy-policy",
+      baseUrl: "https://intranet.radiants.com/RadInd/",
+    },
+    {
+      instance: "Radiant_Canada",
+      logo: RadiantsLogo,
+      flag: CandaFlag,
+      gradientColor: { start: "#003366", end: "#00cccc" },
+      bgImage: radiantBg,
+      aboutus: "https://www.radiants.com/about-us",
+      privacyAndTerms: "https://www.radiants.com/privacy-policy",
+      baseUrl: "https://intranet.radiants.com/RadCA/",
+    },
+    {
+      instance: "Radiant_USA",
+      logo: RadiantsLogo,
+      flag: USFlag,
+      gradientColor: { start: "#003366", end: "#00cccc" },
+      bgImage: radiantBg,
+      aboutus: "https://www.radiants.com/about-us",
+      privacyAndTerms: "https://www.radiants.com/privacy-policy",
+      baseUrl: "https://intranet.radiants.com/RadUS/",
 
+    },
+    {
+      instance: "Radiant_UK",
+      logo: RadiantsLogo,
+      flag: EuropeFlag,
+      gradientColor: { start: "#003366", end: "#00cccc" },
+      bgImage: radiantBg,
+      aboutus: "https://www.radiants.com/about-us",
+      privacyAndTerms: "https://www.radiants.com/about-us",
+      baseUrl: "https://intranet.radiants.uk/RmsUKWeb/"
+    },
+  ];
 
+  useEffect(() => {
+    if (router.isReady) {
+      const instanceParam = router.query.Instance;
+      setIssuer(instanceParam?.toString() || "Radiant_India");
 
+      const selected = data.find(
+        (item) => item.instance.toLowerCase() === instanceParam?.toString().toLowerCase()
+      );
 
-
+      if (selected) {
+        setWrapperDetails(selected);
+      }
+    }
+  }, [router.isReady, router.query]);
   return (
     <LoginWrapper
       logo={wrapperDetails.logo}
       flag={wrapperDetails.flag}
-        bgImage={wrapperDetails.bgImage}
-      gradientColor={wrapperDetails.gradientColor}>
-      
-{!needs2FASetup && !needs2FAVerify && (
-     <div
-        className={`${styles.loginContainer} ${theme === "dark" ? styles.darkTheme : styles.lightTheme
-          }`}
-      >
-        <h2 className="text-white font-bold text-2xl text-center" >Login</h2>
+      bgImage={wrapperDetails.bgImage}
+      gradientColor={wrapperDetails.gradientColor}
+      aboutus={wrapperDetails.aboutus}
+      privacyAndTerms={wrapperDetails.privacyAndTerms}
+    >
+      {!needs2FASetup && !needs2FAVerify && (
+        <div className={`${styles.loginContainer} ${styles.lightTheme}`}>
+          <h2 className="text-white font-bold text-2xl text-center">Login</h2>
 
-    
+          <input
+            placeholder="Username"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+          />
+          <input
+            placeholder="Password"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+          <button onClick={handleLogin}>Login</button>
+        </div>
+      )}
 
-        <input
-          placeholder="Username"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-        />
-        <input
-          placeholder="Password"
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
-        <button onClick={handleLogin}>Login</button>
-      </div>
-)}
-
-{needs2FASetup && (
-   <TwoFASetup tempToken={tempToken} />
-)}
-{needs2FAVerify && (
-   <TwoFAVerify tempToken={tempToken} />
-)}
- 
-
-
-
+      {needs2FASetup && <TwoFASetup tempToken={tempToken} issuer={issuer} />}
+      {needs2FAVerify && <TwoFAVerify tempToken={tempToken} />}
     </LoginWrapper>
-
   );
 }

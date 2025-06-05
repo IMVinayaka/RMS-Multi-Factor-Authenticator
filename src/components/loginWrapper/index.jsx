@@ -1,7 +1,7 @@
 import Image from "next/image";
 import React from "react";
 
-const LoginWrapper = ({ logo, flag, gradientColor,bgImage, children }) => {
+const LoginWrapper = ({ logo, flag, gradientColor,bgImage, children,aboutus,privacyAndTerms }) => {
   return (
     <div
       className="min-h-screen flex flex-col items-center justify-center"
@@ -13,7 +13,7 @@ const LoginWrapper = ({ logo, flag, gradientColor,bgImage, children }) => {
     {/* Header */}
       <div   style={{
         overflow: 'hidden',
-        borderRadius: '8px',
+        borderRadius: '8px 8px 0 0',
         background: `linear-gradient(to bottom right, ${gradientColor.start}, ${gradientColor.end})`,
       }} className="w-full border-b-0  gap-10  flex items-center  overflow-hidden justify-between p-6">
         <Image width={100} className="h-16" src={logo} alt="Logo"/>
@@ -44,12 +44,12 @@ const LoginWrapper = ({ logo, flag, gradientColor,bgImage, children }) => {
       {/* Footer */}
       <footer    style={{
         overflow: 'hidden',
-        borderRadius: '8px',
+       borderRadius: '0 0 8px 8px',
         background: `linear-gradient(to bottom right, ${gradientColor.start}, ${gradientColor.end})`,
       }} className="p-4 w-full h-full text-white text-sm text-center">
         <div className="space-x-4">
-          <a href="#" className="underline">About</a>
-          <a href="#" className="underline">Privacy Statement</a>
+          <a href={aboutus} target="_blank" className="underline">About</a>
+          <a href={privacyAndTerms} target="_blank"  className="underline">Privacy Statement</a>
         </div>
         <p className="mt-2">&copy; {new Date().getFullYear()} Your Company. All rights reserved.</p>
       </footer>

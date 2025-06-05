@@ -4,7 +4,7 @@ import styles from "./TwoFASetup.module.scss";
 import { get2FASetup, verify2FASetup } from "../services/login";
 import { toast } from "react-toastify";
 
-export default function TwoFASetup({ tempToken }) {
+export default function TwoFASetup({ tempToken, issuer }) {
   const [qrCodeUrl, setQrCodeUrl] = useState("");
   const [otp, setOtp] = useState("");
   const [error, setError] = useState("");
@@ -18,7 +18,6 @@ export default function TwoFASetup({ tempToken }) {
           return;
         }
         const secret = res;
-        let issuer = "RMSAuth"; // Default issuer
         let userName = tempToken?.userName;
 
         // Format: otpauth://totp/{issuer}:{userName}?secret={secret}&issuer={issuer}
@@ -40,9 +39,9 @@ export default function TwoFASetup({ tempToken }) {
   }, [tempToken]);
 
   const verifyOtp = async () => {
-    let obj ={
-  "otp": otp
-}
+    let obj = {
+      "otp": otp
+    }
     try {
       const res = await verify2FASetup(obj, tempToken?.userID);
       toast.success("2FA setup complete! You are logged in.");
@@ -62,12 +61,12 @@ export default function TwoFASetup({ tempToken }) {
             src={qrCodeUrl}
             alt="Scan this QR code with your Authenticator app"
             className={styles.qrCode}
-            
+
           />
           <input
             placeholder="Enter code from app"
             value={otp}
-           
+
             onChange={(e) => setOtp(e.target.value)}
             className={styles.input}
           />
