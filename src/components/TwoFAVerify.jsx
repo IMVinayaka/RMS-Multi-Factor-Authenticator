@@ -7,7 +7,7 @@ import FullScreenLoader from "./Loader";
 
 export default function TwoFAVerify({ tempToken, issuer, baseUrl }) {
   const [otp, setOtp] = useState("");
-   const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const verifyOtp = async () => {
     try {
@@ -22,7 +22,7 @@ export default function TwoFAVerify({ tempToken, issuer, baseUrl }) {
       }
     } catch {
       toast.error("Invalid OTP. Please try again.");
-    }finally{
+    } finally {
       setLoading(false);
 
     }
@@ -30,39 +30,42 @@ export default function TwoFAVerify({ tempToken, issuer, baseUrl }) {
 
   const handleReset = async () => {
     try {
-        setLoading(true);
-      await reset2FA(tempToken?.userID, issuer);
-      toast.success("2FA has been reset. Please log in again to reconfigure.");
-      window.location.href = "/login";
+      setLoading(true);
+      await reset2FA(tempToken?.userID, tempToken?.userName
+        , issuer);
+      toast.success("Email sent to reset 2FA. Please check your inbox.");
+      setTimeout(() => {
+        window.location.href = "/login?Instance=" + issuer;
+      }, 3000);
     } catch (err) {
       toast.error("Failed to reset 2FA. Please try again later.");
     }
-    finally{
+    finally {
       setLoading(false);
     }
   };
 
   return (
-<>
+    <>
 
-     {loading && <FullScreenLoader />}
-    <div className={styles.container}>
-      <h2 className="font-bold text-2xl">Enter your 2FA code</h2>
+      {loading && <FullScreenLoader />}
+      <div className={styles.container}>
+        <h2 className="font-bold text-2xl">Enter your 2FA code</h2>
 
-      <input
-        placeholder="Enter code from app"
-        value={otp}
-        onChange={(e) => setOtp(e.target.value)}
-        className={styles.input}
-      />
-      <button disabled={!otp.trim()}  onClick={verifyOtp} className={styles.button}>
-        Verify
-      </button>
-      <button onClick={handleReset} className={styles.resetButton}>
-        Reset Authenticator
-      </button>
-    </div>
-</>
+        <input
+          placeholder="Enter code from app"
+          value={otp}
+          onChange={(e) => setOtp(e.target.value)}
+          className={styles.input}
+        />
+        <button disabled={!otp.trim()} onClick={verifyOtp} className={styles.button}>
+          Verify
+        </button>
+        <button onClick={handleReset} className={styles.resetButton}>
+          Reset Authenticator
+        </button>
+      </div>
+    </>
 
   );
 }

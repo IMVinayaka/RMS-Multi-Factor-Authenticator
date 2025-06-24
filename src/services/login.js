@@ -54,9 +54,9 @@ export const verify2FALogin = async (otp, token) => {
 };
 
 
-export const reset2FA = async (token,userInstance) => {
+export const reset2FA = async (token, email, userInstance) => {
   return axios.post(
-    `/RMSAuthenticator/Forgot2FA?UserID=${token}&userInstance=${userInstance}`,
-
+    `${getBaseUrl("common")}/RMSAuthenticator/Forgot2FA?UserID=${token}&userEmail=${encodeURIComponent(email)}&userInstance=${userInstance}`,
+    {} // Send an empty POST body
   );
 };

@@ -78,7 +78,8 @@ export default function LoginPage() {
       setLoading(true);
 
       const data = await loginUser(obj);
-      if (data?.TwoFAYN) {
+      console.log(data?.twoFAYN,'data from loginUser');
+      if (data?.TwoFAYN === false) {
         const url = generateAuthUrl(wrapperDetails.baseUrl, data.userId);
         window.location.href = url;
         setLoading(false);
