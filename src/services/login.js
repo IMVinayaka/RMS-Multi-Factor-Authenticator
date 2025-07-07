@@ -19,7 +19,7 @@ export const loginUser = async (payload) => {
 export const get2FASetup = async (token,userInstance,userEmail) => {
   try {
     const response = await axios.get(
-      `${getBaseUrl("common")}/RMSAuthenticator/GenerateSecretKey/${token}?userInstance=${userInstance}?userEmail=${userEmail}`
+      `${getBaseUrl("common")}/RMSAuthenticator/GenerateSecretKey/${token}?userEmail=${encodeURIComponent(userEmail)}&userInstance=${userInstance}`
     );
     return response.data;
   } catch (error) {
