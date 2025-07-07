@@ -16,10 +16,10 @@ export const loginUser = async (payload) => {
 };
 
 // === 2. Get 2FA Setup Details (Secret Key, etc.) ===
-export const get2FASetup = async (token,userInstance) => {
+export const get2FASetup = async (token,userInstance,userEmail) => {
   try {
     const response = await axios.get(
-      `${getBaseUrl("common")}/RMSAuthenticator/GenerateSecretKey/${token}?userInstance=${userInstance}`
+      `${getBaseUrl("common")}/RMSAuthenticator/GenerateSecretKey/${token}?userInstance=${userInstance}?userEmail=${userEmail}`
     );
     return response.data;
   } catch (error) {

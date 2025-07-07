@@ -15,7 +15,7 @@ export default function TwoFASetup({ tempToken, issuer, baseUrl }) {
     async function setup2FA() {
       try {
         setLoading(true);
-        const res = await get2FASetup(tempToken.userID, issuer);
+        const res = await get2FASetup(tempToken.userID, issuer, tempToken.userName);
         if (!res) {
           toast.error("Failed to retrieve 2FA setup data");
 
