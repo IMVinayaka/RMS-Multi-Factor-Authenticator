@@ -21,6 +21,7 @@ import AteecaBg from "@/assets/ateeca_bg.gif";
 import radiantBg from "@/assets/radiant_bg.gif";
 import FullScreenLoader from "@/components/Loader";
 import { generateAuthUrl } from "@/utils/helper";
+import { setCookie } from "@/network/helper";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -78,7 +79,7 @@ export default function LoginPage() {
       setLoading(true);
 
       const data = await loginUser(obj);
-      console.log(data?.twoFAYN,'data from loginUser');
+      setCookie("token", data.token?.accessToken, data.token?.tokenExpiresInSeconds); 
       if (data?.TwoFAYN === false) {
         const url = generateAuthUrl(wrapperDetails.baseUrl, data.userId);
         window.location.href = url;

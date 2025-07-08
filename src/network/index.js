@@ -18,22 +18,22 @@ const getTokenFromCookies = () => {
 };
 
 // Request interceptor
-instance.interceptors.request.use(
-    (config) => {
-        const token = getTokenFromCookies();
+instance.interceptors.request.use((config) => {
+  const token = Cookies.get("token");
 
-        if (token) {
-            config.headers = config.headers || {};
-            config.headers["Authorization"] = `Bearer ${token}`;
-        }
-
-        config.headers["Content-Type"] = "application/json";
-        return config;
-    },
-    (error) => {
-        return Promise.reject(error);
+  if (token) {
+    // AxiosHeaders has a .set() helper in v1.x …
+    if (typeof config.headers?.set === "function") {
+      config.headers.set("Authorization", `Bearer ${token}`);
+    } else {
+      // … but v0.x and some build setups still expose a plain object:
+      config.headers = config.headers ?? {};
+      config.headers.Authorization = `Bearer ${token}`;
     }
-);
+  }
+
+  return config;
+});
 
 // Response interceptor
 instance.interceptors.response.use(
