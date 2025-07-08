@@ -5,6 +5,7 @@ import { get2FASetup, verify2FASetup } from "../services/login";
 import { toast } from "react-toastify";
 import { generateAuthUrl } from "@/utils/helper";
 import FullScreenLoader from "./Loader";
+import { userAgent } from "next/server";
 
 export default function TwoFASetup({ tempToken, issuer, baseUrl }) {
   const [qrCodeUrl, setQrCodeUrl] = useState("");
@@ -52,6 +53,7 @@ export default function TwoFASetup({ tempToken, issuer, baseUrl }) {
     let obj = {
       submittedCode: otp,
       userInstance: issuer,
+      userEmail: tempToken?.userName,
     };
     try {
       setLoading(true);
