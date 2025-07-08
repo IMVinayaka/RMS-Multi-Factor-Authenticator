@@ -13,10 +13,10 @@ export default function TwoFAVerify({ tempToken, issuer, baseUrl }) {
     try {
       setLoading(true);
       const resp = await verify2FALogin({ submittedCode: otp }, tempToken?.userID);
-      if (resp === true) {
+      if (resp) {
         toast.success("2FA verified! You will be rediercted to the application.");
-        const url = generateAuthUrl(baseUrl, tempToken.userID);
-        window.location.href = url;
+        // const url = generateAuthUrl(baseUrl, tempToken.userID);
+        window.location.href = resp;
       } else {
         toast.error("Invalid OTP. Please try again.");
       }
