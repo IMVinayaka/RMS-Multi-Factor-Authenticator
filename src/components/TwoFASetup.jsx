@@ -65,21 +65,18 @@ export default function TwoFASetup({ tempToken, issuer, baseUrl }) {
   }, [tempToken]);
 
   const verifyOtp = async () => {
-    let obj = {
-      submittedCode: otp,
-      userInstance: issuer,
-      userEmail: tempToken?.userName,
-    };
+
+    const url = new URL(window?.location?.href);
+    const qsData = url.searchParams.get('qsd');
     try {
       setLoading(true);
-      const res = await verify2FASetup(obj, tempToken?.userID);
+      const res = await verify2FASetup({ submittedCode: otp, QSData: qsData ,userEmail: tempToken?.userName,userInstance: issuer}, tempToken?.userID,);
       if (!res) {
         toast.error("Failed to verify OTP. Please try again.");
         return;
       }
       toast.success("2FA setup complete! You are logged in.");
-      const url = generateAuthUrl(baseUrl, tempToken.userID);
-      window.location.href = url;
+      window.top.location.href = res; // Ensure top-level navigation
     } catch (err) {
       toast.error("Invalid OTP. Please try again.");
     }
