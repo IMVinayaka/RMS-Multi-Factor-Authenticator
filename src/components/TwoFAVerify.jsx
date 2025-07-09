@@ -14,7 +14,7 @@ export default function TwoFAVerify({ tempToken, issuer, baseUrl }) {
       setLoading(true);
       const url = new URL(window?.location?.href);
       const qsData = url.searchParams.get('qsd');
-      const resp = await verify2FALogin({ submittedCode: otp, qsData: qsData }, tempToken?.userID,);
+      const resp = await verify2FALogin({ submittedCode: otp, qsData: qsData ,userEmail: tempToken?.userEmail,userInstance: issuer}, tempToken?.userID,);
       if (resp) {
         toast.success("2FA verified! You will be rediercted to the application.");
         // const url = generateAuthUrl(baseUrl, tempToken.userID);
