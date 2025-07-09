@@ -78,8 +78,8 @@ export default function TwoFASetup({ tempToken, issuer, baseUrl }) {
         return;
       }
       toast.success("2FA setup complete! You are logged in.");
-      const url = generateAuthUrl(baseUrl, tempToken.userID);
-      window.location.href = url;
+      // const url = generateAuthUrl(baseUrl, tempToken.userID);
+    window.top.location.href = res;
     } catch (err) {
       toast.error("Invalid OTP. Please try again.");
     }

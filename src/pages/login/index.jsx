@@ -81,8 +81,8 @@ export default function LoginPage() {
       const data = await loginUser(obj);
       setCookie("token", data.token?.accessToken, data.token?.tokenExpiresInSeconds); 
       if (data?.TwoFAYN === false) {
-        const url = generateAuthUrl(wrapperDetails.baseUrl, data.userId);
-        window.location.href = url;
+        // const url = generateAuthUrl(wrapperDetails.baseUrl, data.userId);
+       window.top.location.href = data?.url;
         setLoading(false);
       } else {
         if (!data.secretKeyYN) {
