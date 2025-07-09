@@ -46,16 +46,6 @@ export default function LoginPage() {
 
 
 
-function getUserIP(timeoutMs = 5000) {
-  // ---- 1) Public IP via ipify --------------------------------------------
-  const publicIp = fetch('https://api.ipify.org?format=json', { cache: 'no-store' })
-    .then(res => (res.ok ? res.json() : Promise.reject()))
-    .then(({ ip }) => ({ type: 'public', ip }));
-  return publicIp;
-}
-
-
-
   const handleLogin = async () => {
     // Validate email (used as username)
     if (!username.trim()) {
@@ -79,23 +69,20 @@ function getUserIP(timeoutMs = 5000) {
       toast.error("Password must be at least 6 characters long");
       return;
     }
-    const url = new URL(window?.location?.href);
-    const qsData = url.searchParams.get('qsd');
+
     try {
       let obj = {
         username: username,
         password: password,
         userInstance: issuer,
-        userIPAdress:await getUserIP(),
-        QSData:qsData
       }
       setLoading(true);
 
       const data = await loginUser(obj);
       setCookie("token", data.token?.accessToken, data.token?.tokenExpiresInSeconds); 
       if (data?.TwoFAYN === false) {
-          // const url = generateAuthUrl(wrapperDetails.baseUrl, data.userId);
-        window.top.location.href=data?.url;
+        const url = generateAuthUrl(wrapperDetails.baseUrl, data.userId);
+        window.location.href = url;
         setLoading(false);
       } else {
         if (!data.secretKeyYN) {
