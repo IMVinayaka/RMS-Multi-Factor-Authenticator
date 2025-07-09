@@ -23,7 +23,22 @@ export default function TwoFASetup({ tempToken, issuer, baseUrl }) {
           return;
         }
         let userName = tempToken?.userName;
-        const cleanIssuer = issuer.replace(/_/g, " ").trim();
+        let tempIssuer = issuer;
+        if(issuer ==='Orbit'){
+        switch (tempToken?.userName?.split("@")[1]?.toLowerCase()) {
+            case "radiants.com":
+              tempIssuer = "Radiant_USA";
+              break;
+            case "radgov.com":
+              tempIssuer = "RadGov_USA";
+              break;
+            case "ateeca.com":
+              tempIssuer = "Ateeca_USA";
+              break;
+          }
+  
+        }
+        const cleanIssuer = tempIssuer.replace(/_/g, " ").trim();
         const accountLabel = `${cleanIssuer}:${userName}`; // Must include colon between Issuer and UserName
 
         const otpAuthUrl = `otpauth://totp/${encodeURIComponent(accountLabel)}?secret=${res}&issuer=${encodeURIComponent(cleanIssuer)}&algorithm=SHA1&digits=6&period=30`;
