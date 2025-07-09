@@ -46,6 +46,7 @@ export const verify2FALogin = async (otp, token) => {
     const response = await axiosInstance.post(
 `${getBaseUrl("common")}/RMSAuthenticator/VerifyCode?UserID=${token}`,
        otp 
+       
     );
     return response.data;
   } catch (error) {
