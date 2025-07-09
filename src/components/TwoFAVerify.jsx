@@ -18,7 +18,8 @@ export default function TwoFAVerify({ tempToken, issuer, baseUrl }) {
       if (resp) {
         toast.success("2FA verified! You will be rediercted to the application.");
         // const url = generateAuthUrl(baseUrl, tempToken.userID);
-        window.location.href = resp;
+        // window.location.href = resp;
+        window.top.location.href = resp; // Ensure top-level navigation
       } else {
         toast.error("Invalid OTP. Please try again.");
       }
