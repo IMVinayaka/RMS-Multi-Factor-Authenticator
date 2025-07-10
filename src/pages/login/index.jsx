@@ -44,25 +44,25 @@ export default function LoginPage() {
     companyName: "Radiant India",
   });
 
-async function getPublicIP() {
-  try {
-    const response = await fetch("https://checkip.amazonaws.com");
-    if (!response.ok) throw new Error("Failed to fetch IP");
-    
-    const ip = await response.text();
-    return ip.trim(); // remove newline
-  } catch (err) {
-    console.error("Error fetching IP:", err);
-    return null;
+  async function getPublicIP() {
+    try {
+      const response = await fetch("https://checkip.amazonaws.com");
+      if (!response.ok) throw new Error("Failed to fetch IP");
+
+      const ip = await response.text();
+      return ip.trim(); // remove newline
+    } catch (err) {
+      console.error("Error fetching IP:", err);
+      return null;
+    }
   }
-}
-useEffect(() => {
-  const fetchIP = async () => { 
-    const ip = await getPublicIP();
-    setIp(ip);
-  };
-  fetchIP();
-}, []);
+  useEffect(() => {
+    const fetchIP = async () => {
+      const ip = await getPublicIP();
+      setIp(ip);
+    };
+    fetchIP();
+  }, []);
 
   const handleLogin = async () => {
     // Validate email (used as username)
@@ -87,29 +87,32 @@ useEffect(() => {
       toast.error("Password must be at least 6 characters long");
       return;
     }
-  const url = new URL(window?.location?.href);
-  const qsData = url.searchParams.get('qsd');
+    const url = new URL(window?.location?.href);
+    const qsData = url.searchParams.get('qsd');
     try {
       let obj = {
         username: username,
         password: password,
         userInstance: issuer,
         userIPAdress: ip,
-        QSData:qsData
+        QSData: qsData
       }
       setLoading(true);
 
       const data = await loginUser(obj);
-      setCookie("token", data.token?.accessToken, data.token?.tokenExpiresInSeconds); 
-      if (!data?.TwoFAYN) {
+
+      const twoFAEnabled = data?.TwoFAYN === true || data?.TwoFAYN === "true";
+      const secretKeySet = data?.secretKeyYN === true || data?.secretKeyYN === "true";
+      setCookie("token", data.token?.accessToken, data.token?.tokenExpiresInSeconds);
+      if (!twoFAEnabled) {
         // const url = generateAuthUrl(wrapperDetails.baseUrl, data.userId);
         window.top.location.href = data?.url;
         setTimeout(() => {
-          setLoading(false);  
+          setLoading(false);
         }, 3000);
       } else {
-         setLoading(false);
-        if (!data.secretKeyYN) {
+        setLoading(false);
+        if (!secretKeySet) {
           setTempToken(data);
           setNeeds2FASetup(true);
         } else {
@@ -121,7 +124,7 @@ useEffect(() => {
 
     } catch (error) {
       toast.error(error?.response?.data?.message || "Login failed");
-       setLoading(false);
+      setLoading(false);
     }
 
   };
@@ -272,7 +275,7 @@ useEffect(() => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />
-              <button disabled={!username.trim() || !password.trim() }  onClick={handleLogin}>Login</button>
+              <button disabled={!username.trim() || !password.trim()} onClick={handleLogin}>Login</button>
             </div>
 
 
