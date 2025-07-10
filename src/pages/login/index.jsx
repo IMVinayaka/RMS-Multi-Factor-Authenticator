@@ -104,8 +104,8 @@ useEffect(() => {
       if (!data?.TwoFAYN) {
         // const url = generateAuthUrl(wrapperDetails.baseUrl, data.userId);
         window.top.location.href = data?.url;
-        setLoading(true);
       } else {
+         setLoading(false);
         if (!data.secretKeyYN) {
           setTempToken(data);
           setNeeds2FASetup(true);
@@ -113,14 +113,14 @@ useEffect(() => {
           setTempToken(data);
           setNeeds2FAVerify(true);
         }
+
       }
 
     } catch (error) {
       toast.error(error?.response?.data?.message || "Login failed");
+       setLoading(false);
     }
-    finally {
-      setLoading(false);
-    }
+
   };
 
   const data = [
