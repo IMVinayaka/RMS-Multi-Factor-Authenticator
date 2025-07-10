@@ -20,7 +20,6 @@ import AteecaLogo from "@/assets/ateeca-logo.png";
 import AteecaBg from "@/assets/ateeca_bg.gif";
 import radiantBg from "@/assets/radiant_bg.gif";
 import FullScreenLoader from "@/components/Loader";
-import { generateAuthUrl } from "@/utils/helper";
 import { setCookie } from "@/network/helper";
 
 export default function LoginPage() {
@@ -32,6 +31,7 @@ export default function LoginPage() {
   const [needs2FAVerify, setNeeds2FAVerify] = useState(false);
   const [issuer, setIssuer] = useState("Radiant_India");
   const [loading, setLoading] = useState(true);
+  const [ip, setIp] = useState(null);
 
   const [wrapperDetails, setWrapperDetails] = useState({
     logo: RadiantsLogo,
@@ -44,7 +44,25 @@ export default function LoginPage() {
     companyName: "Radiant India",
   });
 
-
+async function getPublicIP() {
+  try {
+    const response = await fetch("https://checkip.amazonaws.com");
+    if (!response.ok) throw new Error("Failed to fetch IP");
+    
+    const ip = await response.text();
+    return ip.trim(); // remove newline
+  } catch (err) {
+    console.error("Error fetching IP:", err);
+    return null;
+  }
+}
+useEffect(() => {
+  const fetchIP = async () => { 
+    const ip = await getPublicIP();
+    setIp(ip);
+  };
+  fetchIP();
+}, []);
 
   const handleLogin = async () => {
     // Validate email (used as username)
@@ -69,12 +87,15 @@ export default function LoginPage() {
       toast.error("Password must be at least 6 characters long");
       return;
     }
-
+  const url = new URL(window?.location?.href);
+      const qsData = url.searchParams.get('qsd');
     try {
       let obj = {
         username: username,
         password: password,
         userInstance: issuer,
+        userIPAdress: ip,
+        QSData:qsData
       }
       setLoading(true);
 
