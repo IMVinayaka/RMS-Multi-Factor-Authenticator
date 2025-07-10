@@ -101,12 +101,14 @@ export default function LoginPage() {
 
       const data = await loginUser(obj);
 
-      const twoFAEnabled = data?.TwoFAYN === true || data?.TwoFAYN === "true";
+      const twoFAEnabled = data?.twoFAYN === true || data?.twoFAYN === "true";      // use lowercase t
       const secretKeySet = data?.secretKeyYN === true || data?.secretKeyYN === "true";
+
       setCookie("token", data.token?.accessToken, data.token?.tokenExpiresInSeconds);
+
       if (!twoFAEnabled) {
         // const url = generateAuthUrl(wrapperDetails.baseUrl, data.userId);
-        window.top.location.href = data?.url;
+        // window.top.location.href = data?.url;
         setTimeout(() => {
           setLoading(false);
         }, 3000);
