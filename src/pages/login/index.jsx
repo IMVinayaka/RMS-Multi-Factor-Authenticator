@@ -88,7 +88,7 @@ useEffect(() => {
       return;
     }
   const url = new URL(window?.location?.href);
-      const qsData = url.searchParams.get('qsd');
+  const qsData = url.searchParams.get('qsd');
     try {
       let obj = {
         username: username,
@@ -104,6 +104,9 @@ useEffect(() => {
       if (!data?.TwoFAYN) {
         // const url = generateAuthUrl(wrapperDetails.baseUrl, data.userId);
         window.top.location.href = data?.url;
+        setTimeout(() => {
+          setLoading(false);  
+        }, 3000);
       } else {
          setLoading(false);
         if (!data.secretKeyYN) {
