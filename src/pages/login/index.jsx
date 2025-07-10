@@ -101,7 +101,7 @@ useEffect(() => {
 
       const data = await loginUser(obj);
       setCookie("token", data.token?.accessToken, data.token?.tokenExpiresInSeconds); 
-      if (data?.TwoFAYN === false) {
+      if (!data?.TwoFAYN) {
         // const url = generateAuthUrl(wrapperDetails.baseUrl, data.userId);
        window.top.location.href = data?.url;
         setLoading(false);
@@ -114,7 +114,6 @@ useEffect(() => {
           setNeeds2FAVerify(true);
         }
       }
-
 
     } catch (error) {
       toast.error(error?.response?.data?.message || "Login failed");
