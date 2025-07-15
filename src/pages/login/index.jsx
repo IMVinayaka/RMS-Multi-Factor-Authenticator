@@ -108,7 +108,7 @@ export default function LoginPage() {
 
       if (!twoFAEnabled) {
         // const url = generateAuthUrl(wrapperDetails.baseUrl, data.userId);
-        // window.top.location.href = data?.url;
+        window.top.location.href = data?.url;
         setTimeout(() => {
           setLoading(false);
         }, 3000);
