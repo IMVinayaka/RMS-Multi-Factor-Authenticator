@@ -14,7 +14,7 @@ import {
   COMPANY_INSTANCES,
   DEFAULT_INSTANCE,
   emailRegex,
-} from "./login.constants";
+} from "../../utils/login.constants";
 
 import styles from "./styles.module.scss";
 
