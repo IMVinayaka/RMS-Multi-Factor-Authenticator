@@ -110,9 +110,9 @@ export default function LoginPage() {
 
       setCookie("token", data.token?.accessToken, data.token?.tokenExpiresInSeconds);
 
-      const is2FAEnabled = data?.twoFAYN === true || data?.twoFAYN === "true";
-      const isSecretSet = data?.secretKeyYN === true || data?.secretKeyYN === "true";
-      const isLoginHasAccess = data?.showSecretKeyYN === true || data?.showSecretKeyYN === "true";
+      const is2FAEnabled = data?.mFAVerificationYN === true || data?.mFAVerificationYN === "true";
+      const isSecretSet = data?.secretKeyGeneratedYN === true || data?.secretKeyGeneratedYN === "true";
+      const isLoginHasAccess = data?.ShowQRCodeYN === true || data?.ShowQRCodeYN === "true";
 
 
 
