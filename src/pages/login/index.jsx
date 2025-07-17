@@ -110,25 +110,29 @@ export default function LoginPage() {
 
       setCookie("token", data.token?.accessToken, data.token?.tokenExpiresInSeconds);
 
-      const is2FAEnabled = data?.mFAVerificationYN === true || data?.mFAVerificationYN === "true";
-      const isSecretSet = data?.secretKeyGeneratedYN === true || data?.secretKeyGeneratedYN === "true";
-      const isLoginHasAccess = data?.ShowQRCodeYN === true || data?.ShowQRCodeYN === "true";
-
-
+      const mFAVerificationYN = data?.mFAVerificationYN === true || data?.mFAVerificationYN === "true";
+      const secretKeyGeneratedYN = data?.secretKeyGeneratedYN === true || data?.secretKeyGeneratedYN === "true";
+      const ShowQRCodeYN = data?.ShowQRCodeYN === true || data?.ShowQRCodeYN === "true";
+      if (!mFAVerificationYN) {
+        window.top.location.href = data?.url;
+        return;
+      }
 
       setTempToken(data);
-      setNeeds2FASetup(!isSecretSet);
-      setNeeds2FAVerify(isSecretSet);
-      setHasAccess(isLoginHasAccess);
-      if(!isLoginHasAccess && isSecretSet) {
+
+      setNeeds2FASetup(!secretKeyGeneratedYN);
+
+      setNeeds2FAVerify(secretKeyGeneratedYN);
+
+      setHasAccess(ShowQRCodeYN);
+
+      if (!ShowQRCodeYN && !secretKeyGeneratedYN) {
         toast.error("You do not have access to this instance.");
         return
       }
 
-      if (!is2FAEnabled) {
-        window.top.location.href = data?.url;
-        return;
-      }
+
+
     } catch (err) {
       toast.error(err?.response?.data?.message || "Login failed");
     } finally {
