@@ -1,295 +1,184 @@
 import { useEffect, useState } from "react";
+import { useRouter } from "next/router";
+import { toast } from "react-toastify";
+
+import LoginWrapper from "@/components/loginWrapper";
 import TwoFASetup from "../../components/TwoFASetup";
 import TwoFAVerify from "../../components/TwoFAVerify";
-import styles from "./styles.module.scss";
-import { loginUser } from "../../services/login";
-import { toast } from "react-toastify";
-import LoginWrapper from "@/components/loginWrapper";
-import { useRouter } from "next/router";
-
-import RadiantsLogo from "@/assets/radiants.png";
-import IndainFlag from "@/assets/india.png";
-import CandaFlag from "@/assets/canda.webp";
-import USFlag from "@/assets/us.png";
-import EuropeFlag from "@/assets/europe.webp";
-import RadgovLogo from "@/assets/radGov.png";
-import Orbitlogo from "@/assets/Orbit.png";
-
-import RadGovbg from "@/assets/Radgov_Bg.jpg";
-import AteecaLogo from "@/assets/ateeca-logo.png";
-import AteecaBg from "@/assets/ateeca_bg.gif";
-import radiantBg from "@/assets/radiant_bg.gif";
 import FullScreenLoader from "@/components/Loader";
+
+import { loginUser } from "../../services/login";
 import { setCookie } from "@/network/helper";
+
+import {
+  COMPANY_INSTANCES,
+  DEFAULT_INSTANCE,
+  emailRegex,
+} from "./login.constants";
+
+import styles from "./styles.module.scss";
 
 export default function LoginPage() {
   const router = useRouter();
+
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+
+  const [issuer, setIssuer] = useState(DEFAULT_INSTANCE);
+  const [wrapperDetails, setWrapperDetails] = useState(
+    COMPANY_INSTANCES.find((inst) => inst.instance === DEFAULT_INSTANCE)
+  );
+
+  const [ip, setIp] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [tempToken, setTempToken] = useState(null);
   const [needs2FASetup, setNeeds2FASetup] = useState(false);
   const [needs2FAVerify, setNeeds2FAVerify] = useState(false);
-  const [issuer, setIssuer] = useState("Radiant_India");
-  const [loading, setLoading] = useState(true);
-  const [ip, setIp] = useState(null);
+  const [hasAccess, setHasAccess] = useState(true);
 
-  const [wrapperDetails, setWrapperDetails] = useState({
-    logo: RadiantsLogo,
-    flag: IndainFlag,
-    gradientColor: { start: "#003366", end: "#00cccc" },
-    bgImage: radiantBg,
-    aboutus: "https://www.radiants.com/about-us",
-    privacyAndTerms: "https://www.radiants.com/privacy-policy",
-    baseUrl: "https://intranet.radiants.com/RadInd/",
-    companyName: "Radiant India",
-  });
-
-  async function getPublicIP() {
-    try {
-      const response = await fetch("https://checkip.amazonaws.com");
-      if (!response.ok) throw new Error("Failed to fetch IP");
-
-      const ip = await response.text();
-      return ip.trim(); // remove newline
-    } catch (err) {
-      console.error("Error fetching IP:", err);
-      return null;
-    }
-  }
+  // Fetch user IP address
   useEffect(() => {
-    const fetchIP = async () => {
-      const ip = await getPublicIP();
-      setIp(ip);
-    };
+    async function fetchIP() {
+      try {
+        const response = await fetch("https://checkip.amazonaws.com");
+        const text = await response.text();
+        setIp(text.trim());
+      } catch (err) {
+        console.error("Error fetching IP:", err);
+      }
+    }
     fetchIP();
   }, []);
 
-  const handleLogin = async () => {
-    // Validate email (used as username)
-    if (!username.trim()) {
-      toast.error("Email is required");
-      return;
-    }
+  // Handle dynamic company instance
+  useEffect(() => {
+    if (!router.isReady) return;
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(username)) {
-      toast.error("Please enter a valid email address");
-      return;
-    }
+    const instance = router.query.Instance?.toString() || DEFAULT_INSTANCE;
+    const selectedInstance = COMPANY_INSTANCES.find(
+      (inst) => inst.instance.toLowerCase() === instance.toLowerCase()
+    );
 
-    // Validate password
-    if (!password) {
-      toast.error("Password is required");
-      return;
-    }
+    if (selectedInstance) {
+      setIssuer(instance);
+      setWrapperDetails(selectedInstance);
+      document.title = instance.replace(/_/g, " ");
+      const favicon = document.querySelector("link[rel~='icon']") || document.createElement("link");
+      favicon.rel = "icon";
+      favicon.type = "image/png"; // <-- Add this line to specify the MIME type
+      favicon.href = selectedInstance.logo;
 
-    if (password.length < 6) {
-      toast.error("Password must be at least 6 characters long");
-      return;
-    }
-    const url = new URL(window?.location?.href);
-    const qsData = url.searchParams.get('qsd');
-    try {
-      let obj = {
-        username: username,
-        password: password,
-        userInstance: issuer,
-        userIPAdress: ip,
-        QSData: qsData
+      if (!favicon.parentNode) {
+        document.head.appendChild(favicon);
       }
+
+
+    }
+
+    setTimeout(() => setLoading(false), 500);
+  }, [router.isReady, router.query]);
+
+  const validateInputs = () => {
+    if (!username.trim()) return "Email is required";
+    if (!emailRegex.test(username)) return "Please enter a valid email address";
+    if (!password) return "Password is required";
+    if (password.length < 6) return "Password must be at least 6 characters long";
+    return null;
+  };
+
+  const handleLogin = async () => {
+    const error = validateInputs();
+    if (error) {
+      toast.error(error);
+      return;
+    }
+
+    const qsData = new URL(window?.location?.href).searchParams.get("qsd");
+
+    try {
       setLoading(true);
 
-      const data = await loginUser(obj);
+      const loginPayload = {
+        username,
+        password,
+        userInstance: issuer,
+        userIPAdress: ip,
+        QSData: qsData,
+      };
 
-      const twoFAEnabled = data?.twoFAYN === true || data?.twoFAYN === "true";      // use lowercase t
-      const secretKeySet = data?.secretKeyYN === true || data?.secretKeyYN === "true";
+      const data = await loginUser(loginPayload);
 
       setCookie("token", data.token?.accessToken, data.token?.tokenExpiresInSeconds);
 
-      if (!twoFAEnabled) {
-        // const url = generateAuthUrl(wrapperDetails.baseUrl, data.userId);
-        window.top.location.href = data?.url;
-        setTimeout(() => {
-          setLoading(false);
-        }, 3000);
-      } else {
-        setLoading(false);
-        if (!secretKeySet) {
-          setTempToken(data);
-          setNeeds2FASetup(true);
-        } else {
-          setTempToken(data);
-          setNeeds2FAVerify(true);
-        }
+      const is2FAEnabled = data?.twoFAYN === true || data?.twoFAYN === "true";
+      const isSecretSet = data?.secretKeyYN === true || data?.secretKeyYN === "true";
+      const isLoginHasAccess = data?.showSecretKeyYN === true || data?.showSecretKeyYN === "true";
 
+
+
+      setTempToken(data);
+      setNeeds2FASetup(!isSecretSet);
+      setNeeds2FAVerify(isSecretSet);
+      setHasAccess(isLoginHasAccess);
+      if(!isLoginHasAccess && isSecretSet) {
+        toast.error("You do not have access to this instance.");
+        return
       }
 
-    } catch (error) {
-      toast.error(error?.response?.data?.message || "Login failed");
+      if (!is2FAEnabled) {
+        window.top.location.href = data?.url;
+        return;
+      }
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "Login failed");
+    } finally {
       setLoading(false);
     }
-
   };
 
-  const data = [
-    {
-      instance: "RadGov_USA",
-      logo: RadgovLogo,
-      flag: USFlag,
-      gradientColor: { start: "#06127a", end: "#2558b5" },
-      bgImage: RadGovbg,
-      aboutus: "https://www.radgov.com/aboutus",
-      privacyAndTerms: "https://www.radgov.com/privacy-policy",
-      baseUrl: "https://intranet.radgov.com/RadUS/",
-      companyName: "RadGov.INC",
-    },
-    {
-      instance: "Ateeca_USA",
-      logo: AteecaLogo,
-      flag: USFlag,
-      gradientColor: { start: "#d17f0b", end: "#f5ad46" },
-      bgImage: AteecaBg,
-      aboutus: "https://ateeca.com/about-us",
-      privacyAndTerms: "https://ateeca.com/privacy",
-      baseUrl: "https://intranet.radgov.com/RadUS/",
-      companyName: "Ateeca",
-    },
-    {
-      instance: "Orbit",
-      logo: Orbitlogo,
-      flag: USFlag,
-      gradientColor: { start: "#003366", end: "#00cccc" },
-      bgImage: radiantBg,
-      aboutus: "https://www.radiants.com/about-us",
-      privacyAndTerms: "https://www.radiants.com/privacy-policy",
-      baseUrl: "https://intranet.radiants.com/Orbit/",
-      companyName: "Radiants",
-    },
-    {
-      instance: "Radiant_India",
-      logo: RadiantsLogo,
-      flag: IndainFlag,
-      gradientColor: { start: "#003366", end: "#00cccc" },
-      bgImage: radiantBg,
-      aboutus: "https://www.radiants.com/about-us",
-      privacyAndTerms: "https://www.radiants.com/privacy-policy",
-      baseUrl: "https://intranet.radiants.com/RadInd/",
-      companyName: "Radiants",
-    },
-    {
-      instance: "Radiant_Canada",
-      logo: RadiantsLogo,
-      flag: CandaFlag,
-      gradientColor: { start: "#003366", end: "#00cccc" },
-      bgImage: radiantBg,
-      aboutus: "https://www.radiants.com/about-us",
-      privacyAndTerms: "https://www.radiants.com/privacy-policy",
-      baseUrl: "https://intranet.radiants.com/RadCA/",
-      companyName: "Radiants",
-    },
-    {
-      instance: "Radiant_USA",
-      logo: RadiantsLogo,
-      flag: USFlag,
-      gradientColor: { start: "#003366", end: "#00cccc" },
-      bgImage: radiantBg,
-      aboutus: "https://www.radiants.com/about-us",
-      privacyAndTerms: "https://www.radiants.com/privacy-policy",
-      baseUrl: "https://intranet.radiants.com/RadUS/",
-      companyName: "Radiants",
+  const renderLoginForm = () => (
+    <div className={`${styles.loginContainer} ${styles.lightTheme}`}>
+      <h2 className="text-white font-bold text-2xl text-center">Login</h2>
+      <input
+        placeholder="Username"
+        value={username}
+        onChange={(e) => setUsername(e.target.value)}
+      />
+      <input
+        placeholder="Password"
+        type="password"
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+      />
+      <button
+        disabled={!username.trim() || !password.trim()}
+        onClick={handleLogin}
+      >
+        Login
+      </button>
+    </div>
+  );
 
-    },
-    {
-      instance: "Radiant_UK",
-      logo: RadiantsLogo,
-      flag: EuropeFlag,
-      gradientColor: { start: "#003366", end: "#00cccc" },
-      bgImage: radiantBg,
-      aboutus: "https://www.radiants.com/about-us",
-      privacyAndTerms: "https://www.radiants.com/about-us",
-      baseUrl: "https://intranet.radiants.uk/RmsUKWeb/",
-      companyName: "Radiants",
-    },
-  ];
-
-  useEffect(() => {
-    setLoading(true);
-
-    if (router.isReady) {
-      const instanceParam = router.query.Instance;
-      const instance = instanceParam?.toString() || "Radiant_India";
-
-      setIssuer(instance);
-
-      const selected = data.find(
-        (item) => item.instance.toLowerCase() === instance.toLowerCase()
-      );
-
-      if (selected) {
-        setWrapperDetails(selected);
-
-        // Set document title
-        document.title = instance.replace(/_/g, " ");
-
-        // Set favicon
-        const link = document.querySelector("link[rel~='icon']") || document.createElement("link");
-        link.rel = "icon";
-        link.href = selected.logo;
-        document.head.appendChild(link);
-      }
-
-      setTimeout(() => setLoading(false), 500);
-    }
-  }, [router.isReady, router.query]);
-
+  const renderNoAccess = () => (
+    <div className="text-white text-center mt-4 min-h-[10rem] flex flex-col items-center justify-center text-lg font-bold">
+      Your Device is not listed in the system, please contact your administrator.
+    </div>
+  );
 
   return (
     <>
-
       {loading && <FullScreenLoader />}
 
-      <LoginWrapper
-        logo={wrapperDetails.logo}
-        flag={wrapperDetails.flag}
-        bgImage={wrapperDetails.bgImage}
-        gradientColor={wrapperDetails.gradientColor}
-        aboutus={wrapperDetails.aboutus}
-        privacyAndTerms={wrapperDetails.privacyAndTerms}
-        companyName={wrapperDetails.companyName}
-
-      >
-
-        {!needs2FASetup && !needs2FAVerify && (
-          <>
-
-
-            <div className={`${styles.loginContainer} ${styles.lightTheme}`}>
-              <h2 className="text-white font-bold text-2xl text-center">Login</h2>
-
-              <input
-                placeholder="Username"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-              />
-              <input
-                placeholder="Password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-              <button disabled={!username.trim() || !password.trim()} onClick={handleLogin}>Login</button>
-            </div>
-
-
-
-          </>
-
+      <LoginWrapper {...wrapperDetails}>
+        {!needs2FASetup && !needs2FAVerify && hasAccess && renderLoginForm()}
+        {needs2FASetup && hasAccess && (
+          <TwoFASetup tempToken={tempToken} issuer={issuer} baseUrl={wrapperDetails.baseUrl} />
         )}
-
-        {needs2FASetup && <TwoFASetup tempToken={tempToken} issuer={issuer} baseUrl={wrapperDetails?.baseUrl} />}
-        {needs2FAVerify && <TwoFAVerify tempToken={tempToken} issuer={issuer} baseUrl={wrapperDetails?.baseUrl} />}
+        {needs2FAVerify && hasAccess && (
+          <TwoFAVerify tempToken={tempToken} issuer={issuer} baseUrl={wrapperDetails.baseUrl} />
+        )}
+        {!hasAccess && renderNoAccess()}
       </LoginWrapper>
     </>
-
   );
 }
