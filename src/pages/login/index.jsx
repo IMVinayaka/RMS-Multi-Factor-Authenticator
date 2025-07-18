@@ -114,7 +114,7 @@ export default function LoginPage() {
       const secretKeyGeneratedYN = data?.secretKeyGeneratedYN === true || data?.secretKeyGeneratedYN === "true";
       const ShowQRCodeYN = data?.showQRCodeYN === true || data?.showQRCodeYN === "true";
 
-    
+
       setTempToken(data);
       setNeeds2FASetup(!secretKeyGeneratedYN);
       setNeeds2FAVerify(secretKeyGeneratedYN);
@@ -123,14 +123,19 @@ export default function LoginPage() {
         toast.error("You do not have access to this instance.");
         return
       }
-  if (!mFAVerificationYN) {
+      if (!mFAVerificationYN) {
         window.top.location.href = data?.url;
         return;
       }
     } catch (err) {
       toast.error(err?.response?.data?.message || "Login failed");
     } finally {
-      setLoading(false);
+      setTimeout(() => {
+        setUserName("");
+        setPassword("");
+        setLoading(false);
+      }, 1000);
+
     }
   };
 
