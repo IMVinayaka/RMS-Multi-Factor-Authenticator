@@ -21,7 +21,7 @@ import styles from "./styles.module.scss";
 export default function LoginPage() {
   const router = useRouter();
 
-  const [username, setUsername] = useState("");
+  const [userName, setUserName] = useState("");
   const [password, setPassword] = useState("");
 
   const [issuer, setIssuer] = useState(DEFAULT_INSTANCE);
@@ -79,8 +79,8 @@ export default function LoginPage() {
   }, [router.isReady, router.query]);
 
   const validateInputs = () => {
-    if (!username.trim()) return "Email is required";
-    if (!emailRegex.test(username)) return "Please enter a valid email address";
+    if (!userName.trim()) return "Email is required";
+    if (!emailRegex.test(userName)) return "Please enter a valid email address";
     if (!password) return "Password is required";
     if (password.length < 6) return "Password must be at least 6 characters long";
     return null;
@@ -99,7 +99,7 @@ export default function LoginPage() {
       setLoading(true);
 
       const loginPayload = {
-        username,
+        userName,
         password,
         userInstance: issuer,
         userIPAdress: ip,
@@ -110,29 +110,23 @@ export default function LoginPage() {
 
       setCookie("token", data.token?.accessToken, data.token?.tokenExpiresInSeconds);
 
-      const mFAVerificationYN = data?.mFAVerificationYN === true || data?.mFAVerificationYN === "true";
+      const mFAVerificationYN = data?.mfaVerificationYN === true || data?.mfaVerificationYN === "true";
       const secretKeyGeneratedYN = data?.secretKeyGeneratedYN === true || data?.secretKeyGeneratedYN === "true";
-      const ShowQRCodeYN = data?.ShowQRCodeYN === true || data?.ShowQRCodeYN === "true";
-      if (!mFAVerificationYN) {
-        window.top.location.href = data?.url;
-        return;
-      }
+      const ShowQRCodeYN = data?.showQRCodeYN === true || data?.showQRCodeYN === "true";
 
+    
       setTempToken(data);
-
       setNeeds2FASetup(!secretKeyGeneratedYN);
-
       setNeeds2FAVerify(secretKeyGeneratedYN);
-
       setHasAccess(ShowQRCodeYN);
-
       if (!ShowQRCodeYN && !secretKeyGeneratedYN) {
         toast.error("You do not have access to this instance.");
         return
       }
-
-
-
+  if (!mFAVerificationYN) {
+        window.top.location.href = data?.url;
+        return;
+      }
     } catch (err) {
       toast.error(err?.response?.data?.message || "Login failed");
     } finally {
@@ -145,8 +139,8 @@ export default function LoginPage() {
       <h2 className="text-white font-bold text-2xl text-center">Login</h2>
       <input
         placeholder="Username"
-        value={username}
-        onChange={(e) => setUsername(e.target.value)}
+        value={userName}
+        onChange={(e) => setUserName(e.target.value)}
       />
       <input
         placeholder="Password"
@@ -155,7 +149,7 @@ export default function LoginPage() {
         onChange={(e) => setPassword(e.target.value)}
       />
       <button
-        disabled={!username.trim() || !password.trim()}
+        disabled={!userName.trim() || !password.trim()}
         onClick={handleLogin}
       >
         Login
