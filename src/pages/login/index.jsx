@@ -130,11 +130,9 @@ export default function LoginPage() {
     } catch (err) {
       toast.error(err?.response?.data?.message || "Login failed");
     } finally {
-      setTimeout(() => {
-        setUserName("");
-        setPassword("");
+ 
         setLoading(false);
-      }, 1000);
+     
 
     }
   };

@@ -26,7 +26,10 @@ export default function TwoFAVerify({ tempToken, issuer, baseUrl }) {
     } catch {
       toast.error("Invalid OTP. Please try again.");
     } finally {
+      setTimeout(()=>{
       setLoading(false);
+      },2000)
+
 
     }
   };

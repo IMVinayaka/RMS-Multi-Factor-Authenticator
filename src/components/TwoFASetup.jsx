@@ -84,7 +84,9 @@ export default function TwoFASetup({ tempToken, issuer, baseUrl }) {
       toast.error("Invalid OTP. Please try again.");
     }
     finally {
+   setTimeout(()=>{
       setLoading(false);
+      },2000)
     }
   };
 
