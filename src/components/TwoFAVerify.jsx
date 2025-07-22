@@ -28,9 +28,7 @@ export default function TwoFAVerify({ tempToken, issuer, baseUrl }) {
     } finally {
       setTimeout(()=>{
       setLoading(false);
-      },2000)
-
-
+      },500)
     }
   };
 

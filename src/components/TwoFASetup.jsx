@@ -10,7 +10,7 @@ import { userAgent } from "next/server";
 export default function TwoFASetup({ tempToken, issuer, baseUrl }) {
   const [qrCodeUrl, setQrCodeUrl] = useState("");
   const [otp, setOtp] = useState("");
-   const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     async function setup2FA() {
@@ -25,7 +25,7 @@ export default function TwoFASetup({ tempToken, issuer, baseUrl }) {
         let userName = tempToken?.userName;
         let tempIssuer = issuer;
         if(issuer ==='Orbit'){
-        switch (tempToken?.userName?.split("@")[1]?.toLowerCase()) {
+          switch (tempToken?.userName?.split("@")[1]?.toLowerCase()) {
             case "radiants.com":
               tempIssuer = "Radiant_USA";
               break;
@@ -36,7 +36,7 @@ export default function TwoFASetup({ tempToken, issuer, baseUrl }) {
               tempIssuer = "Ateeca_USA";
               break;
           }
-  
+
         }
         const cleanIssuer = tempIssuer.replace(/_/g, " ").trim();
         const accountLabel = `${cleanIssuer}:${userName}`; // Must include colon between Issuer and UserName
@@ -77,50 +77,53 @@ export default function TwoFASetup({ tempToken, issuer, baseUrl }) {
         toast.error("Failed to verify OTP. Please try again.");
         return;
       }
-      toast.success("2FA setup complete! You are logged in.");
-      // const url = generateAuthUrl(baseUrl, tempToken.userID);
-    window.top.location.href = res;
+      else {
+        toast.success("2FA setup complete! You are logged in.");
+        // const url = generateAuthUrl(baseUrl, tempToken.userID);
+        window.top.location.href = res;
+      }
+
     } catch (err) {
       toast.error("Invalid OTP. Please try again.");
     }
     finally {
-   setTimeout(()=>{
-      setLoading(false);
-      },2000)
+      setTimeout(() => {
+        setLoading(false);
+      }, 2000)
     }
   };
 
   return (
     <>
-        {loading && <FullScreenLoader />}
+      {loading && <FullScreenLoader />}
 
-    <div c className={styles.container}>
-      <h2 className="font-bold text-white text-center text-2xl">
-        Scan from Authenticator
-      </h2>
+      <div c className={styles.container}>
+        <h2 className="font-bold text-white text-center text-2xl">
+          Scan from Authenticator
+        </h2>
 
-      {qrCodeUrl ? (
-        <>
-          <img
-            src={qrCodeUrl}
-            alt="Scan this QR code with your Authenticator app"
-            className={styles.qrCode}
-          />
-          <input
-            placeholder="Enter code from app"
-            value={otp}
-            onChange={(e) => setOtp(e.target.value)}
-            className={styles.input}
-          />
-          <button onClick={verifyOtp} className={styles.button}>
-            Verify OTP
-          </button>
-        </>
-      ) : (
-        <p>Loading QR code...</p>
-      )}
-    </div>
+        {qrCodeUrl ? (
+          <>
+            <img
+              src={qrCodeUrl}
+              alt="Scan this QR code with your Authenticator app"
+              className={styles.qrCode}
+            />
+            <input
+              placeholder="Enter code from app"
+              value={otp}
+              onChange={(e) => setOtp(e.target.value)}
+              className={styles.input}
+            />
+            <button onClick={verifyOtp} className={styles.button}>
+              Verify OTP
+            </button>
+          </>
+        ) : (
+          <p>Loading QR code...</p>
+        )}
+      </div>
     </>
- 
+
   );
 }

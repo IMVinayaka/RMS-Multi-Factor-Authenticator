@@ -47,13 +47,6 @@ instance.interceptors.response.use(
         if (error.response) {
             const { status } = error.response;
 
-            if (status === 401) {
-                logout();
-                window.location.href = "/login";
-                return Promise.reject(error);
-            }
-
-            console.error("Error response:", error.response);
         } else {
             console.error("Error message:", error.message);
             handleToast({
