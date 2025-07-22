@@ -103,7 +103,7 @@ export default function LoginPage() {
         password,
         userInstance: issuer,
         userIPAdress: ip,
-        QSData: qsData,
+        qsData: qsData,
       };
 
       const data = await loginUser(loginPayload);
