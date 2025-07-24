@@ -35,6 +35,7 @@ export default function LoginPage() {
   const [needs2FASetup, setNeeds2FASetup] = useState(false);
   const [needs2FAVerify, setNeeds2FAVerify] = useState(false);
   const [hasAccess, setHasAccess] = useState(true);
+  const [error, setError] = useState(null);
 
   // Fetch user IP address
   useEffect(() => {
@@ -128,12 +129,13 @@ export default function LoginPage() {
         return;
       }
     } catch (err) {
-      toast.error(err?.response?.data?.message || "Login failed");
+      setError(err?.response?.data || "Login failed");
+      toast.error(err?.response?.data|| "Login failed. Please try again.");
+      if( err?.response?.status === 423) {
+        setHasAccess(false);
+      }
     } finally {
- 
-        setLoading(false);
-     
-
+      setLoading(false);
     }
   };
 
@@ -162,7 +164,7 @@ export default function LoginPage() {
 
   const renderNoAccess = () => (
     <div className="text-white text-center mt-4 min-h-[10rem] flex flex-col items-center justify-center text-lg font-bold">
-      Your Device is not listed in the system, please contact your administrator.
+      {error}
     </div>
   );
 
