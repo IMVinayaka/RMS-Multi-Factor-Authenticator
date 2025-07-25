@@ -98,7 +98,7 @@ const PasswordReset = ({ instance ,userName}) => {
             if (response?.status === 200) {
                 setLoading(true);
                 toast.success("Password reset successfully");
-                window.top.location.href = response; // Ensure top-level navigation
+                window.top.location.href = response?.data; // Ensure top-level navigation
                 setTimeout(() => {
                     setLoading(false)
                 }, 3000);
