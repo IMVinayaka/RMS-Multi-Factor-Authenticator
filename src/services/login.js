@@ -65,10 +65,10 @@ export const reset2FA = async (token, email, userInstance) => {
 export const resetPassword = async (payload) => {
   try {
     const response = await axiosInstance.post(
-      `${getBaseUrl("common")}/RMSAuthenticator/ResetPassword`,
+      `${getBaseUrl("common")}/RMSAuthenticator/RestRMSPassword`,
       payload
     );
-    return response.data;
+    return response;
   } catch (error) {
     throw error;
   }

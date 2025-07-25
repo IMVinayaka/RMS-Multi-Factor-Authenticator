@@ -14,7 +14,7 @@ export default function TwoFAVerify({ tempToken, issuer, baseUrl }) {
       setLoading(true);
       const url = new URL(window?.location?.href);
       const qsData = url.searchParams.get('qsd');
-      const resp = await verify2FALogin({ submittedCode: otp, qsData: qsData ,userEmail: tempToken?.userName,userInstance: issuer}, tempToken?.userID,);
+      const resp = await verify2FALogin({ submittedCode: otp, qsData: qsData, userEmail: tempToken?.userName, userInstance: issuer }, tempToken?.userID,);
       if (resp) {
         toast.success("2FA verified! You will be rediercted to the application.");
         // const url = generateAuthUrl(baseUrl, tempToken.userID);
@@ -26,9 +26,9 @@ export default function TwoFAVerify({ tempToken, issuer, baseUrl }) {
     } catch {
       toast.error("Invalid OTP. Please try again.");
     } finally {
-      setTimeout(()=>{
-      setLoading(false);
-      },500)
+      setTimeout(() => {
+        setLoading(false);
+      }, 500)
     }
   };
 
@@ -48,10 +48,14 @@ export default function TwoFAVerify({ tempToken, issuer, baseUrl }) {
       setLoading(false);
     }
   };
-
+  const renderNoAccess = () => (
+    <div className="text-white text-center mt-4 min-h-[10rem] flex flex-col items-center justify-center text-lg font-bold">
+      {error}
+    </div>
+  );
   return (
     <>
-
+      {!hasAccess && renderNoAccess()}
       {loading && <FullScreenLoader />}
       <div className={styles.container}>
         <h2 className="font-bold text-2xl">Enter your 2FA code</h2>
@@ -69,6 +73,7 @@ export default function TwoFAVerify({ tempToken, issuer, baseUrl }) {
           Reset Authenticator
         </button>
       </div>
+    
     </>
 
   );
