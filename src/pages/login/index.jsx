@@ -17,6 +17,7 @@ import {
 } from "../../utils/login.constants";
 
 import styles from "./styles.module.scss";
+import PasswordReset from "@/components/PasswordReset";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -36,6 +37,7 @@ export default function LoginPage() {
   const [needs2FAVerify, setNeeds2FAVerify] = useState(false);
   const [hasAccess, setHasAccess] = useState(true);
   const [error, setError] = useState(null);
+  const [passwordReset, setPasswordReset] = useState(false);
 
   // Fetch user IP address
   useEffect(() => {
@@ -130,8 +132,8 @@ export default function LoginPage() {
       }
     } catch (err) {
       setError(err?.response?.data || "Login failed");
-      toast.error(err?.response?.data|| "Login failed. Please try again.");
-      if( err?.response?.status === 423) {
+      toast.error(err?.response?.data || "Login failed. Please try again.");
+      if (err?.response?.status === 423) {
         setHasAccess(false);
       }
     } finally {
@@ -159,6 +161,9 @@ export default function LoginPage() {
       >
         Login
       </button>
+      <div className="text-white text-center mt-4">
+        <p onClick={() => setPasswordReset(true)}>Forgot Password?</p>
+      </div>
     </div>
   );
 
@@ -168,19 +173,26 @@ export default function LoginPage() {
     </div>
   );
 
+
+  console.log(wrapperDetails,'wrapperDetails');
   return (
     <>
       {loading && <FullScreenLoader />}
 
       <LoginWrapper {...wrapperDetails}>
-        {!needs2FASetup && !needs2FAVerify && hasAccess && renderLoginForm()}
-        {needs2FASetup && hasAccess && (
+        {!passwordReset && !needs2FASetup && !needs2FAVerify && hasAccess && renderLoginForm()}
+        {!passwordReset && needs2FASetup && hasAccess && (
           <TwoFASetup tempToken={tempToken} issuer={issuer} baseUrl={wrapperDetails.baseUrl} />
         )}
-        {needs2FAVerify && hasAccess && (
+        {!passwordReset && needs2FAVerify && hasAccess && (
           <TwoFAVerify tempToken={tempToken} issuer={issuer} baseUrl={wrapperDetails.baseUrl} />
         )}
         {!hasAccess && renderNoAccess()}
+
+
+        {passwordReset && <PasswordReset instance={wrapperDetails?.instance}  />}
+
+
       </LoginWrapper>
     </>
   );

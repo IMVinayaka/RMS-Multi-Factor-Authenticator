@@ -61,3 +61,26 @@ export const reset2FA = async (token, email, userInstance) => {
     {} // Send an empty POST body
   );
 };
+
+export const resetPassword = async (payload) => {
+  try {
+    const response = await axiosInstance.post(
+      `${getBaseUrl("common")}/RMSAuthenticator/ResetPassword`,
+      payload
+    );
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const sendOTP = async ({userName, userInstance}) => {
+  try {
+    const response = await axiosInstance.post(
+      `${getBaseUrl("common")}/RMSAuthenticator/ForgotRMSPassword?userName=${encodeURIComponent(userName)}&userInstance=${userInstance}`
+    );
+    return response;
+  } catch (error) {
+    throw error;
+  }
+}
