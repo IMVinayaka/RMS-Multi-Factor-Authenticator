@@ -48,14 +48,9 @@ export default function TwoFAVerify({ tempToken, issuer, baseUrl }) {
       setLoading(false);
     }
   };
-  const renderNoAccess = () => (
-    <div className="text-white text-center mt-4 min-h-[10rem] flex flex-col items-center justify-center text-lg font-bold">
-      {error}
-    </div>
-  );
+ 
   return (
     <>
-      {!hasAccess && renderNoAccess()}
       {loading && <FullScreenLoader />}
       <div className={styles.container}>
         <h2 className="font-bold text-2xl">Enter your 2FA code</h2>
