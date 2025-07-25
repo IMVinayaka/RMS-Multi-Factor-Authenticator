@@ -4,9 +4,9 @@ import { toast } from 'react-toastify';
 import { resetPassword, sendOTP } from '@/services/login';
 import FullScreenLoader from './Loader';
 
-const PasswordReset = ({ instance }) => {
+const PasswordReset = ({ instance ,userName}) => {
     const [values, setValues] = React.useState({
-        userName: "",
+        userName: userName,
         userInstance: instance,
         userID: 0,
         newPassword: "",
@@ -66,7 +66,6 @@ const PasswordReset = ({ instance }) => {
     };
 
     const handleResetPassword = async (e) => {
-        console.log(values, 'values');
         e.preventDefault();
         if (!values?.newPassword || !values?.confirmPassword || !values?.rmsOtp || !values?.mfaOtp) {
             toast.error("Please fill all fields");

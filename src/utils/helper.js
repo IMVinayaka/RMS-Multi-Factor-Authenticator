@@ -14,8 +14,7 @@ export function generateAuthUrl(baseUrl, userId) {
   // Encrypt using AES
   const encrypted = CryptoJS.AES.encrypt(rawId, secretKey).toString();
   const encodedId = encodeURIComponent(encrypted);
-  console.log(rawId,' rawId');
-  console.log(encodedId,' encodedId');
+
 
   return `${baseUrl}LoginAuth.aspx?id=${encodedId}&type=Auth2`;
 }

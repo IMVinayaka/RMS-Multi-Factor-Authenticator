@@ -162,7 +162,7 @@ export default function LoginPage() {
         Login
       </button>
       <div className="text-white text-center mt-4">
-        <p onClick={() => setPasswordReset(true)}>Forgot Password?</p>
+        <p className="cursor-pointer" onClick={() => setPasswordReset(true)}>Forgot Password?</p>
       </div>
     </div>
   );
@@ -173,8 +173,6 @@ export default function LoginPage() {
     </div>
   );
 
-
-  console.log(wrapperDetails,'wrapperDetails');
   return (
     <>
       {loading && <FullScreenLoader />}
@@ -190,7 +188,7 @@ export default function LoginPage() {
         {!hasAccess && renderNoAccess()}
 
 
-        {passwordReset && <PasswordReset instance={wrapperDetails?.instance}  />}
+        {passwordReset && <PasswordReset instance={wrapperDetails?.instance} userName={userName}  />}
 
 
       </LoginWrapper>
