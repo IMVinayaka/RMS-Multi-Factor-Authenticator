@@ -49,6 +49,11 @@ export default function TwoFAVerify({ tempToken, issuer, baseUrl }) {
     }
   };
  
+       const handleKeyDown = (event) => {
+    if (event.key === 'Enter') {
+      verifyOtp();
+    }
+  };
   return (
     <>
       {loading && <FullScreenLoader />}
@@ -60,8 +65,9 @@ export default function TwoFAVerify({ tempToken, issuer, baseUrl }) {
           value={otp}
           onChange={(e) => setOtp(e.target.value)}
           className={styles.input}
+            onKeyDown={handleKeyDown}
         />
-        <button disabled={!otp.trim()} onClick={verifyOtp} className={styles.button}>
+        <button onKeyDown={handleKeyDown} disabled={!otp.trim()} onClick={verifyOtp} className={styles.button}>
           Verify
         </button>
         <button onClick={handleReset} className={styles.resetButton}>

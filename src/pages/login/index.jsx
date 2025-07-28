@@ -141,6 +141,12 @@ export default function LoginPage() {
     }
   };
 
+  const handleKeyDown = (event) => {
+    if (event.key === 'Enter') {
+      handleLogin();
+    }
+  };
+
   const renderLoginForm = () => (
     <div className={`${styles.loginContainer} ${styles.lightTheme}`}>
       <h2 className="text-white font-bold text-2xl text-center">Login</h2>
@@ -154,10 +160,13 @@ export default function LoginPage() {
         type="password"
         value={password}
         onChange={(e) => setPassword(e.target.value)}
+        onKeyDown={handleKeyDown}
       />
       <button
+        type="submit"
         disabled={!userName.trim() || !password.trim()}
         onClick={handleLogin}
+
       >
         Login
       </button>
@@ -188,7 +197,7 @@ export default function LoginPage() {
         {!hasAccess && renderNoAccess()}
 
 
-        {passwordReset && <PasswordReset instance={wrapperDetails?.instance} userName={userName}  />}
+        {passwordReset && <PasswordReset instance={wrapperDetails?.instance} userName={userName} />}
 
 
       </LoginWrapper>

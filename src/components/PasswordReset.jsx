@@ -121,12 +121,11 @@ const PasswordReset = ({ instance ,userName}) => {
             setLoading(false);
         }
     }
-
-    const renderNoAccess = () => (
-        <div className="text-white text-center mt-4 min-h-[10rem] flex flex-col items-center justify-center text-lg font-bold">
-            {error}
-        </div>
-    );
+       const handleKeyDown = (event) => {
+    if (event.key === 'Enter') {
+      !otpSent ? handleSendOtp(e) : handleResetPassword(e)
+    }
+  };
 
     return (
 
@@ -163,7 +162,7 @@ const PasswordReset = ({ instance ,userName}) => {
 
                         </div>
                     )}
-                    <button disabled={otpSent ? !values?.newPassword || !values?.confirmPassword || !values?.rmsOtp || !values?.mfaOtp : !values?.userName} className={styles.button} >{otpSent ? "Reset Password" : "Send OTP"}</button>
+                    <button type="submit" onKeyDown={handleKeyDown} disabled={otpSent ? !values?.newPassword || !values?.confirmPassword || !values?.rmsOtp || !values?.mfaOtp : !values?.userName} className={styles.button} >{otpSent ? "Reset Password" : "Send OTP"}</button>
 
                     {otpSent && (
                         <div>

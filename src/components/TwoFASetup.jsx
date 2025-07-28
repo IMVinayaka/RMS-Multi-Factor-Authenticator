@@ -93,6 +93,11 @@ export default function TwoFASetup({ tempToken, issuer, baseUrl }) {
     }
   };
 
+     const handleKeyDown = (event) => {
+    if (event.key === 'Enter') {
+      verifyOtp();
+    }
+  };
   return (
     <>
       {loading && <FullScreenLoader />}
@@ -112,6 +117,7 @@ export default function TwoFASetup({ tempToken, issuer, baseUrl }) {
             <input
               placeholder="Enter code from app"
               value={otp}
+              onKeyDown={handleKeyDown}
               onChange={(e) => setOtp(e.target.value)}
               className={styles.input}
             />
