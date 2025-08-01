@@ -117,19 +117,21 @@ export default function LoginPage() {
       const secretKeyGeneratedYN = data?.secretKeyGeneratedYN === true || data?.secretKeyGeneratedYN === "true";
       const ShowQRCodeYN = data?.showQRCodeYN === true || data?.showQRCodeYN === "true";
 
+      if (!mFAVerificationYN) {
+        window.top.location.href = data?.url;
+        return;
+      }
 
       setTempToken(data);
       setNeeds2FASetup(!secretKeyGeneratedYN);
       setNeeds2FAVerify(secretKeyGeneratedYN);
       setHasAccess(ShowQRCodeYN);
+      
       if (!ShowQRCodeYN && !secretKeyGeneratedYN) {
         toast.error("You do not have access to this instance.");
         return
       }
-      if (!mFAVerificationYN) {
-        window.top.location.href = data?.url;
-        return;
-      }
+      
     } catch (err) {
       setError(err?.response?.data || "Login failed");
       toast.error(err?.response?.data || "Login failed. Please try again.");
