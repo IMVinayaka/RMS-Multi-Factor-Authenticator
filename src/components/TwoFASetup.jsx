@@ -11,6 +11,7 @@ export default function TwoFASetup({ tempToken, issuer, baseUrl }) {
   const [qrCodeUrl, setQrCodeUrl] = useState("");
   const [otp, setOtp] = useState("");
   const [loading, setLoading] = useState(false);
+  const [loadingMessage, setLoadingMessage] = useState('');
 
   useEffect(() => {
     async function setup2FA() {
@@ -80,6 +81,8 @@ export default function TwoFASetup({ tempToken, issuer, baseUrl }) {
       else {
         toast.success("2FA setup complete! You are logged in.");
         // const url = generateAuthUrl(baseUrl, tempToken.userID);
+        setLoadingMessage('Loading dashboard, please wait...');
+        setTimeout(() => setLoading(false), 5000);
         window.top.location.href = res;
       }
 
