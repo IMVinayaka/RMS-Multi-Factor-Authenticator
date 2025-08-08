@@ -78,7 +78,7 @@ export default function LoginPage() {
 
     }
 
-    setTimeout(() => setLoading(false), 500);
+    setTimeout(() => setLoading(false), 5000);
   }, [router.isReady, router.query]);
 
   const validateInputs = () => {
@@ -118,6 +118,8 @@ export default function LoginPage() {
       const ShowQRCodeYN = data?.showQRCodeYN === true || data?.showQRCodeYN === "true";
 
       if (!mFAVerificationYN) {
+       setTimeout(() => setLoading(false), 5000);
+        toast.success("Verified! You will be rediercted to the application.");
         window.top.location.href = data?.url;
         return;
       }
@@ -129,7 +131,7 @@ export default function LoginPage() {
       
       if (!ShowQRCodeYN && !secretKeyGeneratedYN) {
         toast.error("You do not have access to this instance.");
-        return
+        return;
       }
       
     } catch (err) {
