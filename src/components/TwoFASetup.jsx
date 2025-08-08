@@ -81,8 +81,6 @@ export default function TwoFASetup({ tempToken, issuer, baseUrl }) {
       else {
         toast.success("2FA setup complete! You are logged in.");
         // const url = generateAuthUrl(baseUrl, tempToken.userID);
-        setLoadingMessage('Loading dashboard, please wait...');
-        setTimeout(() => setLoading(false), 5000);
         window.top.location.href = res;
       }
 
@@ -92,7 +90,8 @@ export default function TwoFASetup({ tempToken, issuer, baseUrl }) {
     finally {
       setTimeout(() => {
         setLoading(false);
-      }, 2000)
+        setLoadingMessage('Loading dashboard, please wait...');
+      }, 5000)
     }
   };
 
