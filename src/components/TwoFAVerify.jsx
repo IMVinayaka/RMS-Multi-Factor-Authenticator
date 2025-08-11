@@ -27,8 +27,8 @@ export default function TwoFAVerify({ tempToken, issuer, baseUrl }) {
       toast.error("Invalid OTP. Please try again.");
     } finally {
       setTimeout(() => {
-        setLoading(false);
         setLoadingMessage('Loading dashboard, please wait...');
+        setLoading(false);
       }, 5000)
     }
   };
