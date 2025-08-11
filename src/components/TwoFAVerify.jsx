@@ -8,6 +8,7 @@ import FullScreenLoader from "./Loader";
 export default function TwoFAVerify({ tempToken, issuer, baseUrl }) {
   const [otp, setOtp] = useState("");
   const [loading, setLoading] = useState(false);
+  const [loadingMessage, setLoadingMessage] = useState('');
 
   const verifyOtp = async () => {
     try {
@@ -17,18 +18,22 @@ export default function TwoFAVerify({ tempToken, issuer, baseUrl }) {
       const resp = await verify2FALogin({ submittedCode: otp, qsData: qsData, userEmail: tempToken?.userName, userInstance: issuer }, tempToken?.userID,);
       if (resp) {
         toast.success("2FA verified! You will be rediercted to the application.");
-        // const url = generateAuthUrl(baseUrl, tempToken.userID);
+        setLoadingMessage('Loading dashboard, please wait...');
+         setTimeout(() => {
+          setLoading(false);
+        }, 5000);
+        const url = generateAuthUrl(baseUrl, tempToken.userID);
         // window.location.href = resp;
         window.top.location.href = resp; // Ensure top-level navigation
       } else {
         toast.error("Invalid OTP. Please try again.");
+        setLoading(false);
       }
     } catch {
-      toast.error("Invalid OTP. Please try again.");
+      toast.error("Verification error. Please try again.");
+      setLoading(false);
     } finally {
-      setTimeout(() => {
-        setLoading(false);
-      }, 500)
+      //setLoading(false);
     }
   };
 

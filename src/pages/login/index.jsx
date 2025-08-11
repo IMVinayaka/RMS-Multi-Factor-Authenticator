@@ -32,6 +32,7 @@ export default function LoginPage() {
 
   const [ip, setIp] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [loadingMessage, setLoadingMessage] = useState('');
   const [tempToken, setTempToken] = useState(null);
   const [needs2FASetup, setNeeds2FASetup] = useState(false);
   const [needs2FAVerify, setNeeds2FAVerify] = useState(false);
@@ -118,12 +119,12 @@ export default function LoginPage() {
       const ShowQRCodeYN = data?.showQRCodeYN === true || data?.showQRCodeYN === "true";
 
       if (!mFAVerificationYN) {
-       toast.success("Verified! You will be rediercted to the application.");
-        window.top.location.href = data?.url;
-        setTimeout(() => {
-        setLoading(false);
+        toast.success("Verified! You will be rediercted to the application.");
         setLoadingMessage('Loading dashboard, please wait...');
-      }, 500)
+          setTimeout(() => {
+          setLoading(false);
+        }, 5000); 
+        window.top.location.href = data?.url;
         return;
       }
 
@@ -134,17 +135,19 @@ export default function LoginPage() {
       
       if (!ShowQRCodeYN && !secretKeyGeneratedYN) {
         toast.error("You do not have access to this instance.");
+        setLoading(false);
         return;
       }
-      
+      setLoading(false);
     } catch (err) {
       setError(err?.response?.data || "Login failed");
       toast.error(err?.response?.data || "Login failed. Please try again.");
       if (err?.response?.status === 423) {
         setHasAccess(false);
       }
-    } finally {
       setLoading(false);
+    } finally {
+      //setLoading(false);
     }
   };
 
