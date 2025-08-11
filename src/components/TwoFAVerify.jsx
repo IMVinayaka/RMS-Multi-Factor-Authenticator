@@ -17,22 +17,21 @@ export default function TwoFAVerify({ tempToken, issuer, baseUrl }) {
       const resp = await verify2FALogin({ submittedCode: otp, qsData: qsData, userEmail: tempToken?.userName, userInstance: issuer }, tempToken?.userID,);
       if (resp) {
         toast.success("2FA verified! You will be rediercted to the application.");
+        // const url = generateAuthUrl(baseUrl, tempToken.userID);
+        // window.location.href = resp;
+        window.top.location.href = resp; // Ensure top-level navigation
         setLoadingMessage('Loading dashboard, please wait...');
         setTimeout(() => {
           setLoading(false);
         }, 5000);
-        // const url = generateAuthUrl(baseUrl, tempToken.userID);
-        // window.location.href = resp;
-        window.top.location.href = resp; // Ensure top-level navigation
       } else {
         toast.error("Invalid OTP. Please try again.");
         setLoading(false);
       }
     } catch {
       toast.error("Invalid OTP. Please try again.");
-      setLoading(false);
     } finally {
-      
+      //setLoading(false);
     }
   };
 

@@ -77,6 +77,7 @@ export default function TwoFASetup({ tempToken, issuer, baseUrl }) {
       if (!res) {
         toast.error("Failed to verify OTP. Please try again.");
         setLoading(false);
+        return;
       }
       else {
         toast.success("2FA setup complete! You are logged in.");
