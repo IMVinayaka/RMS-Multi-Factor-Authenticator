@@ -78,7 +78,7 @@ export default function LoginPage() {
 
     }
 
-    setTimeout(() => setLoading(false), 5000);
+    setTimeout(() => setLoading(false), 500);
   }, [router.isReady, router.query]);
 
   const validateInputs = () => {
@@ -118,9 +118,12 @@ export default function LoginPage() {
       const ShowQRCodeYN = data?.showQRCodeYN === true || data?.showQRCodeYN === "true";
 
       if (!mFAVerificationYN) {
-       setTimeout(() => setLoading(false), 5000);
-        toast.success("Verified! You will be rediercted to the application.");
+       toast.success("Verified! You will be rediercted to the application.");
         window.top.location.href = data?.url;
+        setTimeout(() => {
+        setLoading(false);
+        setLoadingMessage('Loading dashboard, please wait...');
+      }, 5000)
         return;
       }
 
@@ -141,7 +144,10 @@ export default function LoginPage() {
         setHasAccess(false);
       }
     } finally {
-      setLoading(false);
+      setTimeout(() => {
+        setLoading(false);
+        setLoadingMessage('Loading dashboard, please wait...');
+      }, 5000)
     }
   };
 
