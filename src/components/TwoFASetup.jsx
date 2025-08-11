@@ -81,6 +81,10 @@ export default function TwoFASetup({ tempToken, issuer, baseUrl }) {
       else {
         toast.success("2FA setup complete! You are logged in.");
         // const url = generateAuthUrl(baseUrl, tempToken.userID);
+        setTimeout(() => {
+          setLoadingMessage('Loading dashboard, please wait...');
+          setLoading(false);
+        }, 5000);
         window.top.location.href = res;
       }
 
@@ -88,10 +92,7 @@ export default function TwoFASetup({ tempToken, issuer, baseUrl }) {
       toast.error("Invalid OTP. Please try again.");
     }
     finally {
-      setTimeout(() => {
-        setLoading(false);
-        setLoadingMessage('Loading dashboard, please wait...');
-      }, 5000)
+      setLoading(false);
     }
   };
 

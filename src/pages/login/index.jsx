@@ -121,9 +121,9 @@ export default function LoginPage() {
        toast.success("Verified! You will be rediercted to the application.");
         window.top.location.href = data?.url;
         setTimeout(() => {
-        setLoadingMessage('Loading dashboard, please wait...');
-        setLoading(false);
-      }, 5000)
+          setLoadingMessage('Loading dashboard, please wait...');
+          setLoading(false);
+        }, 5000);
         return;
       }
 
