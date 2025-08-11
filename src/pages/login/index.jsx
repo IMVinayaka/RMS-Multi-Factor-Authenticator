@@ -144,10 +144,7 @@ export default function LoginPage() {
         setHasAccess(false);
       }
     } finally {
-      setTimeout(() => {
-        setLoading(false);
-        setLoadingMessage('Loading dashboard, please wait...');
-      }, 5000)
+      setLoading(false);
     }
   };
 

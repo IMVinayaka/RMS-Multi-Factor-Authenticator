@@ -28,7 +28,8 @@ export default function TwoFAVerify({ tempToken, issuer, baseUrl }) {
     } finally {
       setTimeout(() => {
         setLoading(false);
-      }, 500)
+        setLoadingMessage('Loading dashboard, please wait...');
+      }, 5000)
     }
   };
 
