@@ -19,10 +19,6 @@ export default function TwoFAVerify({ tempToken, issuer, baseUrl }) {
         toast.success("2FA verified! You will be rediercted to the application.");
         // const url = generateAuthUrl(baseUrl, tempToken.userID);
         // window.location.href = resp;
-        setLoadingMessage('Loading dashboard, please wait...');
-        setTimeout(() => {
-          setLoading(false);
-        }, 5000)
         window.top.location.href = resp; // Ensure top-level navigation
       } else {
         toast.error("Invalid OTP. Please try again.");
@@ -30,7 +26,9 @@ export default function TwoFAVerify({ tempToken, issuer, baseUrl }) {
     } catch {
       toast.error("Invalid OTP. Please try again.");
     } finally {
-      setLoading(false);
+      setTimeout(() => {
+        setLoading(false);
+      }, 500)
     }
   };
 

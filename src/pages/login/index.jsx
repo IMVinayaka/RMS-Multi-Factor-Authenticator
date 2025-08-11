@@ -120,10 +120,10 @@ export default function LoginPage() {
       if (!mFAVerificationYN) {
        toast.success("Verified! You will be rediercted to the application.");
         window.top.location.href = data?.url;
-        setLoadingMessage('Loading dashboard, please wait...');
         setTimeout(() => {
-          setLoading(false);
-        }, 5000)
+        setLoading(false);
+        setLoadingMessage('Loading dashboard, please wait...');
+      }, 500)
         return;
       }
 
