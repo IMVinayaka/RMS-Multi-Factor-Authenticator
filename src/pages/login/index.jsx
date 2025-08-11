@@ -123,7 +123,7 @@ export default function LoginPage() {
         setLoadingMessage('Loading dashboard, please wait...');
         setTimeout(() => {
           setLoading(false);
-        }, 5000);
+        }, 5000)
         return;
       }
 

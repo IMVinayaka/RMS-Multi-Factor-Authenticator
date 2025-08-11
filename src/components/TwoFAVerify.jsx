@@ -22,7 +22,7 @@ export default function TwoFAVerify({ tempToken, issuer, baseUrl }) {
         setLoadingMessage('Loading dashboard, please wait...');
         setTimeout(() => {
           setLoading(false);
-        }, 5000);
+        }, 5000)
         window.top.location.href = resp; // Ensure top-level navigation
       } else {
         toast.error("Invalid OTP. Please try again.");

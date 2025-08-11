@@ -85,7 +85,7 @@ export default function TwoFASetup({ tempToken, issuer, baseUrl }) {
         setLoadingMessage('Loading dashboard, please wait...');
         setTimeout(() => {
           setLoading(false);
-        }, 5000);
+        }, 5000)
       }
 
     } catch (err) {
