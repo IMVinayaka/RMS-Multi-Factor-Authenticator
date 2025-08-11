@@ -134,19 +134,17 @@ export default function LoginPage() {
       
       if (!ShowQRCodeYN && !secretKeyGeneratedYN) {
         toast.error("You do not have access to this instance.");
-        setLoading(false);
         return;
       }
       
     } catch (err) {
       setError(err?.response?.data || "Login failed");
       toast.error(err?.response?.data || "Login failed. Please try again.");
-      setLoading(false);
       if (err?.response?.status === 423) {
         setHasAccess(false);
       }
     } finally {
-      //setLoading(false);
+      setLoading(false);
     }
   };
 

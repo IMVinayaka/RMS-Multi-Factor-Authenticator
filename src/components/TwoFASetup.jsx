@@ -76,7 +76,6 @@ export default function TwoFASetup({ tempToken, issuer, baseUrl }) {
       const res = await verify2FASetup(obj, tempToken?.userID);
       if (!res) {
         toast.error("Failed to verify OTP. Please try again.");
-        setLoading(false);
         return;
       }
       else {
@@ -91,10 +90,9 @@ export default function TwoFASetup({ tempToken, issuer, baseUrl }) {
 
     } catch (err) {
       toast.error("Invalid OTP. Please try again.");
-      setLoading(false);
     }
     finally {
-      //setLoading(false);
+      setLoading(false);
     }
   };
 
