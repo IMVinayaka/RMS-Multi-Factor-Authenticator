@@ -76,23 +76,24 @@ export default function TwoFASetup({ tempToken, issuer, baseUrl }) {
       const res = await verify2FASetup(obj, tempToken?.userID);
       if (!res) {
         toast.error("Failed to verify OTP. Please try again.");
-        return;
+        setLoading(false);
       }
       else {
         toast.success("2FA setup complete! You are logged in.");
         // const url = generateAuthUrl(baseUrl, tempToken.userID);
+        window.top.location.href = res;
+        setLoadingMessage('Loading dashboard, please wait...');
         setTimeout(() => {
-          setLoadingMessage('Loading dashboard, please wait...');
           setLoading(false);
         }, 5000);
-        window.top.location.href = res;
       }
 
     } catch (err) {
       toast.error("Invalid OTP. Please try again.");
+      setLoading(false);
     }
     finally {
-      setLoading(false);
+      //setLoading(false);
     }
   };
 
