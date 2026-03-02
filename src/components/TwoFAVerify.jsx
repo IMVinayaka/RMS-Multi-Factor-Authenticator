@@ -17,7 +17,7 @@ export default function TwoFAVerify({ tempToken, issuer, baseUrl }) {
       const qsData = url.searchParams.get('qsd');
       const resp = await verify2FALogin({ submittedCode: otp, qsData: qsData, userEmail: tempToken?.userName, userInstance: issuer }, tempToken?.userID,);
       if (resp) {
-        toast.success("2FA verified! You will be rediercted to the application.");
+        toast.success("Loading dashboard, please wait...");
         setLoadingMessage('Loading dashboard, please wait...');
          setTimeout(() => {
           setLoading(false);

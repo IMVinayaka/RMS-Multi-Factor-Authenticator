@@ -31,6 +31,7 @@ export default function TwoFASetup({ tempToken, issuer, baseUrl }) {
               tempIssuer = "Radiant_USA";
               break;
             case "radgov.com":
+            case "radhealthplus.com":
               tempIssuer = "RadGov_USA";
               break;
             case "ateeca.com":
@@ -80,7 +81,7 @@ export default function TwoFASetup({ tempToken, issuer, baseUrl }) {
         return;
       }
       else {
-        toast.success("2FA setup complete! You are logged in.");
+        toast.success("2FA setup complete! Loading dashboard, please wait...");
         // const url = generateAuthUrl(baseUrl, tempToken.userID);
         setLoadingMessage('Loading dashboard, please wait...');
          setTimeout(() => {

@@ -119,7 +119,7 @@ export default function LoginPage() {
       const ShowQRCodeYN = data?.showQRCodeYN === true || data?.showQRCodeYN === "true";
 
       if (!mFAVerificationYN) {
-        toast.success("Verified! You will be rediercted to the application.");
+        toast.success("Verified! Loading dashboard, please wait...");
         setLoadingMessage('Loading dashboard, please wait...');
           setTimeout(() => {
           setLoading(false);
