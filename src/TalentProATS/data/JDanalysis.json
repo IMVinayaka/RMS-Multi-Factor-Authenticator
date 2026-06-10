@@ -1,0 +1,124 @@
+{
+	"jobId": "10001",
+	"jobInfo": {
+		"jobTitle": "Senior C# Developer",
+		"primaryTitle": "Senior Java Developer",
+		"relatedTitles": [
+			"Java Engineer",
+			"Backend Developer",
+			"Software Engineer"
+		],
+		"department": "Engineering",
+		"seniorityLevel": "Senior",
+		"employmentType": "Full Time"
+	},
+	"location": {
+		"workModel": "Hybrid",
+		"city": "Dallas",
+		"state": "Texas",
+		"country": "USA",
+		"zipCode": "54212",
+		"remoteAllowed": true
+	},
+	"compensation": {
+		"salaryMin": 120000,
+		"salaryMax": 150000,
+		"salaryType": "Yearly",
+		"currency": "USD"
+	},
+	"experience": {
+		"minimumYears": 5,
+		"preferredYears": 8
+	},
+	"skills": {
+		"mandatorySkills": [
+			"Java",
+			"Spring Boot",
+			"Microservices",
+			"AWS"
+		],
+		"preferredSkills": [
+			"Kafka",
+			"Terraform"
+		],
+		"softSkills": [
+			"Communication",
+			"Leadership"
+		],
+		"prioritySkills": [
+			"Java",
+			"Spring Boot",
+			"AWS"
+		]
+	},
+	"skillExperienceRequirements": [
+		{
+			"skill": "Java",
+			"minimumYears": 5
+		},
+		{
+			"skill": "AWS",
+			"minimumYears": 3
+		}
+	],
+
+
+	"education": {
+		"educationQualification": [
+			"Bachelor's Degree"
+		],
+		"certifications": [
+			"AWS Solutions Architect"
+		] 
+	 },
+
+
+	"industryDomains": [
+		"Banking",
+		"Financial Services"
+	],
+	"technologies": [
+		"Java",
+		"Spring Boot",
+		"AWS",
+		"Kafka",
+		"Docker",
+		"Kubernetes",
+		"GitLab",
+		"Terraform",
+		"Jenkins",
+		"Microservices",
+		"REST APIs",
+		"SQL" 
+
+	],
+	"searchOptimization": {
+		"keywords": [
+			"Java",
+			"Spring Boot",
+			"AWS",
+			"Microservices",
+			"Kafka" ,
+			"Terraform",
+			"Senior Java Developer",
+			"Backend Developer",
+			"Software Engineer",
+			"Java Engineer",
+			"Banking",
+			"Financial Services",
+			"Cloud"
+		],
+		"searchSynonyms": {
+			"Java Developer": [
+				"Java Engineer",
+				"Software Engineer",
+				"Backend Developer"
+			]
+		},
+		"booleanSearchString": "Java AND (Spring Boot OR Spring Framework) AND (AWS OR Amazon Web Services) AND (Microservices)"
+	},
+	"summary": {
+		"jdSummary": "Senior Java Developer role requiring strong backend engineering experience in Java, Spring Boot, AWS and Microservices.",
+		"recruiterNotes": "Focus on candidates with 5+ years of Java experience and strong cloud exposure. Banking domain experience is highly preferred."
+	}
+}
