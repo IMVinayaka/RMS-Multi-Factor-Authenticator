@@ -575,7 +575,8 @@
 
 .ja-action-btn,
 .ja-primary-btn,
-.ja-gradient-btn {
+.ja-gradient-btn,
+.ja-back-btn {
   min-height: 34px !important;
   border-radius: 7px !important;
   text-transform: none !important;
@@ -588,6 +589,17 @@
   border-color: #ccd7e8 !important;
   color: #12203a !important;
   background: #fff !important;
+}
+
+.ja-back-btn {
+  border: 1px solid #b9d8ff !important;
+  color: #075bd8 !important;
+  background: linear-gradient(135deg, #f7fbff 0%, #e9f4ff 100%) !important;
+}
+
+.ja-back-btn:hover {
+  border-color: #93c2ff !important;
+  background: linear-gradient(135deg, #eef7ff 0%, #dbeeff 100%) !important;
 }
 
 .ja-gradient-btn {

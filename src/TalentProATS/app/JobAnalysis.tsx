@@ -10,6 +10,7 @@ import {
 } from "@mui/material";
 import AccountBalanceOutlinedIcon from "@mui/icons-material/AccountBalanceOutlined";
 import AddCircleOutlineOutlinedIcon from "@mui/icons-material/AddCircleOutlineOutlined";
+import ArrowBackOutlinedIcon from "@mui/icons-material/ArrowBackOutlined";
 import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome";
 import BusinessCenterOutlinedIcon from "@mui/icons-material/BusinessCenterOutlined";
 import ChecklistRtlOutlinedIcon from "@mui/icons-material/ChecklistRtlOutlined";
@@ -204,6 +205,15 @@ export default function JobAnalysis() {
     }, 120);
   };
 
+  const goBack = () => {
+    if (typeof window !== "undefined" && window.history.length > 1) {
+      router.back();
+      return;
+    }
+
+    router.push("/");
+  };
+
   const hasMinimumExperience = hasValue(data?.experience?.minimumYears);
   const hasPreferredExperience = hasValue(data?.experience?.preferredYears);
   const hasExperience = hasMinimumExperience || hasPreferredExperience;
@@ -249,6 +259,9 @@ export default function JobAnalysis() {
           </Stack>
 
           <Stack className="ja-export-controls" direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+            <Button className="ja-back-btn" startIcon={<ArrowBackOutlinedIcon />} onClick={goBack} variant="outlined">
+              Back
+            </Button>
             <Button className="ja-action-btn ja-export-btn" startIcon={<FileDownloadOutlinedIcon />} endIcon={<ExpandMoreOutlinedIcon />} onClick={exportPdf} variant="outlined">
               Export
             </Button>
