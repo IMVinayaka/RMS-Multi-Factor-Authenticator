@@ -3,7 +3,6 @@ import {
   Box,
   Button,
   Chip,
-  Divider,
   IconButton,
   Paper,
   Stack,
@@ -15,70 +14,161 @@ import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome";
 import BusinessCenterOutlinedIcon from "@mui/icons-material/BusinessCenterOutlined";
 import ChecklistRtlOutlinedIcon from "@mui/icons-material/ChecklistRtlOutlined";
 import ContentCopyOutlinedIcon from "@mui/icons-material/ContentCopyOutlined";
-import DescriptionOutlinedIcon from "@mui/icons-material/DescriptionOutlined";
-import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import ExpandMoreOutlinedIcon from "@mui/icons-material/ExpandMoreOutlined";
+import FileDownloadOutlinedIcon from "@mui/icons-material/FileDownloadOutlined";
 import FlagOutlinedIcon from "@mui/icons-material/FlagOutlined";
 import LocationOnOutlinedIcon from "@mui/icons-material/LocationOnOutlined";
 import LocalOfferOutlinedIcon from "@mui/icons-material/LocalOfferOutlined";
 import ManageSearchOutlinedIcon from "@mui/icons-material/ManageSearchOutlined";
 import PaymentsOutlinedIcon from "@mui/icons-material/PaymentsOutlined";
-import PsychologyAltOutlinedIcon from "@mui/icons-material/PsychologyAltOutlined";
 import RocketLaunchOutlinedIcon from "@mui/icons-material/RocketLaunchOutlined";
 import SchoolOutlinedIcon from "@mui/icons-material/SchoolOutlined";
 import SearchOutlinedIcon from "@mui/icons-material/SearchOutlined";
 import TimelineOutlinedIcon from "@mui/icons-material/TimelineOutlined";
 import WifiOutlinedIcon from "@mui/icons-material/WifiOutlined";
 import WorkspacePremiumOutlinedIcon from "@mui/icons-material/WorkspacePremiumOutlined";
-import WorkOutlineOutlinedIcon from "@mui/icons-material/WorkOutlineOutlined";
 import type { ReactNode } from "react";
+import { useRouter } from "next/router";
 import { toast } from "react-toastify";
-import jdAnalysis from "@/TalentProATS/data/JDanalysis.json";
-
-type JobAnalysisData = typeof jdAnalysis;
+import { analyseJobDescription, type JobAnalysisRequest, type JobAnalysisResponse } from "@/TalentProATS/api/jobAnalysis";
 
 type PillTone = "blue" | "green" | "purple" | "orange" | "gray";
 
-const formatMoney = (value: number, currency: string) =>
-  new Intl.NumberFormat("en-US", {
+const emptyArray = <T,>(value?: T[] | null) => (Array.isArray(value) ? value : []);
+
+const valueOrDash = (value?: string | number | null) => {
+  if (value === null || value === undefined || value === "") return "-";
+  return String(value);
+};
+
+const formatMoney = (value: number | null | undefined, currency?: string | null) => {
+  if (value === null || value === undefined || !currency) return "-";
+
+  return new Intl.NumberFormat("en-US", {
     style: "currency",
     currency,
     maximumFractionDigits: 0,
   }).format(value);
+};
 
-const toYesNo = (value: boolean | string) => {
+const toYesNo = (value?: boolean | string) => {
   if (typeof value === "boolean") return value ? "Yes" : "No";
-  return value;
+  return valueOrDash(value);
+};
+
+const formatYears = (value?: number | null) => {
+  if (value === null || value === undefined) return "-";
+  return `${value} Years`;
+};
+
+const hasValue = (value?: string | number | null) => value !== null && value !== undefined && value !== "";
+
+const parseJobAnalysisRequest = (query: Record<string, string | string[] | undefined>): JobAnalysisRequest | null => {
+  const requestValue = Array.isArray(query.request) ? query.request[0] : query.request;
+  const tildeParts = requestValue?.split("~").map((part) => part.trim()).filter(Boolean);
+
+  if (tildeParts?.length === 3) {
+    return {
+      jobId: tildeParts[0],
+      jobInstance: tildeParts[1],
+      clientReference: tildeParts[2],
+    };
+  }
+
+  const jobId = Array.isArray(query.jobId) ? query.jobId[0] : query.jobId;
+  const jobInstance = Array.isArray(query.jobInstance) ? query.jobInstance[0] : query.jobInstance;
+  const clientReference = Array.isArray(query.clientReference) ? query.clientReference[0] : query.clientReference;
+
+  if (!jobId || !jobInstance || !clientReference) return null;
+
+  return {
+    jobId,
+    jobInstance,
+    clientReference,
+  };
 };
 
 export default function JobAnalysis() {
-  const data = jdAnalysis as JobAnalysisData;
+  const router = useRouter();
+  const [data, setData] = useState<JobAnalysisResponse | null>(null);
+  const [requestPayload, setRequestPayload] = useState<JobAnalysisRequest | null>(null);
   const [loading, setLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
-    const timer = window.setTimeout(() => setLoading(false), 650);
-    return () => window.clearTimeout(timer);
-  }, []);
+    if (!router.isReady) return;
+
+    const request = parseJobAnalysisRequest(router.query);
+    console.log("[JobAnalysis Page] URL query", router.query);
+    console.log("[JobAnalysis Page] Parsed payload", request);
+
+    setRequestPayload(request);
+    setErrorMessage("");
+
+    if (!request) {
+      setData(null);
+      setLoading(false);
+      setErrorMessage("Missing job analysis request parameters.");
+      console.warn("[JobAnalysis Page] Missing parameters. Use ?request=jobId~jobInstance~clientReference");
+      return;
+    }
+
+    let active = true;
+
+    async function loadJobAnalysis() {
+      try {
+        setLoading(true);
+        const response = await analyseJobDescription(request);
+        if (active) setData(response);
+      } catch (error) {
+        if (active) {
+          setData(null);
+          setErrorMessage("Unable to load job analysis.");
+          console.error("[JobAnalysis Page] API error", error);
+          toast.error("Unable to load job analysis.");
+        }
+      } finally {
+        if (active) setLoading(false);
+      }
+    }
+
+    loadJobAnalysis();
+
+    return () => {
+      active = false;
+    };
+  }, [router.isReady, router.query.clientReference, router.query.jobId, router.query.jobInstance, router.query.request]);
 
   const view = useMemo(
     () => ({
-      jobId: data.jobId,
-      title: data.jobInfo.jobTitle || data.jobInfo.primaryTitle,
-      department: data.jobInfo.department,
-      level: data.jobInfo.seniorityLevel,
-      employment: data.jobInfo.employmentType,
-      workModel: data.location.workModel,
-      location: `${data.location.city}, ${data.location.state} ${data.location.zipCode}`,
-      remoteAllowed: toYesNo(data.location.remoteAllowed),
-      salaryMin: formatMoney(data.compensation.salaryMin, data.compensation.currency),
-      salaryMax: formatMoney(data.compensation.salaryMax, data.compensation.currency),
-      booleanSearch: data.searchOptimization.booleanSearchString,
-      educationQualification:
-        "educationQualification" in data.education
-          ? data.education.educationQualification
-          : (data.education as { degrees?: string[] }).degrees || [],
+      jobId: data?.jobId || requestPayload?.jobId || "-",
+      title: data?.jobInfo?.jobTitle || data?.jobInfo?.primaryTitle || "-",
+      department: valueOrDash(data?.jobInfo?.department),
+      level: valueOrDash(data?.jobInfo?.seniorityLevel),
+      employment: valueOrDash(data?.jobInfo?.employmentType),
+      workModel: valueOrDash(data?.location?.workModel),
+      location: [data?.location?.city, data?.location?.state, data?.location?.zipCode].filter(Boolean).join(", ") || "-",
+      remoteAllowed: toYesNo(data?.location?.remoteAllowed),
+      salaryMin: formatMoney(data?.compensation?.salaryMin, data?.compensation?.currency),
+      salaryMax: formatMoney(data?.compensation?.salaryMax, data?.compensation?.currency),
+      salaryType: valueOrDash(data?.compensation?.salaryType),
+      salaryCurrency: valueOrDash(data?.compensation?.currency),
+      booleanSearch: valueOrDash(data?.searchOptimization?.booleanSearchString),
+      educationQualification: emptyArray(data?.education?.educationQualification || data?.education?.degrees),
+      certifications: emptyArray(data?.education?.certifications),
+      mandatorySkills: emptyArray(data?.skills?.mandatorySkills),
+      preferredSkills: emptyArray(data?.skills?.preferredSkills),
+      softSkills: emptyArray(data?.skills?.softSkills),
+      prioritySkills: emptyArray(data?.skills?.prioritySkills),
+      relatedTitles: emptyArray(data?.jobInfo?.relatedTitles),
+      industryDomains: emptyArray(data?.industryDomains),
+      technologies: emptyArray(data?.technologies),
+      keywords: emptyArray(data?.searchOptimization?.keywords),
+      summary: valueOrDash(data?.summary?.jdSummary || data?.summary?.jobDiscriptionSummary),
+      recruiterNotes: valueOrDash(data?.summary?.recruiterNotes),
+      skillExperienceRequirements: emptyArray(data?.skillExperienceRequirements),
     }),
-    [data]
+    [data, requestPayload]
   );
 
   const copyBooleanSearch = async () => {
@@ -94,6 +184,31 @@ export default function JobAnalysis() {
     toast.info(`${label} clicked`);
   };
 
+  const exportPdf = () => {
+    if (typeof window === "undefined") return;
+
+    const previousTitle = document.title;
+    const exportTitle = `Job-Analysis-${view.jobId}`;
+
+    console.log("[JobAnalysis Export] Preparing PDF template", {
+      jobId: view.jobId,
+      title: view.title,
+    });
+   // toast.info("Preparing PDF export");
+    document.title = exportTitle;
+
+    window.setTimeout(() => {
+      window.print();
+      document.title = previousTitle;
+      console.log("[JobAnalysis Export] Print dialog opened", exportTitle);
+    }, 120);
+  };
+
+  const hasMinimumExperience = hasValue(data?.experience?.minimumYears);
+  const hasPreferredExperience = hasValue(data?.experience?.preferredYears);
+  const hasExperience = hasMinimumExperience || hasPreferredExperience;
+  const hasEducation = view.educationQualification.length > 0 || view.certifications.length > 0;
+
   if (loading) {
     return (
       <main className="ja-page ja-loader-page">
@@ -108,6 +223,22 @@ export default function JobAnalysis() {
     );
   }
 
+  if (!data) {
+    return (
+      <main className="ja-page">
+        <Box className="ja-shell">
+          <Card className="ja-empty-card">
+            <InfoTitle icon={<AutoAwesomeIcon />} title="Job Analysis" />
+            <Typography className="ja-body-text">{errorMessage || "No job analysis data available."}</Typography>
+            <Typography className="ja-muted">
+              Use /job-analysis?request=jobId~jobInstance~clientReference or pass jobId, jobInstance, and clientReference as query parameters.
+            </Typography>
+          </Card>
+        </Box>
+      </main>
+    );
+  }
+
   return (
     <main className="ja-page">
       <Box className="ja-shell">
@@ -117,15 +248,9 @@ export default function JobAnalysis() {
             <Chip size="small" className="ja-ai-chip" icon={<AutoAwesomeIcon />} label="AI Powered" />
           </Stack>
 
-          <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-            <Button className="ja-action-btn" startIcon={<EditOutlinedIcon />} onClick={() => showActionToast("Edit JD")} variant="outlined">
-              Edit JD
-            </Button>
-            <Button className="ja-action-btn" endIcon={<ExpandMoreOutlinedIcon />} onClick={() => showActionToast("Export")} variant="outlined">
+          <Stack className="ja-export-controls" direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+            <Button className="ja-action-btn ja-export-btn" startIcon={<FileDownloadOutlinedIcon />} endIcon={<ExpandMoreOutlinedIcon />} onClick={exportPdf} variant="outlined">
               Export
-            </Button>
-            <Button className="ja-primary-btn" onClick={() => showActionToast("View Full JD")} variant="contained">
-              View Full JD
             </Button>
           </Stack>
         </Stack>
@@ -138,10 +263,12 @@ export default function JobAnalysis() {
               </Box>
 
               <Box flex={1} minWidth={0}>
-                <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
-                  <Typography className="ja-title">{view.title}</Typography>
-                  <Pill tone="green">Active</Pill>
-                </Stack>
+                <Box className="ja-title-row">
+                  <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
+                    <Typography className="ja-title">{view.title}</Typography>
+                    <Pill tone="green">Active</Pill>
+                  </Stack>
+                </Box>
 
                 <Box className="ja-meta-grid">
                   <Meta label="Department" value={view.department} />
@@ -152,26 +279,30 @@ export default function JobAnalysis() {
                   <Meta label="Remote Allowed" value={view.remoteAllowed} icon={<WifiOutlinedIcon />} chipTone="green" />
                 </Box>
 
-                <Divider className="ja-divider" />
-
-                <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
-                  <Typography className="ja-label">Related Titles</Typography>
-                  {data.jobInfo.relatedTitles.map((title) => (
-                    <Pill key={title} tone="purple">
-                      {title}
-                    </Pill>
-                  ))}
-                </Stack>
               </Box>
             </Stack>
+            <Box className="ja-hero-summary-grid">
+              <Box className="ja-note-panel">
+                <InfoTitle icon={<AutoAwesomeIcon />} title="AI JD Summary" />
+                <Typography className="ja-body-text">{view.summary}</Typography>
+              </Box>
+              <Box className="ja-note-panel">
+                <InfoTitle icon={<ChecklistRtlOutlinedIcon />} title="Recruiter Notes" />
+                <Typography className="ja-body-text">{view.recruiterNotes}</Typography>
+              </Box>
+            </Box>
           </Card>
 
-          <Card className="ja-summary-card">
-            <InfoTitle icon={<AutoAwesomeIcon />} title="AI JD Summary" />
-            <Typography className="ja-body-text">{data.summary.jdSummary}</Typography>
-            <Divider className="ja-divider" />
-            <InfoTitle icon={<PsychologyAltOutlinedIcon />} title="Recruiter Notes" />
-            <Typography className="ja-body-text">{data.summary.recruiterNotes}</Typography>
+          <Card className="ja-related-card">
+            <InfoTitle icon={<AutoAwesomeIcon />} title="Related Job Titles" />
+            <Box className="ja-related-grid">
+              <Pill tone="blue">{view.title}</Pill>
+              {view.relatedTitles.map((title) => (
+                <Pill key={title} tone="purple">
+                  {title}
+                </Pill>
+              ))}
+            </Box>
           </Card>
         </Box>
 
@@ -179,38 +310,65 @@ export default function JobAnalysis() {
           <Box className="ja-four-grid">
             <Section className="ja-wide-section" icon={<ChecklistRtlOutlinedIcon />} title="Skills">
               <Box className="ja-skill-grid">
-                <SkillGroup title="Must Have" tone="green" items={data.skills.mandatorySkills} />
-                <SkillGroup title="Nice To Have" tone="orange" items={data.skills.preferredSkills} />
-                <SkillGroup title="Soft Skills" tone="purple" items={data.skills.softSkills} />
+                <SkillGroup title="Must Have" tone="green" items={view.mandatorySkills} />
+                <SkillGroup title="Nice To Have" tone="orange" items={view.preferredSkills} />
+                <SkillGroup title="Soft Skills" tone="purple" items={view.softSkills} />
               </Box>
             </Section>
 
-            <Section icon={<TimelineOutlinedIcon />} title="Experience">
-              <Metric label="Minimum" value={`${data.experience.minimumYears} Years`} />
-              <Metric label="Preferred" value={`${data.experience.preferredYears} Years`} />
-            </Section>
+            {view.skillExperienceRequirements.length > 0 && (
+              <Section className="ja-wide-section" icon={<WorkspacePremiumOutlinedIcon />} title="Skill Experience Requirements">
+                <Box className="ja-exp-grid">
+                  <Typography className="ja-exp-head">Skill</Typography>
+                  <Typography className="ja-exp-head">Minimum Years Required</Typography>
+                  {view.skillExperienceRequirements.map((item) => (
+                    <Box className="ja-exp-row" key={item.skill}>
+                      <Typography className="ja-row-value">{valueOrDash(item.skill)}</Typography>
+                      <Pill tone="blue">{valueOrDash(item.minimumYears)} Years</Pill>
+                    </Box>
+                  ))}
+                </Box>
+              </Section>
+            )}
 
-            <Section icon={<SchoolOutlinedIcon />} title="Education & Certifications">
-              <Metric label="Degree" value={view.educationQualification.join(", ")} />
-              <Typography className="ja-muted ja-cert-label">Certification</Typography>
-              <Stack direction="row" gap={0.8} flexWrap="wrap">
-                {data.education.certifications.map((item) => (
-                  <Pill key={item} tone="blue">
-                    {item}
-                  </Pill>
-                ))}
-              </Stack>
-            </Section>
+            {hasExperience && (
+              <Section icon={<TimelineOutlinedIcon />} title="Experience">
+                {hasMinimumExperience && <Metric label="Minimum" value={formatYears(data?.experience?.minimumYears)} />}
+                {hasPreferredExperience && <Metric label="Preferred" value={formatYears(data?.experience?.preferredYears)} />}
+              </Section>
+            )}
 
-            <Section icon={<AccountBalanceOutlinedIcon />} title="Industry / Domain">
-              <Stack direction="row" gap={0.8} flexWrap="wrap">
-                {data.industryDomains.map((item) => (
-                  <Pill key={item} tone="purple">
-                    {item}
-                  </Pill>
-                ))}
-              </Stack>
-            </Section>
+            {hasEducation && (
+              <Section icon={<SchoolOutlinedIcon />} title="Education & Certifications">
+                {view.educationQualification.length > 0 && (
+                  <Metric label="Degree" value={view.educationQualification.join(", ")} />
+                )}
+                {view.certifications.length > 0 && (
+                  <>
+                    <Typography className="ja-muted ja-cert-label">Certification</Typography>
+                    <Stack direction="row" gap={0.8} flexWrap="wrap">
+                      {view.certifications.map((item) => (
+                        <Pill key={item} tone="blue">
+                          {item}
+                        </Pill>
+                      ))}
+                    </Stack>
+                  </>
+                )}
+              </Section>
+            )}
+
+            {view.industryDomains.length > 0 && (
+              <Section icon={<AccountBalanceOutlinedIcon />} title="Industry / Domain">
+                <Stack direction="row" gap={0.8} flexWrap="wrap">
+                  {view.industryDomains.map((item) => (
+                    <Pill key={item} tone="purple">
+                      {item}
+                    </Pill>
+                  ))}
+                </Stack>
+              </Section>
+            )}
           </Box>
         </Card>
 
@@ -229,7 +387,7 @@ export default function JobAnalysis() {
           <Card>
             <InfoTitle icon={<FlagOutlinedIcon />} title="Key Skills by Priority" />
             <Stack spacing={1.1}>
-              {data.skills.prioritySkills.map((skill, index) => (
+              {view.prioritySkills.map((skill, index) => (
                 <Stack key={skill} direction="row" alignItems="center" spacing={1}>
                   <span className="ja-rank">{index + 1}</span>
                   <Typography className="ja-row-value">{skill}</Typography>
@@ -242,11 +400,11 @@ export default function JobAnalysis() {
             <InfoTitle icon={<LocationOnOutlinedIcon />} title="Location & Work Details" />
             <DetailRows
               rows={[
-                ["City", data.location.city],
-                ["State", data.location.state],
-                ["Country", data.location.country],
-                ["ZIP Code", data.location.zipCode],
-                ["Work Model", <Pill key="work-model" tone="green">{data.location.workModel}</Pill>],
+                ["City", valueOrDash(data?.location?.city)],
+                ["State", valueOrDash(data?.location?.state)],
+                ["Country", valueOrDash(data?.location?.country)],
+                ["ZIP Code", valueOrDash(data?.location?.zipCode)],
+                ["Work Model", <Pill key="work-model" tone="green">{view.workModel}</Pill>],
                 ["Remote", <Pill key="remote" tone="green">{view.remoteAllowed}</Pill>],
               ]}
             />
@@ -256,8 +414,8 @@ export default function JobAnalysis() {
             <InfoTitle icon={<PaymentsOutlinedIcon />} title="Salary Details" />
             <DetailRows
               rows={[
-                ["Salary Type", data.compensation.salaryType],
-                ["Currency", data.compensation.currency],
+                ["Salary Type", view.salaryType],
+                ["Currency", view.salaryCurrency],
                 ["Minimum", view.salaryMin],
                 ["Maximum", view.salaryMax],
               ]}
@@ -268,23 +426,9 @@ export default function JobAnalysis() {
 
         <Box className="ja-grid ja-bottom-grid">
           <Card>
-            <InfoTitle icon={<WorkspacePremiumOutlinedIcon />} title="Skill Experience Requirements" />
-            <Box className="ja-exp-grid">
-              <Typography className="ja-exp-head">Skill</Typography>
-              <Typography className="ja-exp-head">Minimum Years Required</Typography>
-              {data.skillExperienceRequirements.map((item) => (
-                <Box className="ja-exp-row" key={item.skill}>
-                  <Typography className="ja-row-value">{item.skill}</Typography>
-                  <Pill tone="blue">{item.minimumYears} Years</Pill>
-                </Box>
-              ))}
-            </Box>
-          </Card>
-
-          <Card>
             <InfoTitle icon={<LocalOfferOutlinedIcon />} title="Additional Keywords" />
             <Stack direction="row" gap={0.8} flexWrap="wrap">
-              {data.searchOptimization.keywords.map((item) => (
+              {view.keywords.map((item) => (
                 <Pill key={item} tone="gray">
                   {item}
                 </Pill>
@@ -295,10 +439,10 @@ export default function JobAnalysis() {
           <Card>
             <InfoTitle icon={<RocketLaunchOutlinedIcon />} title="Quick Actions" />
             <Box className="ja-actions-grid">
-              <Button className="ja-action-btn" startIcon={<SearchOutlinedIcon />} onClick={() => showActionToast("Create Candidate Search")} variant="outlined">
+              <Button className="ja-gradient-btn" startIcon={<SearchOutlinedIcon />} onClick={() => showActionToast("Create Candidate Search")} variant="outlined">
                 Create Candidate Search
               </Button>
-              <Button className="ja-action-btn" startIcon={<AddCircleOutlineOutlinedIcon />} onClick={() => showActionToast("Add to Job")} variant="outlined">
+              <Button className="ja-gradient-btn" startIcon={<AddCircleOutlineOutlinedIcon />} onClick={() => showActionToast("Add to Job")} variant="outlined">
                 Add to Job
               </Button>
             </Box>

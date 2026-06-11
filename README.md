@@ -1,96 +1,145 @@
 # TalentProATS Job Analysis
 
-This module adds the public TalentProATS Job Analysis page without changing the existing Login or MFA flow.
+This module adds the public Job Analysis dashboard without changing the existing Login or MFA flow.
 
 ## Route
-
-The page is available at:
 
 ```txt
 /job-analysis
 ```
 
-Routing is handled by the catch-all Next.js pages route:
+The catch-all route is:
 
 ```txt
 src/pages/[...talentproRoute].tsx
 ```
 
-The route map lives here:
+The TalentProATS route map is:
 
 ```txt
 src/TalentProATS/routes/index.ts
 ```
 
-To add another TalentProATS page later, create a component inside `src/TalentProATS/app` and add it to the route map.
-
 ## Main Files
 
 ```txt
 src/TalentProATS/app/JobAnalysis.tsx
+src/TalentProATS/api/jobAnalysis.ts
 src/TalentProATS/styles/JobAnalysis.css
-src/TalentProATS/data/JDanalysis.json
 ```
 
-`JobAnalysis.tsx` renders the dashboard UI.
+## Live API
 
-`JobAnalysis.css` contains all Job Analysis layout, spacing, card, chip, loader, and font styles.
+Method:
 
-`JDanalysis.json` is the current mock data source.
+```txt
+POST
+```
 
-## Data Source
+URL:
 
-The page currently imports data from:
+```txt
+https://intranet.radiants.com/RadAPIs/api/OpenAI/JDAnalyseService
+```
+
+Environment variable:
+
+```txt
+NEXT_PUBLIC_JD_ANALYSE_SERVICE_URL
+```
+
+Headers:
+
+```txt
+accept: */*
+Content-Type: application/json-patch+json
+```
+
+Request body:
+
+```json
+{
+  "jobId": 209572,
+  "jobInstance": "RADIANT",
+  "clientReference": "LRLGJP00012620"
+}
+```
+
+The service function is:
 
 ```ts
-import jdAnalysis from "@/TalentProATS/data/JDanalysis.json";
+analyseJobDescription(payload);
 ```
 
-All visible job values should come from this object shape so it can later be replaced by an API response with the same fields.
-
-Important fields currently used:
+from:
 
 ```txt
-jobId
-jobInfo.jobTitle
-jobInfo.primaryTitle
-jobInfo.relatedTitles
-jobInfo.department
-jobInfo.seniorityLevel
-jobInfo.employmentType
-location
-compensation
-experience
-skills
-skillExperienceRequirements
-education.educationQualification
-education.certifications
-industryDomains
-technologies
-searchOptimization
-summary
+src/TalentProATS/api/jobAnalysis.ts
 ```
 
-The education field supports both the new and old names:
+## URL Parameters
+
+The page reads the API payload from the URL. No static request payload is kept in the UI.
+
+Preferred compact format:
+
+```txt
+/job-analysis?request=209572~RADIANT~LRLGJP00012620
+```
+
+Standard query format:
+
+```txt
+/job-analysis?jobId=209572&jobInstance=RADIANT&clientReference=LRLGJP00012620
+```
+
+If the required values are missing, the page shows a compact empty state instead of calling the API.
+
+## Logging
+
+The page and API service log each important step to the browser console:
+
+```txt
+[JobAnalysis Page] URL query
+[JobAnalysis Page] Parsed payload
+[JobAnalysis API] POST
+[JobAnalysis API] Payload
+[JobAnalysis API] Response
+```
+
+API errors are logged with:
+
+```txt
+[JobAnalysis Page] API error
+```
+
+## Response Shape Notes
+
+The real API response supports:
 
 ```txt
 education.educationQualification
+summary.jobDiscriptionSummary
+```
+
+The UI also safely supports the older mock names:
+
+```txt
 education.degrees
+summary.jdSummary
 ```
 
-## Loader
+`compensation` can be `null`; the UI handles missing salary values safely.
 
-The page shows a short AI loader before rendering the dashboard.
+## Styling
 
-The loader uses the same MUI `AutoAwesomeIcon` visual language as the `AI Powered` chip and displays:
+All Job Analysis styles are scoped in:
 
 ```txt
-Job Analysis ID: <jobId>
+src/TalentProATS/styles/JobAnalysis.css
 ```
 
-## Styling Rules
-
-The Job Analysis page uses this exact font stack:
+The page uses this font stack:
 
 ```css
 font-family:
@@ -103,7 +152,7 @@ font-family:
   sans-serif;
 ```
 
-Bold text is normalized with:
+Strong text is normalized with:
 
 ```css
 :where(strong, b) {
@@ -111,28 +160,13 @@ Bold text is normalized with:
 }
 ```
 
-The page is centered with a 20px side gutter:
+The page is centered with:
 
 ```css
 width: calc(100% - 40px);
 margin: 0 auto;
 ```
 
-## API Migration
+## Auth Boundary
 
-When replacing JSON with an API, keep the response shape the same and replace the local import with fetched data.
-
-Example target flow:
-
-```ts
-const data = apiResponse;
-```
-
-Avoid hardcoding display values in the component. Keep derived values, such as formatted salary and remote yes/no text, inside the component helpers.
-
-## Notes
-
-- This page is public and does not check authentication.
-- Login and MFA files should not be modified for this feature.
-- MUI components and MUI icons are used for UI consistency.
-- `lucide-react` is not used in this page.
+This page is public. It does not add login checks and does not modify the MFA flow.

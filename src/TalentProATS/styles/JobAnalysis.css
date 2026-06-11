@@ -128,7 +128,7 @@
 }
 
 .ja-bottom-grid {
-  grid-template-columns: 1fr 0.72fr 0.82fr;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 0.72fr);
   margin-top: 8px;
 }
 
@@ -153,6 +153,30 @@
   min-height: auto;
 }
 
+.ja-related-card {
+  min-height: auto;
+  overflow: hidden;
+}
+
+.ja-related-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  align-items: start;
+  padding-top: 5px;
+}
+
+.ja-related-grid .ja-pill {
+  justify-self: stretch;
+  max-width: 100%;
+}
+
+.ja-related-grid .MuiChip-label {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .ja-job-icon {
   width: 68px;
   height: 68px;
@@ -174,6 +198,37 @@
   line-height: 1.15 !important;
   font-weight: 550 !important;
   letter-spacing: 0 !important;
+}
+
+.ja-title-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-start;
+  gap: 12px;
+  min-width: 0;
+}
+
+.ja-hero-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.ja-note-panel {
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid #dfe7f2;
+  border-radius: 8px;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+}
+
+.ja-note-panel .ja-section-title {
+  margin-bottom: 4px;
+}
+
+.ja-note-panel .ja-body-text {
+  margin-top: 0 !important;
 }
 
 .ja-kicker {
@@ -310,8 +365,13 @@
 
 .ja-four-grid {
   display: grid;
-  grid-template-columns: minmax(330px, 1.48fr) minmax(145px, 0.5fr) minmax(220px, 0.72fr) minmax(180px, 0.54fr);
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 12px;
+  grid-auto-flow: dense;
+}
+
+.ja-four-grid .ja-wide-section {
+  grid-column: span 2;
 }
 
 .ja-section {
@@ -336,11 +396,14 @@
 
 .ja-skill-group {
   min-width: 0;
+  padding: 10px;
+  border: 1px solid #dfe7f2;
+  border-radius: 8px;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
 }
 
 .ja-skill-group + .ja-skill-group {
-  border-left: 1px solid #dbe3ef;
-  padding-left: 10px;
+  border-left: 1px solid #dfe7f2;
 }
 
 .ja-pill {
@@ -511,7 +574,8 @@
 }
 
 .ja-action-btn,
-.ja-primary-btn {
+.ja-primary-btn,
+.ja-gradient-btn {
   min-height: 34px !important;
   border-radius: 7px !important;
   text-transform: none !important;
@@ -526,9 +590,24 @@
   background: #fff !important;
 }
 
+.ja-gradient-btn {
+  border: 1px solid #b9d8ff !important;
+  color: #075bd8 !important;
+  background: linear-gradient(135deg, #f7fbff 0%, #e8f3ff 48%, #d9ebff 100%) !important;
+}
+
+.ja-gradient-btn:hover {
+  border-color: #93c2ff !important;
+  background: linear-gradient(135deg, #eef7ff 0%, #dbeeff 52%, #cae4ff 100%) !important;
+}
+
 .ja-primary-btn {
   background: #105be8 !important;
   color: #fff !important;
+}
+
+.ja-export-btn svg {
+  font-size: 16px !important;
 }
 
 
@@ -580,8 +659,7 @@
 @media (max-width: 1280px) {
   .ja-hero-grid,
   .ja-detail-grid,
-  .ja-bottom-grid,
-  .ja-four-grid {
+  .ja-bottom-grid {
     grid-template-columns: 1fr 1fr;
   }
 
@@ -621,6 +699,20 @@
     font-size: 21px !important;
   }
 
+  .ja-title-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .ja-four-grid .ja-wide-section {
+    grid-column: auto;
+  }
+
+  .ja-related-grid {
+    grid-template-columns: 1fr;
+  }
+
   .ja-exp-grid {
     grid-template-columns: 1fr;
   }
@@ -642,5 +734,136 @@
     border: 0;
     padding: 2px 0 !important;
     margin: 0 !important;
+  }
+}
+
+@media print {
+  @page {
+    size: A4 landscape;
+    margin: 8mm;
+  }
+
+  html,
+  body {
+    width: 100%;
+    min-height: auto !important;
+    background: #ffffff !important;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  .ja-page {
+    min-height: auto !important;
+    background: #ffffff !important;
+    color: #071127 !important;
+  }
+
+  .ja-shell {
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    animation: none !important;
+  }
+
+  .ja-export-controls,
+  .ja-copy-btn {
+    display: none !important;
+  }
+
+  .ja-topbar {
+    margin-bottom: 6px !important;
+    padding-bottom: 6px !important;
+    border-bottom: 1px solid #dce4ef;
+  }
+
+  .ja-grid,
+  .ja-hero-grid,
+  .ja-detail-grid,
+  .ja-bottom-grid,
+  .ja-four-grid,
+  .ja-meta-grid,
+  .ja-skill-grid,
+  .ja-hero-summary-grid,
+  .ja-related-grid,
+  .ja-actions-grid {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .ja-hero-grid {
+    grid-template-columns: minmax(0, 1fr) 320px !important;
+  }
+
+  .ja-detail-grid {
+    grid-template-columns: minmax(320px, 1.18fr) minmax(190px, 0.56fr) minmax(220px, 0.66fr) minmax(210px, 0.62fr) !important;
+  }
+
+  .ja-bottom-grid {
+    grid-template-columns: minmax(0, 1fr) minmax(260px, 0.7fr) !important;
+  }
+
+  .ja-four-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  }
+
+  .ja-four-grid .ja-wide-section {
+    grid-column: span 2 !important;
+  }
+
+  .ja-card {
+    break-inside: avoid;
+    page-break-inside: avoid;
+    border-color: #d8e1ee !important;
+    box-shadow: 0 3px 10px rgba(20, 35, 65, 0.05) !important;
+    background: #ffffff !important;
+    animation: none !important;
+    transform: none !important;
+  }
+
+  .ja-card:hover {
+    transform: none !important;
+    box-shadow: 0 3px 10px rgba(20, 35, 65, 0.05) !important;
+  }
+
+  .ja-job-icon {
+    width: 58px;
+    height: 58px;
+  }
+
+  .ja-job-icon svg {
+    font-size: 30px;
+  }
+
+  .ja-title {
+    font-size: 21px !important;
+  }
+
+  .ja-section-title .MuiTypography-root {
+    font-size: 12.5px !important;
+  }
+
+  .ja-body-text,
+  .ja-row-value,
+  .ja-detail-value,
+  .ja-meta-value {
+    font-size: 11.5px !important;
+  }
+
+  .ja-muted,
+  .ja-label,
+  .ja-meta-label,
+  .ja-code-box pre {
+    font-size: 10.5px !important;
+  }
+
+  .ja-pill {
+    height: 21px !important;
+    font-size: 10.5px !important;
+  }
+
+  .ja-code-box {
+    min-height: auto;
+    grid-template-columns: 1fr;
   }
 }
