@@ -6,6 +6,7 @@ import {
   IconButton,
   Paper,
   Stack,
+  Tooltip,
   Typography,
 } from "@mui/material";
 import AccountBalanceOutlinedIcon from "@mui/icons-material/AccountBalanceOutlined";
@@ -32,6 +33,7 @@ import type { ReactNode } from "react";
 import { useRouter } from "next/router";
 import { toast } from "react-toastify";
 import { analyseJobDescription, type JobAnalysisRequest, type JobAnalysisResponse } from "@/TalentProATS/api/jobAnalysis";
+import { decryptJobAnalysisToken, encryptJobAnalysisRequest } from "@/TalentProATS/utils/jobAnalysisUrl";
 
 type PillTone = "blue" | "green" | "purple" | "orange" | "gray";
 
@@ -64,7 +66,20 @@ const formatYears = (value?: number | null) => {
 
 const hasValue = (value?: string | number | null) => value !== null && value !== undefined && value !== "";
 
+const maskRequest = (request: JobAnalysisRequest | null) => {
+  if (!request) return null;
+
+  return {
+    jobId: request.jobId,
+    jobInstance: request.jobInstance,
+    clientReference: request.clientReference ? "********" : "",
+  };
+};
+
 const parseJobAnalysisRequest = (query: Record<string, string | string[] | undefined>): JobAnalysisRequest | null => {
+  const token = Array.isArray(query.token) ? query.token[0] : query.token;
+  if (token) return decryptJobAnalysisToken(token);
+
   const requestValue = Array.isArray(query.request) ? query.request[0] : query.request;
   const tildeParts = requestValue?.split("~").map((part) => part.trim()).filter(Boolean);
 
@@ -100,8 +115,8 @@ export default function JobAnalysis() {
     if (!router.isReady) return;
 
     const request = parseJobAnalysisRequest(router.query);
-    console.log("[JobAnalysis Page] URL query", router.query);
-    console.log("[JobAnalysis Page] Parsed payload", request);
+    console.log("[JobAnalysis Page] URL query received", router.query.token ? { token: "encrypted" } : { legacyQuery: "plain" });
+    console.log("[JobAnalysis Page] Parsed payload", maskRequest(request));
 
     setRequestPayload(request);
     setErrorMessage("");
@@ -110,8 +125,21 @@ export default function JobAnalysis() {
       setData(null);
       setLoading(false);
       setErrorMessage("Missing job analysis request parameters.");
-      console.warn("[JobAnalysis Page] Missing parameters. Use ?request=jobId~jobInstance~clientReference");
+      console.warn("[JobAnalysis Page] Missing parameters. Use ?token=<encrypted-request>");
       return;
+    }
+
+    if (!router.query.token) {
+      const token = encryptJobAnalysisRequest(request);
+      console.log("[JobAnalysis Page] Replacing plain URL with encrypted token");
+      router.replace(
+        {
+          pathname: router.pathname,
+          query: { talentproRoute: router.query.talentproRoute, token },
+        },
+        `/job-analysis?token=${encodeURIComponent(token)}`,
+        { shallow: true }
+      );
     }
 
     let active = true;
@@ -138,7 +166,7 @@ export default function JobAnalysis() {
     return () => {
       active = false;
     };
-  }, [router.isReady, router.query.clientReference, router.query.jobId, router.query.jobInstance, router.query.request]);
+  }, [router.isReady, router.query.clientReference, router.query.jobId, router.query.jobInstance, router.query.request, router.query.token]);
 
   const view = useMemo(
     () => ({
@@ -188,21 +216,146 @@ export default function JobAnalysis() {
   const exportPdf = () => {
     if (typeof window === "undefined") return;
 
-    const previousTitle = document.title;
-    const exportTitle = `Job-Analysis-${view.jobId}`;
+    async function generatePdf() {
+      const originalTarget = document.querySelector<HTMLElement>(".ja-pdf-template");
+      const fileName = `JD-${view.jobId}.pdf`;
 
-    console.log("[JobAnalysis Export] Preparing PDF template", {
-      jobId: view.jobId,
-      title: view.title,
-    });
-   // toast.info("Preparing PDF export");
-    document.title = exportTitle;
+      if (!originalTarget) {
+        toast.error("PDF template is not available.");
+        return;
+      }
 
-    window.setTimeout(() => {
-      window.print();
-      document.title = previousTitle;
-      console.log("[JobAnalysis Export] Print dialog opened", exportTitle);
-    }, 120);
+      let clone: HTMLElement | null = null;
+
+      try {
+        toast.info("Generating PDF");
+        document.body.classList.add("ja-exporting-pdf");
+
+        await document.fonts?.ready;
+
+        const [{ default: html2canvas }, { jsPDF }] = await Promise.all([
+          import("html2canvas"),
+          import("jspdf"),
+        ]);
+
+        clone = originalTarget.cloneNode(true) as HTMLElement;
+        clone.classList.add("ja-export-clone");
+        clone.style.position = "absolute";
+        clone.style.left = "-99999px";
+        clone.style.top = "0";
+        clone.style.width = "1440px";
+        clone.style.maxWidth = "1440px";
+        clone.style.minWidth = "1440px";
+        clone.style.transform = "none";
+
+        clone.querySelectorAll(".MuiChip-root").forEach((chip) => {
+          const label = chip.querySelector(".MuiChip-label")?.textContent || chip.textContent || "";
+          const textValue = document.createElement("span");
+          textValue.className = "ja-pdf-text-value";
+          textValue.textContent = label.trim();
+          chip.replaceWith(textValue);
+        });
+
+        document.body.appendChild(clone);
+
+        await document.fonts?.ready;
+        await new Promise((resolve) => setTimeout(resolve, 250));
+
+        const canvas = await html2canvas(clone, {
+          backgroundColor: "#f6f8fc",
+          scale: 2,
+          useCORS: true,
+          allowTaint: false,
+          logging: false,
+          width: clone.scrollWidth,
+          height: clone.scrollHeight,
+          windowWidth: 1440,
+          windowHeight: clone.scrollHeight,
+          scrollX: 0,
+          scrollY: 0,
+        });
+
+      const pdf = new jsPDF({
+        orientation: "landscape",
+        unit: "mm",
+        format: "a4",
+        compress: true,
+      });
+
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+
+      const margin = 7;
+      const imageWidth = pageWidth - margin * 2;
+      const printableHeight = pageHeight - margin * 2;
+
+      const sourcePageHeight = Math.floor(
+        (printableHeight * canvas.width) / imageWidth
+      );
+
+      const pageCanvas = document.createElement("canvas");
+      const pageContext = pageCanvas.getContext("2d");
+
+      if (!pageContext) {
+        throw new Error("Unable to create PDF canvas context.");
+      }
+
+      pageCanvas.width = canvas.width;
+
+      let renderedHeight = 0;
+      let pageIndex = 0;
+
+      while (renderedHeight < canvas.height) {
+        const sliceHeight = Math.min(
+          sourcePageHeight,
+          canvas.height - renderedHeight
+        );
+
+        pageCanvas.height = sliceHeight;
+
+        pageContext.clearRect(0, 0, pageCanvas.width, pageCanvas.height);
+        pageContext.drawImage(
+          canvas,
+          0,
+          renderedHeight,
+          canvas.width,
+          sliceHeight,
+          0,
+          0,
+          canvas.width,
+          sliceHeight
+        );
+
+        if (pageIndex > 0) pdf.addPage();
+
+        pdf.addImage(
+          pageCanvas.toDataURL("image/png"),
+          "PNG",
+          margin,
+          margin,
+          imageWidth,
+          (sliceHeight * imageWidth) / canvas.width
+        );
+
+        renderedHeight += sliceHeight;
+        pageIndex += 1;
+      }
+
+        pdf.save(fileName);
+        toast.success("PDF downloaded");
+      } catch (error) {
+        console.error("[JobAnalysis Export] PDF generation failed", error);
+        toast.error("Unable to generate PDF.");
+      } finally {
+        if (clone && clone.parentNode) {
+          clone.parentNode.removeChild(clone);
+        }
+
+        document.body.classList.remove("ja-exporting-pdf");
+      }
+    }
+
+    generatePdf();
   };
 
   const goBack = () => {
@@ -241,7 +394,7 @@ export default function JobAnalysis() {
             <InfoTitle icon={<AutoAwesomeIcon />} title="Job Analysis" />
             <Typography className="ja-body-text">{errorMessage || "No job analysis data available."}</Typography>
             <Typography className="ja-muted">
-              Use /job-analysis?request=jobId~jobInstance~clientReference or pass jobId, jobInstance, and clientReference as query parameters.
+              Use /job-analysis?token=encryptedRequest.
             </Typography>
           </Card>
         </Box>
@@ -251,7 +404,7 @@ export default function JobAnalysis() {
 
   return (
     <main className="ja-page">
-      <Box className="ja-shell">
+      <Box className="ja-shell ja-pdf-template">
         <Stack className="ja-topbar" direction={{ xs: "column", md: "row" }}>
           <Stack className="ja-header-line" direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
             <Typography className="ja-kicker">Job Analysis ID: {view.jobId}</Typography>
@@ -316,6 +469,30 @@ export default function JobAnalysis() {
                 </Pill>
               ))}
             </Box>
+            {(hasExperience || view.industryDomains.length > 0) && (
+              <Box className="ja-side-info-grid">
+                {hasExperience && (
+                  <CompactPanel icon={<TimelineOutlinedIcon />} title="Experience">
+                    <Box className="ja-compact-metrics">
+                      {hasMinimumExperience && <Metric label="Minimum" value={formatYears(data?.experience?.minimumYears)} />}
+                      {hasPreferredExperience && <Metric label="Preferred" value={formatYears(data?.experience?.preferredYears)} />}
+                    </Box>
+                  </CompactPanel>
+                )}
+
+                {view.industryDomains.length > 0 && (
+                  <CompactPanel icon={<AccountBalanceOutlinedIcon />} title="Industry / Domain">
+                    <Stack direction="row" gap={0.8} flexWrap="wrap">
+                      {view.industryDomains.map((item) => (
+                        <Pill key={item} tone="purple">
+                          {item}
+                        </Pill>
+                      ))}
+                    </Stack>
+                  </CompactPanel>
+                )}
+              </Box>
+            )}
           </Card>
         </Box>
 
@@ -344,13 +521,6 @@ export default function JobAnalysis() {
               </Section>
             )}
 
-            {hasExperience && (
-              <Section icon={<TimelineOutlinedIcon />} title="Experience">
-                {hasMinimumExperience && <Metric label="Minimum" value={formatYears(data?.experience?.minimumYears)} />}
-                {hasPreferredExperience && <Metric label="Preferred" value={formatYears(data?.experience?.preferredYears)} />}
-              </Section>
-            )}
-
             {hasEducation && (
               <Section icon={<SchoolOutlinedIcon />} title="Education & Certifications">
                 {view.educationQualification.length > 0 && (
@@ -368,18 +538,6 @@ export default function JobAnalysis() {
                     </Stack>
                   </>
                 )}
-              </Section>
-            )}
-
-            {view.industryDomains.length > 0 && (
-              <Section icon={<AccountBalanceOutlinedIcon />} title="Industry / Domain">
-                <Stack direction="row" gap={0.8} flexWrap="wrap">
-                  {view.industryDomains.map((item) => (
-                    <Pill key={item} tone="purple">
-                      {item}
-                    </Pill>
-                  ))}
-                </Stack>
               </Section>
             )}
           </Box>
@@ -506,6 +664,15 @@ function Section({
   );
 }
 
+function CompactPanel({ icon, title, children }: { icon: ReactNode; title: string; children: ReactNode }) {
+  return (
+    <Box className="ja-compact-panel">
+      <InfoTitle icon={icon} title={title} />
+      <Box className="ja-compact-body">{children}</Box>
+    </Box>
+  );
+}
+
 function Meta({
   label,
   value,
@@ -553,7 +720,13 @@ function SkillGroup({ title, items, tone }: { title: string; items: string[]; to
 }
 
 function Pill({ children, tone }: { children: ReactNode; tone: PillTone }) {
-  return <Chip size="small" className={`ja-pill ja-pill-${tone}`} label={children} />;
+  const tooltipTitle = typeof children === "string" || typeof children === "number" ? String(children) : "";
+
+  return (
+    <Tooltip title={tooltipTitle} arrow placement="top" disableHoverListener={!tooltipTitle}>
+      <Chip size="small" className={`ja-pill ja-pill-${tone}`} label={children} />
+    </Tooltip>
+  );
 }
 
 function DetailRows({ rows, divided = false }: { rows: Array<[string, ReactNode]>; divided?: boolean }) {

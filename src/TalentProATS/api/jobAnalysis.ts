@@ -71,9 +71,15 @@ const JD_ANALYSE_SERVICE_URL =
   process.env.NEXT_PUBLIC_JD_ANALYSE_SERVICE_URL ||
   "https://intranet.radiants.com/RadAPIs/api/OpenAI/JDAnalyseService";
 
+const maskPayload = (payload: JobAnalysisRequest) => ({
+  jobId: payload.jobId,
+  jobInstance: payload.jobInstance,
+  clientReference: payload.clientReference ? "********" : "",
+});
+
 export const analyseJobDescription = async (payload: JobAnalysisRequest) => {
   console.log("[JobAnalysis API] POST", JD_ANALYSE_SERVICE_URL);
-  console.log("[JobAnalysis API] Payload", payload);
+  console.log("[JobAnalysis API] Payload", maskPayload(payload));
 
   const response = await axiosInstance.post<JobAnalysisResponse>(JD_ANALYSE_SERVICE_URL, payload, {
     headers: {
