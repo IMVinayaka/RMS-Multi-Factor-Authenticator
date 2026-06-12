@@ -9,8 +9,6 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
-import AccountBalanceOutlinedIcon from "@mui/icons-material/AccountBalanceOutlined";
-import AddCircleOutlineOutlinedIcon from "@mui/icons-material/AddCircleOutlineOutlined";
 import ArrowBackOutlinedIcon from "@mui/icons-material/ArrowBackOutlined";
 import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome";
 import BusinessCenterOutlinedIcon from "@mui/icons-material/BusinessCenterOutlined";
@@ -22,20 +20,20 @@ import FlagOutlinedIcon from "@mui/icons-material/FlagOutlined";
 import LocationOnOutlinedIcon from "@mui/icons-material/LocationOnOutlined";
 import LocalOfferOutlinedIcon from "@mui/icons-material/LocalOfferOutlined";
 import ManageSearchOutlinedIcon from "@mui/icons-material/ManageSearchOutlined";
-import PaymentsOutlinedIcon from "@mui/icons-material/PaymentsOutlined";
-import RocketLaunchOutlinedIcon from "@mui/icons-material/RocketLaunchOutlined";
 import SchoolOutlinedIcon from "@mui/icons-material/SchoolOutlined";
-import SearchOutlinedIcon from "@mui/icons-material/SearchOutlined";
 import TimelineOutlinedIcon from "@mui/icons-material/TimelineOutlined";
 import WifiOutlinedIcon from "@mui/icons-material/WifiOutlined";
-import WorkspacePremiumOutlinedIcon from "@mui/icons-material/WorkspacePremiumOutlined";
 import type { ReactNode } from "react";
 import { useRouter } from "next/router";
 import { toast } from "react-toastify";
-import { analyseJobDescription, type JobAnalysisRequest, type JobAnalysisResponse } from "@/TalentProATS/api/jobAnalysis";
+import { analyseJobDescription, type JobAnalysisRequest, type JobAnalysisResponse, type SkillValue } from "@/TalentProATS/api/jobAnalysis";
 import { decryptJobAnalysisToken, encryptJobAnalysisRequest } from "@/TalentProATS/utils/jobAnalysisUrl";
 
 type PillTone = "blue" | "green" | "purple" | "orange" | "gray";
+type SkillDisplayItem = {
+  label: string;
+  experience?: string;
+};
 
 const emptyArray = <T,>(value?: T[] | null) => (Array.isArray(value) ? value : []);
 
@@ -64,7 +62,31 @@ const formatYears = (value?: number | null) => {
   return `${value} Years`;
 };
 
-const hasValue = (value?: string | number | null) => value !== null && value !== undefined && value !== "";
+const formatSalaryRange = (
+  minimum?: number | null,
+  maximum?: number | null,
+  currency?: string | null,
+  salaryType?: string | null
+) => {
+  const min = formatMoney(minimum, currency);
+  const max = formatMoney(maximum, currency);
+  const type = salaryType ? `/${salaryType}` : "";
+
+  if (min === "-" && max === "-") return "-";
+  if (min !== "-" && (max === "-" || min === max)) return `${min}${type}`;
+  if (min === "-") return `${max}${type}`;
+  return `${min} - ${max}${type}`;
+};
+
+const normalizeSkills = (items?: SkillValue[] | null): SkillDisplayItem[] =>
+  emptyArray(items).map((item) => {
+    if (typeof item === "string") return { label: item };
+
+    return {
+      label: valueOrDash(item?.skill),
+      experience: item?.skillExperienceRequirement || undefined,
+    };
+  }).filter((item) => item.label !== "-");
 
 const maskRequest = (request: JobAnalysisRequest | null) => {
   if (!request) return null;
@@ -178,16 +200,19 @@ export default function JobAnalysis() {
       workModel: valueOrDash(data?.location?.workModel),
       location: [data?.location?.city, data?.location?.state, data?.location?.zipCode].filter(Boolean).join(", ") || "-",
       remoteAllowed: toYesNo(data?.location?.remoteAllowed),
-      salaryMin: formatMoney(data?.compensation?.salaryMin, data?.compensation?.currency),
-      salaryMax: formatMoney(data?.compensation?.salaryMax, data?.compensation?.currency),
-      salaryType: valueOrDash(data?.compensation?.salaryType),
-      salaryCurrency: valueOrDash(data?.compensation?.currency),
+      experienceDisplay: formatYears(data?.experience?.minimumYears),
+      salaryDisplay: formatSalaryRange(
+        data?.compensation?.salaryMin,
+        data?.compensation?.salaryMax,
+        data?.compensation?.currency,
+        data?.compensation?.salaryType
+      ),
       booleanSearch: valueOrDash(data?.searchOptimization?.booleanSearchString),
       educationQualification: emptyArray(data?.education?.educationQualification || data?.education?.degrees),
       certifications: emptyArray(data?.education?.certifications),
-      mandatorySkills: emptyArray(data?.skills?.mandatorySkills),
-      preferredSkills: emptyArray(data?.skills?.preferredSkills),
-      softSkills: emptyArray(data?.skills?.softSkills),
+      mandatorySkills: normalizeSkills(data?.skills?.mandatorySkills),
+      preferredSkills: normalizeSkills(data?.skills?.preferredSkills),
+      softSkills: normalizeSkills(data?.skills?.softSkills),
       prioritySkills: emptyArray(data?.skills?.prioritySkills),
       relatedTitles: emptyArray(data?.jobInfo?.relatedTitles),
       industryDomains: emptyArray(data?.industryDomains),
@@ -367,9 +392,6 @@ export default function JobAnalysis() {
     router.push("/");
   };
 
-  const hasMinimumExperience = hasValue(data?.experience?.minimumYears);
-  const hasPreferredExperience = hasValue(data?.experience?.preferredYears);
-  const hasExperience = hasMinimumExperience || hasPreferredExperience;
   const hasEducation = view.educationQualification.length > 0 || view.certifications.length > 0;
 
   if (loading) {
@@ -411,14 +433,14 @@ export default function JobAnalysis() {
             <Chip size="small" className="ja-ai-chip" icon={<AutoAwesomeIcon />} label="AI Powered" />
           </Stack>
 
-          <Stack className="ja-export-controls" direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+          {/* <Stack className="ja-export-controls" direction="row" spacing={1} flexWrap="wrap" useFlexGap>
             <Button className="ja-back-btn" startIcon={<ArrowBackOutlinedIcon />} onClick={goBack} variant="outlined">
               Back
             </Button>
             <Button className="ja-action-btn ja-export-btn" startIcon={<FileDownloadOutlinedIcon />} endIcon={<ExpandMoreOutlinedIcon />} onClick={exportPdf} variant="outlined">
               Export
             </Button>
-          </Stack>
+          </Stack> */}
         </Stack>
 
         <Box className="ja-grid ja-hero-grid">
@@ -443,6 +465,8 @@ export default function JobAnalysis() {
                   <Meta label="Work Model" value={view.workModel} />
                   <Meta label="Location" value={view.location} icon={<LocationOnOutlinedIcon />} />
                   <Meta label="Remote Allowed" value={view.remoteAllowed} icon={<WifiOutlinedIcon />} chipTone="green" />
+                  {view.experienceDisplay !== "-" && <Meta label="Experience" value={view.experienceDisplay} icon={<TimelineOutlinedIcon />} />}
+                  {view.salaryDisplay !== "-" && <Meta label="Salary" value={view.salaryDisplay} />}
                 </Box>
 
               </Box>
@@ -457,42 +481,17 @@ export default function JobAnalysis() {
                 <Typography className="ja-body-text">{view.recruiterNotes}</Typography>
               </Box>
             </Box>
-          </Card>
-
-          <Card className="ja-related-card">
-            <InfoTitle icon={<AutoAwesomeIcon />} title="Related Job Titles" />
-            <Box className="ja-related-grid">
-              <Pill tone="blue">{view.title}</Pill>
-              {view.relatedTitles.map((title) => (
-                <Pill key={title} tone="purple">
-                  {title}
-                </Pill>
-              ))}
-            </Box>
-            {(hasExperience || view.industryDomains.length > 0) && (
-              <Box className="ja-side-info-grid">
-                {hasExperience && (
-                  <CompactPanel icon={<TimelineOutlinedIcon />} title="Experience">
-                    <Box className="ja-compact-metrics">
-                      {hasMinimumExperience && <Metric label="Minimum" value={formatYears(data?.experience?.minimumYears)} />}
-                      {hasPreferredExperience && <Metric label="Preferred" value={formatYears(data?.experience?.preferredYears)} />}
-                    </Box>
-                  </CompactPanel>
-                )}
-
-                {view.industryDomains.length > 0 && (
-                  <CompactPanel icon={<AccountBalanceOutlinedIcon />} title="Industry / Domain">
-                    <Stack direction="row" gap={0.8} flexWrap="wrap">
-                      {view.industryDomains.map((item) => (
-                        <Pill key={item} tone="purple">
-                          {item}
-                        </Pill>
-                      ))}
-                    </Stack>
-                  </CompactPanel>
-                )}
+            <Box className="ja-hero-related-panel">
+              <InfoTitle icon={<AutoAwesomeIcon />} title="Related Job Titles" />
+              <Box className="ja-related-grid">
+                <Pill tone="blue">{view.title}</Pill>
+                {view.relatedTitles.map((title) => (
+                  <Pill key={title} tone="purple">
+                    {title}
+                  </Pill>
+                ))}
               </Box>
-            )}
+            </Box>
           </Card>
         </Box>
 
@@ -503,23 +502,20 @@ export default function JobAnalysis() {
                 <SkillGroup title="Must Have" tone="green" items={view.mandatorySkills} />
                 <SkillGroup title="Nice To Have" tone="orange" items={view.preferredSkills} />
                 <SkillGroup title="Soft Skills" tone="purple" items={view.softSkills} />
+                {view.industryDomains.length > 0 && (
+                  <Box className="ja-skill-group">
+                    <Typography className="ja-label">Industry / Domain</Typography>
+                    <Box className="ja-skill-block-grid">
+                      {view.industryDomains.map((item) => (
+                        <Pill key={item} tone="purple">
+                          {item}
+                        </Pill>
+                      ))}
+                    </Box>
+                  </Box>
+                )}
               </Box>
             </Section>
-
-            {view.skillExperienceRequirements.length > 0 && (
-              <Section className="ja-wide-section" icon={<WorkspacePremiumOutlinedIcon />} title="Skill Experience Requirements">
-                <Box className="ja-exp-grid">
-                  <Typography className="ja-exp-head">Skill</Typography>
-                  <Typography className="ja-exp-head">Minimum Years Required</Typography>
-                  {view.skillExperienceRequirements.map((item) => (
-                    <Box className="ja-exp-row" key={item.skill}>
-                      <Typography className="ja-row-value">{valueOrDash(item.skill)}</Typography>
-                      <Pill tone="blue">{valueOrDash(item.minimumYears)} Years</Pill>
-                    </Box>
-                  ))}
-                </Box>
-              </Section>
-            )}
 
             {hasEducation && (
               <Section icon={<SchoolOutlinedIcon />} title="Education & Certifications">
@@ -582,21 +578,6 @@ export default function JobAnalysis() {
           </Card>
 
           <Card>
-            <InfoTitle icon={<PaymentsOutlinedIcon />} title="Salary Details" />
-            <DetailRows
-              rows={[
-                ["Salary Type", view.salaryType],
-                ["Currency", view.salaryCurrency],
-                ["Minimum", view.salaryMin],
-                ["Maximum", view.salaryMax],
-              ]}
-              divided
-            />
-          </Card>
-        </Box>
-
-        <Box className="ja-grid ja-bottom-grid">
-          <Card>
             <InfoTitle icon={<LocalOfferOutlinedIcon />} title="Additional Keywords" />
             <Stack direction="row" gap={0.8} flexWrap="wrap">
               {view.keywords.map((item) => (
@@ -605,18 +586,6 @@ export default function JobAnalysis() {
                 </Pill>
               ))}
             </Stack>
-          </Card>
-
-          <Card>
-            <InfoTitle icon={<RocketLaunchOutlinedIcon />} title="Quick Actions" />
-            <Box className="ja-actions-grid">
-              <Button className="ja-gradient-btn" startIcon={<SearchOutlinedIcon />} onClick={() => showActionToast("Create Candidate Search")} variant="outlined">
-                Create Candidate Search
-              </Button>
-              <Button className="ja-gradient-btn" startIcon={<AddCircleOutlineOutlinedIcon />} onClick={() => showActionToast("Add to Job")} variant="outlined">
-                Add to Job
-              </Button>
-            </Box>
           </Card>
         </Box>
       </Box>
@@ -664,15 +633,6 @@ function Section({
   );
 }
 
-function CompactPanel({ icon, title, children }: { icon: ReactNode; title: string; children: ReactNode }) {
-  return (
-    <Box className="ja-compact-panel">
-      <InfoTitle icon={icon} title={title} />
-      <Box className="ja-compact-body">{children}</Box>
-    </Box>
-  );
-}
-
 function Meta({
   label,
   value,
@@ -704,18 +664,29 @@ function Metric({ label, value }: { label: string; value: string }) {
   );
 }
 
-function SkillGroup({ title, items, tone }: { title: string; items: string[]; tone: PillTone }) {
+function SkillGroup({ title, items, tone }: { title: string; items: SkillDisplayItem[]; tone: PillTone }) {
   return (
     <Box className="ja-skill-group">
       <Typography className="ja-label">{title}</Typography>
-      <Stack direction="row" gap={0.7} flexWrap="wrap">
+      <Box className="ja-skill-block-grid">
         {items.map((item) => (
-          <Pill key={item} tone={tone}>
-            {item}
-          </Pill>
+          <SkillBlock key={`${item.label}-${item.experience || ""}`} item={item} tone={tone} />
         ))}
-      </Stack>
+      </Box>
     </Box>
+  );
+}
+
+function SkillBlock({ item, tone }: { item: SkillDisplayItem; tone: PillTone }) {
+  const label = item.experience ? `${item.label} (${item.experience})` : item.label;
+
+  return (
+    <Tooltip title={label} arrow placement="top">
+      <span className={`ja-skill-block ja-skill-block-${tone}`}>
+        {item.label}
+        {item.experience && <span className="ja-skill-exp">({item.experience})</span>}
+      </span>
+    </Tooltip>
   );
 }
 

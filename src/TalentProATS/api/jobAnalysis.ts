@@ -6,6 +6,13 @@ export type JobAnalysisRequest = {
   clientReference: string;
 };
 
+export type SkillValue =
+  | string
+  | {
+      skill?: string | null;
+      skillExperienceRequirement?: string | null;
+    };
+
 export type JobAnalysisResponse = {
   jobId: number | string;
   jobInfo: {
@@ -35,9 +42,9 @@ export type JobAnalysisResponse = {
     preferredYears?: number | null;
   };
   skills?: {
-    mandatorySkills?: string[];
-    preferredSkills?: string[];
-    softSkills?: string[];
+    mandatorySkills?: SkillValue[];
+    preferredSkills?: SkillValue[];
+    softSkills?: SkillValue[];
     prioritySkills?: string[];
   };
   skillExperienceRequirements?: Array<{

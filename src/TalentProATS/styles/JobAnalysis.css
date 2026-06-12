@@ -143,17 +143,12 @@
 }
 
 .ja-hero-grid {
-  grid-template-columns: minmax(0, 1fr) 430px;
+  grid-template-columns: minmax(0, 1fr);
   padding-bottom: 8px;
 }
 
 .ja-detail-grid {
-  grid-template-columns: minmax(330px, 1.22fr) minmax(195px, 0.58fr) minmax(225px, 0.68fr) minmax(220px, 0.66fr);
-  margin-top: 8px;
-}
-
-.ja-bottom-grid {
-  grid-template-columns: minmax(0, 1fr) minmax(280px, 0.72fr);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   margin-top: 8px;
 }
 
@@ -178,46 +173,25 @@
   min-height: auto;
 }
 
-.ja-related-card {
-  min-height: auto;
-  overflow: hidden;
-}
-
 .ja-related-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 8px;
   align-items: start;
   padding-top: 5px;
 }
 
-.ja-side-info-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
-  margin-top: 10px;
-}
-
-.ja-compact-panel {
+.ja-hero-related-panel {
   min-width: 0;
+  margin-top: 10px;
   padding: 10px;
   border: 1px solid #dfe7f2;
   border-radius: 8px;
   background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
 }
 
-.ja-compact-panel .ja-section-title {
-  margin-bottom: 6px;
-}
-
-.ja-compact-body {
-  min-width: 0;
-}
-
-.ja-compact-metrics {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(72px, 1fr));
-  gap: 8px;
+.ja-hero-related-panel .ja-section-title {
+  margin-bottom: 4px;
 }
 
 .ja-related-grid .ja-pill {
@@ -283,6 +257,7 @@
 
 .ja-note-panel .ja-body-text {
   margin-top: 0 !important;
+  text-align: justify !important;
 }
 
 .ja-kicker {
@@ -333,7 +308,7 @@
 
 .ja-meta-grid {
   display: grid;
-  grid-template-columns: repeat(6, minmax(108px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
   gap: 10px;
   margin-top: 12px;
 }
@@ -425,11 +400,11 @@
 }
 
 .ja-four-grid .ja-wide-section {
-  grid-column: span 3;
+  grid-column: span 4;
 }
 
 .ja-four-grid .ja-wide-section + .ja-wide-section {
-  grid-column: span 1;
+  grid-column: span 4;
 }
 
 .ja-section {
@@ -448,7 +423,7 @@
 
 .ja-skill-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: 10px;
 }
 
@@ -462,6 +437,69 @@
 
 .ja-skill-group + .ja-skill-group {
   border-left: 1px solid #dfe7f2;
+}
+
+.ja-skill-block-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(138px, 1fr));
+  gap: 7px;
+  margin-top: 8px;
+}
+
+.ja-skill-block {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  min-height: 30px;
+  padding: 6px 9px;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  font-size: 12px;
+  line-height: 1.25;
+  font-weight: 550;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  overflow-wrap: anywhere;
+}
+
+.ja-skill-exp {
+  flex: 0 0 auto;
+  color: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  opacity: 0.78;
+  white-space: nowrap;
+}
+
+.ja-skill-block-blue {
+  border-color: #bfd2ff;
+  background: #edf4ff;
+  color: #0557dc;
+}
+
+.ja-skill-block-green {
+  border-color: #bfe6cf;
+  background: #eaf8f0;
+  color: #087236;
+}
+
+.ja-skill-block-purple {
+  border-color: #dacdff;
+  background: #f4f0ff;
+  color: #3510bc;
+}
+
+.ja-skill-block-orange {
+  border-color: #ffd5a5;
+  background: #fff4e8;
+  color: #a94700;
+}
+
+.ja-skill-block-gray {
+  border-color: #d0dae9;
+  background: #ffffff;
+  color: #25375d;
 }
 
 .ja-pill {
@@ -622,13 +660,6 @@
 .ja-exp-row > .MuiChip-root:nth-child(even),
 .ja-exp-row > .MuiTypography-root:nth-child(even) {
   border-left: 1px solid #edf1f6;
-}
-
-.ja-actions-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
-  margin-top: 10px;
 }
 
 .ja-action-btn,
@@ -1177,10 +1208,16 @@
 }
 
 @media (max-width: 1280px) {
-  .ja-hero-grid,
-  .ja-detail-grid,
-  .ja-bottom-grid {
-    grid-template-columns: 1fr 1fr;
+  .ja-hero-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .ja-detail-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .ja-meta-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .ja-wide-section {
@@ -1188,7 +1225,7 @@
   }
 
   .ja-four-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: 1fr;
   }
 
   .ja-four-grid .ja-wide-section,
@@ -1197,18 +1234,16 @@
   }
 }
 
-@media (max-width: 900px) {
+@media (max-width: 700px) {
   .ja-shell {
     width: calc(100% - 24px) !important;
   }
 
   .ja-hero-grid,
   .ja-detail-grid,
-  .ja-bottom-grid,
   .ja-four-grid,
   .ja-meta-grid,
-  .ja-skill-grid,
-  .ja-side-info-grid {
+  .ja-skill-grid {
     grid-template-columns: 1fr;
   }
 
@@ -1310,13 +1345,11 @@
   .ja-grid,
   .ja-hero-grid,
   .ja-detail-grid,
-  .ja-bottom-grid,
   .ja-four-grid,
   .ja-meta-grid,
   .ja-skill-grid,
   .ja-hero-summary-grid,
-  .ja-related-grid,
-  .ja-actions-grid {
+  .ja-related-grid {
     break-inside: avoid;
     page-break-inside: avoid;
   }
@@ -1327,10 +1360,6 @@
 
   .ja-detail-grid {
     grid-template-columns: minmax(320px, 1.18fr) minmax(190px, 0.56fr) minmax(220px, 0.66fr) minmax(210px, 0.62fr) !important;
-  }
-
-  .ja-bottom-grid {
-    grid-template-columns: minmax(0, 1fr) minmax(260px, 0.7fr) !important;
   }
 
   .ja-four-grid {
