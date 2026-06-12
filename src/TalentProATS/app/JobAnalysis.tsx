@@ -42,14 +42,25 @@ const valueOrDash = (value?: string | number | null) => {
   return String(value);
 };
 
-const formatMoney = (value: number | null | undefined, currency?: string | null) => {
-  if (value === null || value === undefined || !currency) return "-";
+const getCurrencySymbol = (currency?: string | null) => {
+  const normalized = currency?.trim().toLowerCase();
 
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency,
+  if (!normalized) return "";
+  if (["usd", "us dollar", "dollar", "dollars", "$"].includes(normalized)) return "$";
+  if (["inr", "rupee", "rupees", "ruppee", "ruppess", "₹", "rs"].includes(normalized)) return "₹";
+
+  return `${currency} `;
+};
+
+const formatMoney = (value: number | null | undefined, currency?: string | null) => {
+  if (value === null || value === undefined) return "-";
+
+  const symbol = getCurrencySymbol(currency);
+  const amount = new Intl.NumberFormat("en-US", {
     maximumFractionDigits: 0,
   }).format(value);
+
+  return `${symbol}${amount}`;
 };
 
 const toYesNo = (value?: boolean | string) => {
