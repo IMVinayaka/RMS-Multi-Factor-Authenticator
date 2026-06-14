@@ -492,17 +492,6 @@ export default function JobAnalysis() {
                 <Typography className="ja-body-text">{view.recruiterNotes}</Typography>
               </Box>
             </Box>
-            <Box className="ja-hero-related-panel">
-              <InfoTitle icon={<AutoAwesomeIcon />} title="Related Job Titles" />
-              <Box className="ja-related-grid">
-                <Pill tone="blue">{view.title}</Pill>
-                {view.relatedTitles.map((title) => (
-                  <Pill key={title} tone="purple">
-                    {title}
-                  </Pill>
-                ))}
-              </Box>
-            </Box>
           </Card>
         </Box>
 
@@ -513,47 +502,32 @@ export default function JobAnalysis() {
                 <SkillGroup title="Must Have" tone="green" items={view.mandatorySkills} />
                 <SkillGroup title="Nice To Have" tone="orange" items={view.preferredSkills} />
                 <SkillGroup title="Soft Skills" tone="purple" items={view.softSkills} />
-                {view.industryDomains.length > 0 && (
+                {view.prioritySkills.length > 0 && (
                   <Box className="ja-skill-group">
-                    <Typography className="ja-label">Industry / Domain</Typography>
-                    <Box className="ja-skill-block-grid">
-                      {view.industryDomains.map((item) => (
-                        <Pill key={item} tone="purple">
-                          {item}
-                        </Pill>
+                    <Typography className="ja-label">Key Skills by Priority</Typography>
+                    <Stack spacing={1.1}>
+                      {view.prioritySkills.map((skill, index) => (
+                        <Stack key={skill} direction="row" alignItems="center" spacing={1}>
+                          <span className="ja-rank">{index + 1}</span>
+                          <Typography className="ja-row-value">{skill}</Typography>
+                        </Stack>
                       ))}
-                    </Box>
+                    </Stack>
                   </Box>
                 )}
               </Box>
             </Section>
-
-            {hasEducation && (
-              <Section icon={<SchoolOutlinedIcon />} title="Education & Certifications">
-                {view.educationQualification.length > 0 && (
-                  <Metric label="Degree" value={view.educationQualification.join(", ")} />
-                )}
-                {view.certifications.length > 0 && (
-                  <>
-                    <Typography className="ja-muted ja-cert-label">Certification</Typography>
-                    <Stack direction="row" gap={0.8} flexWrap="wrap">
-                      {view.certifications.map((item) => (
-                        <Pill key={item} tone="blue">
-                          {item}
-                        </Pill>
-                      ))}
-                    </Stack>
-                  </>
-                )}
-              </Section>
-            )}
           </Box>
         </Card>
 
-        <Box className="ja-grid ja-detail-grid">
+        <Box className="ja-grid">
           <Card>
-            <InfoTitle icon={<ManageSearchOutlinedIcon />} title="Boolean Search String" />
-            <Typography className="ja-muted">Optimized search string for candidate discovery.</Typography>
+            <Stack direction="row" spacing={0.5} alignItems="baseline" className="ja-section-title" style={{ marginBottom: "8px" }}>
+              <span className="ja-icon-bubble"><ManageSearchOutlinedIcon /></span>
+              <Typography style={{ display: "flex", alignItems: "baseline", gap: "4px" }}>
+                Boolean Search String <span className="ja-muted">(Optimized search string for candidate discovery)</span>
+              </Typography>
+            </Stack>
             <Box className="ja-code-box">
               <Typography component="pre">{view.booleanSearch}</Typography>
               <IconButton className="ja-copy-btn" onClick={copyBooleanSearch} aria-label="Copy boolean search">
@@ -561,18 +535,66 @@ export default function JobAnalysis() {
               </IconButton>
             </Box>
           </Card>
+        </Box>
+
+        <Box className="ja-grid ja-detail-grid">
 
           <Card>
-            <InfoTitle icon={<FlagOutlinedIcon />} title="Key Skills by Priority" />
-            <Stack spacing={1.1}>
-              {view.prioritySkills.map((skill, index) => (
-                <Stack key={skill} direction="row" alignItems="center" spacing={1}>
-                  <span className="ja-rank">{index + 1}</span>
-                  <Typography className="ja-row-value">{skill}</Typography>
-                </Stack>
+            <InfoTitle icon={<AutoAwesomeIcon />} title="Related Job Titles" />
+            <Stack direction="row" gap={0.8} flexWrap="wrap">
+              <Pill tone="blue">{view.title}</Pill>
+              {view.relatedTitles.map((title) => (
+                <Pill key={title} tone="purple">
+                  {title}
+                </Pill>
               ))}
             </Stack>
           </Card>
+
+          {view.industryDomains.length > 0 && (
+            <Card>
+              <InfoTitle icon={<BusinessCenterOutlinedIcon />} title="Industry / Domain" />
+              <Stack direction="row" gap={0.8} flexWrap="wrap">
+                {view.industryDomains.map((item) => (
+                  <Pill key={item} tone="purple">
+                    {item}
+                  </Pill>
+                ))}
+              </Stack>
+            </Card>
+          )}
+
+          <Card>
+            <InfoTitle icon={<LocalOfferOutlinedIcon />} title="Additional Keywords" />
+            <Stack direction="row" gap={0.8} flexWrap="wrap">
+              {view.keywords.map((item) => (
+                <Pill key={item} tone="gray">
+                  {item}
+                </Pill>
+              ))}
+            </Stack>
+          </Card>
+
+          {hasEducation && (
+            <Card>
+              <InfoTitle icon={<SchoolOutlinedIcon />} title="Education & Certifications" />
+              {view.educationQualification.length > 0 && (
+                <Metric label="Degree" value={view.educationQualification.join(", ")} />
+              )}
+              {view.certifications.length > 0 && (
+                <>
+                  <Typography className="ja-muted ja-cert-label">Certification</Typography>
+                  <Stack direction="row" gap={0.8} flexWrap="wrap">
+                    {view.certifications.map((item) => (
+                      <Pill key={item} tone="blue">
+                        {item}
+                      </Pill>
+                    ))}
+                  </Stack>
+                </>
+              )}
+            </Card>
+          )}
 
           <Card>
             <InfoTitle icon={<LocationOnOutlinedIcon />} title="Location & Work Details" />
@@ -586,17 +608,6 @@ export default function JobAnalysis() {
                 ["Remote", <Pill key="remote" tone="green">{view.remoteAllowed}</Pill>],
               ]}
             />
-          </Card>
-
-          <Card>
-            <InfoTitle icon={<LocalOfferOutlinedIcon />} title="Additional Keywords" />
-            <Stack direction="row" gap={0.8} flexWrap="wrap">
-              {view.keywords.map((item) => (
-                <Pill key={item} tone="gray">
-                  {item}
-                </Pill>
-              ))}
-            </Stack>
           </Card>
         </Box>
       </Box>
