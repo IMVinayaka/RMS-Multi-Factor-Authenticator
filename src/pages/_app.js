@@ -1,4 +1,5 @@
 import "@/styles/globals.scss";
+import "@/TalentProATS/styles/JobAnalysis.css";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
