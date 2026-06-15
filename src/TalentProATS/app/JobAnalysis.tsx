@@ -754,8 +754,7 @@ function SkillBlock({ item, tone }: { item: SkillDisplayItem; tone: PillTone }) 
   return (
     <Tooltip title={label} arrow placement="top">
       <span className={`ja-skill-block ja-skill-block-${tone}`}>
-        {item.label}
-        {item.experience && <span className="ja-skill-exp">({item.experience})</span>}
+        {label}
       </span>
     </Tooltip>
   );
