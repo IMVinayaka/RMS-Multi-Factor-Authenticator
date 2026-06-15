@@ -148,7 +148,8 @@
 }
 
 .ja-detail-grid {
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
   margin-top: 8px;
 }
 
@@ -226,6 +227,20 @@
   line-height: 1.15 !important;
   font-weight: 550 !important;
   letter-spacing: 0 !important;
+}
+
+.ja-title-subtitle {
+  color: #536383;
+  font-size: 15px !important;
+  line-height: 1.35 !important;
+  font-weight: 450 !important;
+  margin-top: 2px !important;
+}
+
+.ja-work-model {
+  color: #536383;
+  font-size: 13px !important;
+  font-weight: 450 !important;
 }
 
 .ja-title-row {
@@ -308,7 +323,7 @@
 
 .ja-meta-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
   gap: 10px;
   margin-top: 12px;
 }
@@ -1216,10 +1231,6 @@
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 
-  .ja-meta-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-
   .ja-wide-section {
     grid-column: 1 / -1;
   }
@@ -1239,6 +1250,14 @@
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
+  .ja-four-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .ja-four-grid .ja-wide-section {
+    grid-column: span 3;
+  }
+
   .ja-skill-grid {
     grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   }
@@ -1250,11 +1269,15 @@
   }
 
   .ja-hero-grid,
+  .ja-hero-summary-grid,
   .ja-detail-grid,
   .ja-four-grid,
-  .ja-meta-grid,
   .ja-skill-grid {
     grid-template-columns: 1fr;
+  }
+
+  .ja-meta-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .ja-hero-grid {
@@ -1270,6 +1293,16 @@
     padding-left: 0;
   }
 
+  .ja-meta-grid .ja-meta:nth-child(odd) {
+    border-left: 0;
+    padding-left: 0;
+  }
+
+  .ja-meta-grid .ja-meta:nth-child(even) {
+    border-left: 1px solid #d9e1ee;
+    padding-left: 12px;
+  }
+
   .ja-title {
     font-size: 21px !important;
   }
@@ -1278,6 +1311,10 @@
     flex-direction: column;
     align-items: stretch;
     gap: 8px;
+  }
+
+  .ja-title-subtitle {
+    font-size: 13px !important;
   }
 
   .ja-four-grid .ja-wide-section {
@@ -1369,7 +1406,7 @@
   }
 
   .ja-detail-grid {
-    grid-template-columns: minmax(320px, 1.18fr) minmax(190px, 0.56fr) minmax(220px, 0.66fr) minmax(210px, 0.62fr) minmax(220px, 0.62fr) !important;
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
   }
 
   .ja-four-grid {
@@ -1406,6 +1443,10 @@
 
   .ja-title {
     font-size: 21px !important;
+  }
+
+  .ja-title-subtitle {
+    font-size: 12px !important;
   }
 
   .ja-section-title .MuiTypography-root {
