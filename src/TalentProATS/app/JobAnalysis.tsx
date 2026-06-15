@@ -10,18 +10,22 @@ import {
   Typography,
 } from "@mui/material";
 import ArrowBackOutlinedIcon from "@mui/icons-material/ArrowBackOutlined";
+import AttachMoneyOutlinedIcon from "@mui/icons-material/AttachMoneyOutlined";
 import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome";
 import BusinessCenterOutlinedIcon from "@mui/icons-material/BusinessCenterOutlined";
 import ChecklistRtlOutlinedIcon from "@mui/icons-material/ChecklistRtlOutlined";
 import ContentCopyOutlinedIcon from "@mui/icons-material/ContentCopyOutlined";
+import CorporateFareOutlinedIcon from "@mui/icons-material/CorporateFareOutlined";
 import ExpandMoreOutlinedIcon from "@mui/icons-material/ExpandMoreOutlined";
 import FileDownloadOutlinedIcon from "@mui/icons-material/FileDownloadOutlined";
 import FlagOutlinedIcon from "@mui/icons-material/FlagOutlined";
 import LocationOnOutlinedIcon from "@mui/icons-material/LocationOnOutlined";
 import LocalOfferOutlinedIcon from "@mui/icons-material/LocalOfferOutlined";
 import ManageSearchOutlinedIcon from "@mui/icons-material/ManageSearchOutlined";
+import PersonOutlinedIcon from "@mui/icons-material/PersonOutlined";
 import SchoolOutlinedIcon from "@mui/icons-material/SchoolOutlined";
 import TimelineOutlinedIcon from "@mui/icons-material/TimelineOutlined";
+import TrendingUpOutlinedIcon from "@mui/icons-material/TrendingUpOutlined";
 import WifiOutlinedIcon from "@mui/icons-material/WifiOutlined";
 import type { ReactNode } from "react";
 import { useRouter } from "next/router";
@@ -463,21 +467,24 @@ export default function JobAnalysis() {
 
               <Box flex={1} minWidth={0}>
                 <Box className="ja-title-row">
-                  <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
-                    <Typography className="ja-title">{view.title}</Typography>
-                    <Pill tone="green">Active</Pill>
+                  <Stack direction="column" spacing={0.5} flex={1} minWidth={0}>
+                    <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
+                      <Typography className="ja-title">{view.title}</Typography>
+                      {/*<Pill tone="green">Active</Pill> */}
+                    </Stack>
+                    <Typography className="ja-title-subtitle">
+                      at {view.location} <span className="ja-work-model">({view.workModel})</span>
+                    </Typography>
                   </Stack>
                 </Box>
 
                 <Box className="ja-meta-grid">
-                  <Meta label="Department" value={view.department} />
-                  <Meta label="Level" value={view.level} />
-                  <Meta label="Employment" value={view.employment} />
-                  <Meta label="Work Model" value={view.workModel} />
-                  <Meta label="Location" value={view.location} icon={<LocationOnOutlinedIcon />} />
-                  <Meta label="Remote Allowed" value={view.remoteAllowed} icon={<WifiOutlinedIcon />} chipTone="green" />
+                  <Meta label="Remote Allowed" value={view.remoteAllowed} icon={<WifiOutlinedIcon />} chipTone={(val) => val === "No" ? "orange" : "green"} />
                   {view.experienceDisplay !== "-" && <Meta label="Experience" value={view.experienceDisplay} icon={<TimelineOutlinedIcon />} />}
-                  {view.salaryDisplay !== "-" && <Meta label="Salary" value={view.salaryDisplay} />}
+                  {view.salaryDisplay !== "-" && <Meta label="Salary" value={view.salaryDisplay} icon={<AttachMoneyOutlinedIcon />} />}
+                  <Meta label="Department" value={view.department} icon={<CorporateFareOutlinedIcon />} />
+                  <Meta label="Employment" value={view.employment} icon={<PersonOutlinedIcon />} />
+                  <Meta label="Level" value={view.level} icon={<TrendingUpOutlinedIcon />} />
                 </Box>
 
               </Box>
@@ -596,7 +603,7 @@ export default function JobAnalysis() {
             </Card>
           )}
 
-          <Card>
+          {/*<Card>
             <InfoTitle icon={<LocationOnOutlinedIcon />} title="Location & Work Details" />
             <DetailRows
               rows={[
@@ -608,7 +615,7 @@ export default function JobAnalysis() {
                 ["Remote", <Pill key="remote" tone="green">{view.remoteAllowed}</Pill>],
               ]}
             />
-          </Card>
+          </Card> */}
         </Box>
       </Box>
     </main>
@@ -664,15 +671,16 @@ function Meta({
   label: string;
   value: string;
   icon?: ReactNode;
-  chipTone?: PillTone;
+  chipTone?: PillTone | ((val: string) => PillTone);
 }) {
+  const resolvedTone = typeof chipTone === "function" ? chipTone(value) : chipTone;
   return (
     <Box className="ja-meta">
       <Typography className="ja-meta-label">
         {icon}
         {label}
       </Typography>
-      {chipTone ? <Pill tone={chipTone}>{value}</Pill> : <Typography className="ja-meta-value">{value}</Typography>}
+      {resolvedTone ? <Pill tone={resolvedTone}>{value}</Pill> : <Typography className="ja-meta-value">{value}</Typography>}
     </Box>
   );
 }
