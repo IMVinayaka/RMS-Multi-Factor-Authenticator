@@ -128,9 +128,13 @@ const parseJobAnalysisRequest = (query: Record<string, string | string[] | undef
     };
   }
 
-  const jobId = Array.isArray(query.jobId) ? query.jobId[0] : query.jobId;
-  const jobInstance = Array.isArray(query.jobInstance) ? query.jobInstance[0] : query.jobInstance;
-  const clientReference = Array.isArray(query.clientReference) ? query.clientReference[0] : query.clientReference;
+  // Support both camelCase and lowercase parameter names
+  const jobId = Array.isArray(query.jobId) ? query.jobId[0] : query.jobId ||
+                Array.isArray(query.jobid) ? query.jobid[0] : query.jobid;
+  const jobInstance = Array.isArray(query.jobInstance) ? query.jobInstance[0] : query.jobInstance ||
+                      Array.isArray(query.jobinstance) ? query.jobinstance[0] : query.jobinstance;
+  const clientReference = Array.isArray(query.clientReference) ? query.clientReference[0] : query.clientReference ||
+                          Array.isArray(query.clientreference) ? query.clientreference[0] : query.clientreference;
 
   if (!jobId || !jobInstance || !clientReference) return null;
 
