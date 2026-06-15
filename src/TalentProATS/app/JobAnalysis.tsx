@@ -23,10 +23,13 @@ import LocationOnOutlinedIcon from "@mui/icons-material/LocationOnOutlined";
 import LocalOfferOutlinedIcon from "@mui/icons-material/LocalOfferOutlined";
 import ManageSearchOutlinedIcon from "@mui/icons-material/ManageSearchOutlined";
 import PersonOutlinedIcon from "@mui/icons-material/PersonOutlined";
+import PsychologyOutlinedIcon from "@mui/icons-material/PsychologyOutlined";
 import SchoolOutlinedIcon from "@mui/icons-material/SchoolOutlined";
 import TimelineOutlinedIcon from "@mui/icons-material/TimelineOutlined";
 import TrendingUpOutlinedIcon from "@mui/icons-material/TrendingUpOutlined";
 import WifiOutlinedIcon from "@mui/icons-material/WifiOutlined";
+import LightbulbOutlinedIcon from "@mui/icons-material/LightbulbOutlined";
+import WorkspacePremiumOutlinedIcon from "@mui/icons-material/WorkspacePremiumOutlined";
 import type { ReactNode } from "react";
 import { useRouter } from "next/router";
 import { toast } from "react-toastify";
@@ -448,8 +451,6 @@ export default function JobAnalysis() {
     router.push("/");
   };
 
-  const hasEducation = view.educationQualification.length > 0 || view.certifications.length > 0;
-
   if (loading) {
     return (
       <main className="ja-page ja-loader-page">
@@ -457,7 +458,7 @@ export default function JobAnalysis() {
           <Box className="ja-ai-loader-icon">
             <AutoAwesomeIcon />
           </Box>
-          <Typography className="ja-loader-title">Job Analysis ID: {view.jobId}</Typography>
+          <Typography className="ja-loader-title">Job ID: {view.jobId}</Typography>
           <Chip size="small" className="ja-ai-chip ja-loader-chip" icon={<AutoAwesomeIcon />} label="AI Powered" />
         </Box>
       </main>
@@ -501,7 +502,7 @@ export default function JobAnalysis() {
 
         <Box className="ja-grid ja-hero-grid">
           <Card className="ja-hero-card">
-            <Stack direction={{ xs: "column", md: "row" }} spacing={2} alignItems={{ md: "center" }}>
+            <Stack className="ja-hero-heading" direction="row" spacing={2} alignItems="center">
               <Box className="ja-job-icon">
                 <BusinessCenterOutlinedIcon />
               </Box>
@@ -518,25 +519,27 @@ export default function JobAnalysis() {
                     </Typography>
                   </Stack>
                 </Box>
-
-                <Box className="ja-meta-grid">
-                  <Meta label="Remote Allowed" value={view.remoteAllowed} icon={<WifiOutlinedIcon />} chipTone={(val) => val === "No" ? "orange" : "green"} />
-                  {view.experienceDisplay !== "-" && <Meta label="Experience" value={view.experienceDisplay} icon={<TimelineOutlinedIcon />} />}
-                  {view.salaryDisplay !== "-" && <Meta label="Salary" value={view.salaryDisplay} icon={<AttachMoneyOutlinedIcon />} />}
-                  <Meta label="Department" value={view.department} icon={<CorporateFareOutlinedIcon />} />
-                  <Meta label="Employment" value={view.employment} icon={<PersonOutlinedIcon />} />
-                  <Meta label="Level" value={view.level} icon={<TrendingUpOutlinedIcon />} />
-                </Box>
-
               </Box>
             </Stack>
+
+            <Box className="ja-meta-grid">
+              {view.remoteAllowed !== "-" && <Meta label="Remote Allowed" value={view.remoteAllowed} icon={<WifiOutlinedIcon />} chipTone={(val) => val === "No" ? "orange" : "green"} />}
+              {view.experienceDisplay !== "-" && <Meta label="Experience" value={view.experienceDisplay} icon={<TimelineOutlinedIcon />} />}
+              {view.educationQualification.length > 0 && <Meta label="Education" value={view.educationQualification.join(", ")} icon={<SchoolOutlinedIcon />} />}
+              {view.certifications.length > 0 && <Meta label="Certifications" value={view.certifications.join(", ")} icon={<WorkspacePremiumOutlinedIcon />} />}
+              {view.salaryDisplay !== "-" && <Meta label="Salary" value={view.salaryDisplay} icon={<AttachMoneyOutlinedIcon />} />}
+              {view.department !== "-" && <Meta label="Department" value={view.department} icon={<CorporateFareOutlinedIcon />} />}
+              {view.employment !== "-" && <Meta label="Employment" value={view.employment} icon={<PersonOutlinedIcon />} />}
+              {view.level !== "-" && <Meta label="Level" value={view.level} icon={<TrendingUpOutlinedIcon />} />}
+            </Box>
+
             <Box className="ja-hero-summary-grid">
               <Box className="ja-note-panel">
-                <InfoTitle icon={<AutoAwesomeIcon />} title="AI JD Summary" />
+                <InfoTitle icon={<AutoAwesomeIcon />} title="Summary" />
                 <Typography className="ja-body-text" sx={{ whiteSpace: "pre-line" }}>{view.summary}</Typography>
               </Box>
               <Box className="ja-note-panel">
-                <InfoTitle icon={<ChecklistRtlOutlinedIcon />} title="Recruiter Notes" />
+                <InfoTitle icon={<ChecklistRtlOutlinedIcon />} title="Recruitment Notes" />
                 <Typography className="ja-body-text" sx={{ whiteSpace: "pre-line" }}>{view.recruiterNotes}</Typography>
               </Box>
             </Box>
@@ -545,7 +548,7 @@ export default function JobAnalysis() {
 
         <Card>
           <Box className="ja-four-grid">
-            <Section className="ja-wide-section" icon={<ChecklistRtlOutlinedIcon />} title="Skills">
+            <Section className="ja-wide-section" icon={<PsychologyOutlinedIcon />} title="Skills">
               <Box className="ja-skill-grid">
                 <SkillGroup title="Must Have" tone="green" items={view.mandatorySkills} />
                 <SkillGroup title="Nice To Have" tone="orange" items={view.preferredSkills} />
@@ -622,28 +625,6 @@ export default function JobAnalysis() {
               ))}
             </Stack>
           </Card>
-
-          {hasEducation && (
-            <Card>
-              <InfoTitle icon={<SchoolOutlinedIcon />} title="Education & Certifications" />
-              {view.educationQualification.length > 0 && (
-                <Metric label="Degree" value={view.educationQualification.join(", ")} />
-              )}
-              {view.certifications.length > 0 && (
-                <>
-                  <Typography className="ja-muted ja-cert-label">Certification</Typography>
-                  <Stack direction="row" gap={0.8} flexWrap="wrap">
-                    {view.certifications.map((item) => (
-                      <Pill key={item} tone="blue">
-                        {item}
-                      </Pill>
-                    ))}
-                  </Stack>
-                </>
-              )}
-            </Card>
-          )}
-
           {/*<Card>
             <InfoTitle icon={<LocationOnOutlinedIcon />} title="Location & Work Details" />
             <DetailRows
@@ -722,15 +703,6 @@ function Meta({
         {label}
       </Typography>
       {resolvedTone ? <Pill tone={resolvedTone}>{value}</Pill> : <Typography className="ja-meta-value">{value}</Typography>}
-    </Box>
-  );
-}
-
-function Metric({ label, value }: { label: string; value: string }) {
-  return (
-    <Box className="ja-metric">
-      <Typography className="ja-muted">{label}</Typography>
-      <Typography className="ja-row-value">{value}</Typography>
     </Box>
   );
 }

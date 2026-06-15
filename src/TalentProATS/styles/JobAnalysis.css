@@ -148,7 +148,7 @@
 }
 
 .ja-detail-grid {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
   gap: 12px;
   margin-top: 8px;
 }
@@ -206,9 +206,13 @@
   text-overflow: ellipsis;
 }
 
+.ja-hero-heading {
+  min-width: 0;
+}
+
 .ja-job-icon {
-  width: 68px;
-  height: 68px;
+  width: 56px;
+  height: 56px;
   display: grid;
   place-items: center;
   flex: 0 0 auto;
@@ -218,7 +222,7 @@
 }
 
 .ja-job-icon svg {
-  font-size: 34px;
+  font-size: 30px;
 }
 
 .ja-title {
@@ -323,14 +327,15 @@
 
 .ja-meta-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
-  gap: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(128px, 1fr));
+  gap: 10px 8px;
   margin-top: 12px;
 }
 
 .ja-meta {
+  min-width: 0;
   border-left: 1px solid #d9e1ee;
-  padding-left: 12px;
+  padding-left: 10px;
 }
 
 .ja-meta:first-child {
@@ -557,15 +562,6 @@
   border-color: #d0dae9 !important;
   background: #fff !important;
   color: #25375d !important;
-}
-
-.ja-metric + .ja-metric {
-  margin-top: 10px;
-}
-
-.ja-cert-label {
-  margin-top: 10px !important;
-  margin-bottom: 6px !important;
 }
 
 .ja-code-box {
@@ -1228,7 +1224,7 @@
   }
 
   .ja-detail-grid {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
   }
 
   .ja-wide-section {
@@ -1247,7 +1243,7 @@
 
 @media (max-width: 1000px) {
   .ja-detail-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   }
 
   .ja-four-grid {
@@ -1406,7 +1402,7 @@
   }
 
   .ja-detail-grid {
-    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
   }
 
   .ja-four-grid {
