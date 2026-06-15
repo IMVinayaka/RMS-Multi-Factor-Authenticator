@@ -213,6 +213,38 @@ export default function JobAnalysis() {
       active = false;
     };
   }, [router.isReady, router.query.clientReference, router.query.jobId, router.query.jobInstance, router.query.request, router.query.token]);
+  
+
+  // Added this for handling height changes on iframe embedding, on RMS
+  useEffect(() => {
+    const sendHeight = () => {
+      const height = Math.max(
+        document.body.scrollHeight,
+        document.documentElement.scrollHeight
+      );
+
+      if (window.parent !== window) {
+        window.parent.postMessage(
+          {
+            type: "jobAnalysisHeight",
+            height,
+          },
+          "*"
+        );
+      }
+    };
+
+    sendHeight();
+
+    const timer = setTimeout(sendHeight, 500);
+
+    window.addEventListener("resize", sendHeight);
+
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener("resize", sendHeight);
+    };
+  }, [data]);
 
   const view = useMemo(
     () => ({
