@@ -492,11 +492,11 @@ export default function JobAnalysis() {
             <Box className="ja-hero-summary-grid">
               <Box className="ja-note-panel">
                 <InfoTitle icon={<AutoAwesomeIcon />} title="AI JD Summary" />
-                <Typography className="ja-body-text">{view.summary}</Typography>
+                <Typography className="ja-body-text" sx={{ whiteSpace: "pre-line" }}>{view.summary}</Typography>
               </Box>
               <Box className="ja-note-panel">
                 <InfoTitle icon={<ChecklistRtlOutlinedIcon />} title="Recruiter Notes" />
-                <Typography className="ja-body-text">{view.recruiterNotes}</Typography>
+                <Typography className="ja-body-text" sx={{ whiteSpace: "pre-line" }}>{view.recruiterNotes}</Typography>
               </Box>
             </Box>
           </Card>
