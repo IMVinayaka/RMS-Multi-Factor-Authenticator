@@ -113,6 +113,14 @@ const maskRequest = (request: JobAnalysisRequest | null) => {
   };
 };
 
+const getQueryParam = (query: Record<string, string | string[] | undefined>, ...keys: string[]): string | undefined => {
+  for (const key of keys) {
+    const value = query[key];
+    if (value) return Array.isArray(value) ? value[0] : value;
+  }
+  return undefined;
+};
+
 const parseJobAnalysisRequest = (query: Record<string, string | string[] | undefined>): JobAnalysisRequest | null => {
   const token = Array.isArray(query.token) ? query.token[0] : query.token;
   if (token) return decryptJobAnalysisToken(token);
@@ -129,12 +137,9 @@ const parseJobAnalysisRequest = (query: Record<string, string | string[] | undef
   }
 
   // Support both camelCase and lowercase parameter names
-  const jobId = Array.isArray(query.jobId) ? query.jobId[0] : query.jobId ||
-                Array.isArray(query.jobid) ? query.jobid[0] : query.jobid;
-  const jobInstance = Array.isArray(query.jobInstance) ? query.jobInstance[0] : query.jobInstance ||
-                      Array.isArray(query.jobinstance) ? query.jobinstance[0] : query.jobinstance;
-  const clientReference = Array.isArray(query.clientReference) ? query.clientReference[0] : query.clientReference ||
-                          Array.isArray(query.clientreference) ? query.clientreference[0] : query.clientreference;
+  const jobId = getQueryParam(query, "jobId", "jobid");
+  const jobInstance = getQueryParam(query, "jobInstance", "jobinstance");
+  const clientReference = getQueryParam(query, "clientReference", "clientreference");
 
   if (!jobId || !jobInstance || !clientReference) return null;
 
