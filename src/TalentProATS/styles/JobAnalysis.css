@@ -234,6 +234,9 @@
 }
 
 .ja-title-subtitle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   color: #536383;
   font-size: 15px !important;
   line-height: 1.35 !important;
@@ -241,10 +244,14 @@
   margin-top: 2px !important;
 }
 
-.ja-work-model {
-  color: #536383;
-  font-size: 13px !important;
-  font-weight: 450 !important;
+.ja-title-subtitle svg {
+  color: #1c76ff;
+  font-size: 17px;
+}
+
+.ja-title-location {
+  gap: 7px;
+  margin-top: 2px;
 }
 
 .ja-title-row {
@@ -262,6 +269,10 @@
   margin-top: 12px;
 }
 
+.ja-hero-summary-grid .ja-note-panel:only-child {
+  grid-column: 1 / -1;
+}
+
 .ja-note-panel {
   min-width: 0;
   padding: 10px;
@@ -276,7 +287,7 @@
 
 .ja-note-panel .ja-body-text {
   margin-top: 0 !important;
-  text-align: justify !important;
+  text-align: left !important;
 }
 
 .ja-kicker {

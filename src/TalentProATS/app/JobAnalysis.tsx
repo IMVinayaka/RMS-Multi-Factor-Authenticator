@@ -451,6 +451,9 @@ export default function JobAnalysis() {
     router.push("/");
   };
 
+  const hasJobOverview = view.summary !== "-";
+  const hasRecruiterNotes = view.recruiterNotes !== "-";
+
   if (loading) {
     return (
       <main className="ja-page ja-loader-page">
@@ -486,7 +489,7 @@ export default function JobAnalysis() {
       <Box className="ja-shell ja-pdf-template">
         <Stack className="ja-topbar" direction={{ xs: "column", md: "row" }}>
           <Stack className="ja-header-line" direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
-            <Typography className="ja-kicker">Job Analysis ID: {view.jobId}</Typography>
+            <Typography className="ja-kicker">Job ID: {view.jobId}</Typography>
             <Chip size="small" className="ja-ai-chip" icon={<AutoAwesomeIcon />} label="AI Powered" />
           </Stack>
 
@@ -514,9 +517,15 @@ export default function JobAnalysis() {
                       <Typography className="ja-title">{view.title}</Typography>
                       {/*<Pill tone="green">Active</Pill> */}
                     </Stack>
-                    <Typography className="ja-title-subtitle">
-                      at {view.location} <span className="ja-work-model">({view.workModel})</span>
-                    </Typography>
+                    <Stack className="ja-title-location" direction="row" alignItems="center" flexWrap="wrap" useFlexGap>
+                      {view.location !== "-" && (
+                        <Typography className="ja-title-subtitle">
+                          <LocationOnOutlinedIcon />
+                          {view.location}
+                        </Typography>
+                      )}
+                      {view.workModel !== "-" && <Pill tone="green">{view.workModel}</Pill>}
+                    </Stack>
                   </Stack>
                 </Box>
               </Box>
@@ -533,16 +542,22 @@ export default function JobAnalysis() {
               {view.level !== "-" && <Meta label="Level" value={view.level} icon={<TrendingUpOutlinedIcon />} />}
             </Box>
 
-            <Box className="ja-hero-summary-grid">
-              <Box className="ja-note-panel">
-                <InfoTitle icon={<AutoAwesomeIcon />} title="Summary" />
-                <Typography className="ja-body-text" sx={{ whiteSpace: "pre-line" }}>{view.summary}</Typography>
+            {(hasJobOverview || hasRecruiterNotes) && (
+              <Box className="ja-hero-summary-grid">
+                {hasJobOverview && (
+                  <Box className="ja-note-panel ja-overview-panel">
+                    <InfoTitle icon={<AutoAwesomeIcon />} title="Job Overview" />
+                    <Typography className="ja-body-text" sx={{ whiteSpace: "pre-line" }}>{view.summary}</Typography>
+                  </Box>
+                )}
+                {hasRecruiterNotes && (
+                  <Box className="ja-note-panel ja-recruiter-panel">
+                    <InfoTitle icon={<ChecklistRtlOutlinedIcon />} title="Recruitment Notes" />
+                    <Typography className="ja-body-text" sx={{ whiteSpace: "pre-line" }}>{view.recruiterNotes}</Typography>
+                  </Box>
+                )}
               </Box>
-              <Box className="ja-note-panel">
-                <InfoTitle icon={<ChecklistRtlOutlinedIcon />} title="Recruitment Notes" />
-                <Typography className="ja-body-text" sx={{ whiteSpace: "pre-line" }}>{view.recruiterNotes}</Typography>
-              </Box>
-            </Box>
+            )}
           </Card>
         </Box>
 
