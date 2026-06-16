@@ -257,9 +257,14 @@
 .ja-title-row {
   display: flex;
   align-items: flex-start;
-  justify-content: flex-start;
+  justify-content: space-between;
   gap: 12px;
   min-width: 0;
+}
+
+.ja-title-ai-chip {
+  flex: 0 0 auto;
+  margin-left: auto;
 }
 
 .ja-hero-summary-grid {
@@ -1318,6 +1323,11 @@
     flex-direction: column;
     align-items: stretch;
     gap: 8px;
+  }
+
+  .ja-title-ai-chip {
+    margin-left: 0;
+    align-self: flex-start;
   }
 
   .ja-title-subtitle {

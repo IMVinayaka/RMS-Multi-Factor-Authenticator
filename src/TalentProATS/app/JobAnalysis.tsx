@@ -159,6 +159,7 @@ export default function JobAnalysis() {
   const [requestPayload, setRequestPayload] = useState<JobAnalysisRequest | null>(null);
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
+  const [isEmbedded, setIsEmbedded] = useState(false);
 
   useEffect(() => {
     if (!router.isReady) return;
@@ -220,13 +221,16 @@ export default function JobAnalysis() {
 
   // Added this for handling height changes on iframe embedding, on RMS
   useEffect(() => {
+    const embedded = window.parent !== window;
+    setIsEmbedded(embedded);
+
     const sendHeight = () => {
       const height = Math.max(
         document.body.scrollHeight,
         document.documentElement.scrollHeight
       );
 
-      if (window.parent !== window) {
+      if (embedded) {
         window.parent.postMessage(
           {
             type: "jobAnalysisHeight",
@@ -487,21 +491,22 @@ export default function JobAnalysis() {
   return (
     <main className="ja-page">
       <Box className="ja-shell ja-pdf-template">
-        <Stack className="ja-topbar" direction={{ xs: "column", md: "row" }}>
-          <Stack className="ja-header-line" direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
-            <Typography className="ja-kicker">Job ID: {view.jobId}</Typography>
-            <Chip size="small" className="ja-ai-chip" icon={<AutoAwesomeIcon />} label="AI Powered" />
-          </Stack>
+        {!isEmbedded && (
+          <Stack className="ja-topbar" direction={{ xs: "column", md: "row" }}>
+            <Stack className="ja-header-line" direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
+              <Typography className="ja-kicker">Job ID: {view.jobId}</Typography>
+            </Stack>
 
-          {/* <Stack className="ja-export-controls" direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-            <Button className="ja-back-btn" startIcon={<ArrowBackOutlinedIcon />} onClick={goBack} variant="outlined">
-              Back
-            </Button>
-            <Button className="ja-action-btn ja-export-btn" startIcon={<FileDownloadOutlinedIcon />} endIcon={<ExpandMoreOutlinedIcon />} onClick={exportPdf} variant="outlined">
-              Export
-            </Button>
-          </Stack> */}
-        </Stack>
+            {/* <Stack className="ja-export-controls" direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+              <Button className="ja-back-btn" startIcon={<ArrowBackOutlinedIcon />} onClick={goBack} variant="outlined">
+                Back
+              </Button>
+              <Button className="ja-action-btn ja-export-btn" startIcon={<FileDownloadOutlinedIcon />} endIcon={<ExpandMoreOutlinedIcon />} onClick={exportPdf} variant="outlined">
+                Export
+              </Button>
+            </Stack> */}
+          </Stack>
+        )}
 
         <Box className="ja-grid ja-hero-grid">
           <Card className="ja-hero-card">
@@ -527,6 +532,7 @@ export default function JobAnalysis() {
                       {view.workModel !== "-" && <Pill tone="green">{view.workModel}</Pill>}
                     </Stack>
                   </Stack>
+                  <Chip size="small" className="ja-ai-chip ja-title-ai-chip" icon={<AutoAwesomeIcon />} label="AI Powered" />
                 </Box>
               </Box>
             </Stack>
