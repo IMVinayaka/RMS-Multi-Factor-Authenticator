@@ -174,6 +174,10 @@
   min-height: auto;
 }
 
+.ja-hero-card {
+  padding: 14px !important;
+}
+
 .ja-related-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
@@ -208,11 +212,13 @@
 
 .ja-hero-heading {
   min-width: 0;
+  padding: 2px 0 12px;
+  border-bottom: 1px solid #e4ebf5;
 }
 
 .ja-job-icon {
-  width: 56px;
-  height: 56px;
+  width: 52px;
+  height: 52px;
   display: grid;
   place-items: center;
   flex: 0 0 auto;
@@ -257,9 +263,14 @@
 .ja-title-row {
   display: flex;
   align-items: flex-start;
-  justify-content: flex-start;
+  justify-content: space-between;
   gap: 12px;
   min-width: 0;
+}
+
+.ja-title-ai-chip {
+  flex: 0 0 auto;
+  margin-left: auto;
 }
 
 .ja-hero-summary-grid {
@@ -281,6 +292,32 @@
   background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
 }
 
+.ja-overview-style-card {
+  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%) !important;
+}
+
+.ja-overview-style-card .ja-section-title {
+  margin-bottom: 8px;
+}
+
+.ja-check-row {
+  padding: 8px 9px;
+  border: 1px solid #dfe7f2;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.ja-check-row svg {
+  flex: 0 0 auto;
+  margin-top: 1px;
+  color: #087236;
+  font-size: 17px;
+}
+
+.ja-check-row .ja-body-text {
+  margin-top: 0 !important;
+}
+
 .ja-note-panel .ja-section-title {
   margin-bottom: 4px;
 }
@@ -288,6 +325,23 @@
 .ja-note-panel .ja-body-text {
   margin-top: 0 !important;
   text-align: left !important;
+}
+
+.ja-manager-priority {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid #dfe7f2;
+}
+
+.ja-manager-priority-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.ja-manager-priority-label svg {
+  color: #1c76ff;
+  font-size: 15px;
 }
 
 .ja-kicker {
@@ -309,6 +363,16 @@
   line-height: 1.55 !important;
   font-weight: 450 !important;
   margin-top: 8px !important;
+}
+
+.ja-list {
+  margin: 8px 0 0 !important;
+  padding-left: 18px !important;
+}
+
+.ja-list .ja-body-text {
+  margin-top: 0 !important;
+  display: list-item;
 }
 
 .ja-label {
@@ -336,19 +400,62 @@
   text-align: right;
 }
 
-.ja-meta-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(128px, 1fr));
-  gap: 10px 8px;
-  margin-top: 12px;
+.ja-summary-badge-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
 }
 
+.ja-summary-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 28px;
+  padding: 5px 10px;
+  border: 1px solid #bfd2ff;
+  border-radius: 7px;
+  background: #edf4ff;
+  color: #17366d;
+  font-size: 12px;
+  line-height: 1.25;
+}
+
+.ja-summary-badge span {
+  font-weight: 500;
+}
+
+.ja-summary-badge strong {
+  color: #071127;
+  font-weight: 650;
+}
+
+.ja-summary-badge-orange {
+  border-color: #ffd5a5;
+  background: #fff4e8;
+  color: #884000;
+}
+
+.ja-info-grid,
+.ja-meta-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+  padding: 10px;
+  border: 1px solid #e1e8f3;
+  border-radius: 8px;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+}
+
+.ja-info-meta,
 .ja-meta {
   min-width: 0;
   border-left: 1px solid #d9e1ee;
   padding-left: 10px;
 }
 
+.ja-info-meta:first-child,
 .ja-meta:first-child {
   border-left: 0;
   padding-left: 0;
@@ -371,10 +478,24 @@
 }
 
 .ja-meta-value {
+  display: grid;
+  gap: 2px;
   color: #071127;
   font-size: 13px !important;
   line-height: 1.25 !important;
   font-weight: 550 !important;
+}
+
+.ja-warning-panel {
+  margin-top: 10px;
+  padding: 10px;
+  border: 1px solid #ffd7d7;
+  border-radius: 8px;
+  background: linear-gradient(180deg, #ffffff 0%, #fff8f8 100%);
+}
+
+.ja-warning-panel .ja-section-title {
+  margin-bottom: 6px;
 }
 
 .ja-divider {
@@ -450,6 +571,11 @@
 
 .ja-section-body {
   margin-top: 8px;
+}
+
+.ja-plain-section {
+  border-left: 0;
+  padding-left: 0;
 }
 
 .ja-skill-grid {
@@ -575,9 +701,33 @@
   color: #25375d !important;
 }
 
+.ja-boolean-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.ja-skill-tooltip {
+  display: grid;
+  gap: 8px;
+}
+
+.ja-skill-tooltip .MuiTypography-root {
+  color: inherit !important;
+  font-size: 12px !important;
+  line-height: 1.4 !important;
+  font-weight: 500 !important;
+}
+
+.MuiTooltip-tooltip .ja-skill-tooltip-heading,
+.ja-skill-tooltip .ja-skill-tooltip-heading {
+  font-weight: 800 !important;
+  margin-bottom: 3px !important;
+}
+
+.ja-boolean-card,
 .ja-code-box {
   display: grid;
-  grid-template-columns: 1fr auto;
   gap: 10px;
   align-items: start;
   min-height: 78px;
@@ -588,6 +738,16 @@
   background: linear-gradient(135deg, #f1fbf6, #f8fffb);
 }
 
+.ja-code-box {
+  grid-template-columns: 1fr auto;
+}
+
+.ja-boolean-card {
+  min-width: 0;
+  margin-top: 0;
+}
+
+.ja-boolean-card pre,
 .ja-code-box pre {
   margin: 0;
   white-space: pre-wrap;
@@ -595,6 +755,141 @@
   font-size: 12px;
   line-height: 1.6;
   font-weight: 400;
+}
+
+.ja-warning-card {
+  border-color: #ffd7d7 !important;
+  background: linear-gradient(180deg, #ffffff 0%, #fff8f8 100%) !important;
+}
+
+.ja-avoid-row {
+  padding: 7px 8px;
+  border: 1px solid #ffd7d7;
+  border-radius: 7px;
+  background: #fffafa;
+}
+
+.ja-avoid-row svg {
+  flex: 0 0 auto;
+  margin-top: 1px;
+  color: #d92d20;
+  font-size: 17px;
+}
+
+.ja-avoid-row .ja-body-text {
+  margin-top: 0 !important;
+}
+
+.ja-question-count-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.ja-question-helper {
+  color: #536383;
+  font-size: 12px !important;
+  line-height: 1.4 !important;
+  font-weight: 450 !important;
+  margin-top: 2px !important;
+}
+
+.ja-question-count {
+  display: grid;
+  justify-items: center;
+  gap: 5px;
+  padding: 9px 8px;
+  border: 1px solid #dfe7f2;
+  border-radius: 7px;
+  background: #f8fbff;
+  text-align: center;
+}
+
+.ja-question-count-empty {
+  opacity: 0.62;
+}
+
+.ja-question-count-label {
+  color: #536383;
+  font-size: 11px !important;
+  line-height: 1.25 !important;
+  font-weight: 550 !important;
+}
+
+.ja-question-count-value,
+.ja-question-count-link {
+  appearance: none;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #071127;
+  font-size: 20px !important;
+  line-height: 1.15 !important;
+  font-weight: 700 !important;
+  text-align: center;
+}
+
+.ja-question-count-link {
+  color: #0d5fec;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.ja-question-count-link:hover {
+  color: #084fc8;
+}
+
+.ja-question-btn {
+  margin-top: 10px !important;
+  min-height: 31px !important;
+  border-color: #bfd4ff !important;
+  border-radius: 7px !important;
+  color: #0d5fec !important;
+  text-transform: none !important;
+  font-size: 12px !important;
+  font-weight: 550 !important;
+}
+
+.ja-dialog-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: #071127;
+  font-size: 16px !important;
+  font-weight: 650 !important;
+}
+
+.ja-question-list {
+  margin: 8px 0 0 !important;
+  padding-left: 20px !important;
+}
+
+.ja-question-list .ja-body-text {
+  margin-top: 0 !important;
+}
+
+.ja-question-dialog-group {
+  padding: 10px;
+  border: 1px solid #dfe7f2;
+  border-radius: 8px;
+  background: #f8fbff;
+}
+
+.ja-chip-section + .ja-chip-section {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid #dfe7f2;
+}
+
+.ja-chip-section .ja-label {
+  margin-bottom: 7px !important;
+}
+
+.ja-bottom-full-grid {
+  margin-top: 8px;
 }
 
 .ja-copy-btn {
@@ -1268,6 +1563,10 @@
   .ja-skill-grid {
     grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   }
+
+  .ja-boolean-grid {
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  }
 }
 
 @media (max-width: 700px) {
@@ -1279,11 +1578,14 @@
   .ja-hero-summary-grid,
   .ja-detail-grid,
   .ja-four-grid,
+  .ja-info-grid,
+  .ja-boolean-grid,
   .ja-skill-grid {
     grid-template-columns: 1fr;
   }
 
-  .ja-meta-grid {
+  .ja-meta-grid,
+  .ja-question-count-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
@@ -1292,6 +1594,8 @@
   }
 
   .ja-meta,
+  .ja-info-meta,
+  .ja-info-meta:first-child,
   .ja-meta:first-child,
   .ja-section,
   .ja-section:first-child,
@@ -1318,6 +1622,11 @@
     flex-direction: column;
     align-items: stretch;
     gap: 8px;
+  }
+
+  .ja-title-ai-chip {
+    margin-left: 0;
+    align-self: flex-start;
   }
 
   .ja-title-subtitle {

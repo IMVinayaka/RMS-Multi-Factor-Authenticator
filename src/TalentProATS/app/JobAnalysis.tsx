@@ -3,6 +3,9 @@ import {
   Box,
   Button,
   Chip,
+  Dialog,
+  DialogContent,
+  DialogTitle,
   IconButton,
   Paper,
   Stack,
@@ -13,7 +16,10 @@ import ArrowBackOutlinedIcon from "@mui/icons-material/ArrowBackOutlined";
 import AttachMoneyOutlinedIcon from "@mui/icons-material/AttachMoneyOutlined";
 import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome";
 import BusinessCenterOutlinedIcon from "@mui/icons-material/BusinessCenterOutlined";
+import CancelOutlinedIcon from "@mui/icons-material/CancelOutlined";
+import CheckCircleOutlineOutlinedIcon from "@mui/icons-material/CheckCircleOutlineOutlined";
 import ChecklistRtlOutlinedIcon from "@mui/icons-material/ChecklistRtlOutlined";
+import CloseOutlinedIcon from "@mui/icons-material/CloseOutlined";
 import ContentCopyOutlinedIcon from "@mui/icons-material/ContentCopyOutlined";
 import CorporateFareOutlinedIcon from "@mui/icons-material/CorporateFareOutlined";
 import ExpandMoreOutlinedIcon from "@mui/icons-material/ExpandMoreOutlined";
@@ -27,7 +33,6 @@ import PsychologyOutlinedIcon from "@mui/icons-material/PsychologyOutlined";
 import SchoolOutlinedIcon from "@mui/icons-material/SchoolOutlined";
 import TimelineOutlinedIcon from "@mui/icons-material/TimelineOutlined";
 import TrendingUpOutlinedIcon from "@mui/icons-material/TrendingUpOutlined";
-import WifiOutlinedIcon from "@mui/icons-material/WifiOutlined";
 import LightbulbOutlinedIcon from "@mui/icons-material/LightbulbOutlined";
 import WorkspacePremiumOutlinedIcon from "@mui/icons-material/WorkspacePremiumOutlined";
 import type { ReactNode } from "react";
@@ -40,9 +45,20 @@ type PillTone = "blue" | "green" | "purple" | "orange" | "gray";
 type SkillDisplayItem = {
   label: string;
   experience?: string;
+  tooltip?: string;
+  synonyms?: string[];
+};
+
+type QuestionGroup = {
+  key: string;
+  title: string;
+  items: string[];
 };
 
 const emptyArray = <T,>(value?: T[] | null) => (Array.isArray(value) ? value : []);
+
+const compactStringArray = (value?: Array<string | null | undefined> | null) =>
+  emptyArray(value).map((item) => String(item || "").trim()).filter(Boolean);
 
 const valueOrDash = (value?: string | number | null) => {
   if (value === null || value === undefined || value === "") return "-";
@@ -80,6 +96,13 @@ const formatYears = (value?: number | null) => {
   return `${value} Years`;
 };
 
+const formatSkillYears = (value?: string | number | null) => {
+  if (value === null || value === undefined || value === "") return undefined;
+  const normalized = String(value).trim();
+  if (/years?|yrs?/i.test(normalized)) return normalized;
+  return `${normalized} Years`;
+};
+
 const formatSalaryRange = (
   minimum?: number | null,
   maximum?: number | null,
@@ -102,9 +125,57 @@ const normalizeSkills = (items?: SkillValue[] | null): SkillDisplayItem[] =>
 
     return {
       label: valueOrDash(item?.skill),
-      experience: item?.skillExperienceRequirement || undefined,
+      experience: item?.skillExperienceRequirement || formatSkillYears(item?.minimumYears),
+      tooltip: item?.tooltip || undefined,
+      synonyms: compactStringArray(item?.resumeSynonyms),
     };
   }).filter((item) => item.label !== "-");
+
+const getBooleanSearchString = (data?: JobAnalysisResponse | null) =>
+  valueOrDash(
+    data?.booleanSearch?.eliteTightBoolean ||
+    data?.booleanSearch?.corePrecisionBoolean ||
+    data?.booleanSearch?.broadMustHaveBoolean ||
+    data?.searchOptimization?.booleanSearchString
+  );
+
+const getBooleanSearchCards = (data?: JobAnalysisResponse | null) => [
+  {
+    title: "Best Match Search",
+    value: valueOrDash(data?.booleanSearch?.eliteTightBoolean || data?.searchOptimization?.booleanSearchString),
+  },
+  {
+    title: "Balanced Search",
+    value: valueOrDash(data?.booleanSearch?.corePrecisionBoolean),
+  },
+  {
+    title: "Expanded Talent Search",
+    value: valueOrDash(data?.booleanSearch?.broadMustHaveBoolean),
+  },
+].filter((item) => item.value !== "-");
+
+const getQuestionGroups = (data?: JobAnalysisResponse | null): QuestionGroup[] => [
+  {
+    key: "technical",
+    title: "Technical Questions",
+    items: compactStringArray(data?.screeningQuestions?.technicalQuestions),
+  },
+  {
+    key: "experience",
+    title: "Experience Questions",
+    items: compactStringArray(data?.screeningQuestions?.experienceQuestions),
+  },
+  {
+    key: "domain",
+    title: "Domain Questions",
+    items: compactStringArray(data?.screeningQuestions?.domainQuestions),
+  },
+  {
+    key: "risk",
+    title: "Risk Questions",
+    items: compactStringArray(data?.screeningQuestions?.riskQuestions),
+  },
+];
 
 const maskRequest = (request: JobAnalysisRequest | null) => {
   if (!request) return null;
@@ -159,6 +230,9 @@ export default function JobAnalysis() {
   const [requestPayload, setRequestPayload] = useState<JobAnalysisRequest | null>(null);
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
+  const [isEmbedded, setIsEmbedded] = useState(false);
+  const [questionsOpen, setQuestionsOpen] = useState(false);
+  const [activeQuestionGroup, setActiveQuestionGroup] = useState<string | null>(null);
 
   useEffect(() => {
     if (!router.isReady) return;
@@ -220,13 +294,16 @@ export default function JobAnalysis() {
 
   // Added this for handling height changes on iframe embedding, on RMS
   useEffect(() => {
+    const embedded = window.parent !== window;
+    setIsEmbedded(embedded);
+
     const sendHeight = () => {
       const height = Math.max(
         document.body.scrollHeight,
         document.documentElement.scrollHeight
       );
 
-      if (window.parent !== window) {
+      if (embedded) {
         window.parent.postMessage(
           {
             type: "jobAnalysisHeight",
@@ -258,7 +335,6 @@ export default function JobAnalysis() {
       employment: valueOrDash(data?.jobInfo?.employmentType),
       workModel: valueOrDash(data?.location?.workModel),
       location: [data?.location?.city, data?.location?.state, data?.location?.zipCode].filter(Boolean).join(", ") || "-",
-      remoteAllowed: toYesNo(data?.location?.remoteAllowed),
       experienceDisplay: formatYears(data?.experience?.minimumYears),
       salaryDisplay: formatSalaryRange(
         data?.compensation?.salaryMin,
@@ -266,27 +342,45 @@ export default function JobAnalysis() {
         data?.compensation?.currency,
         data?.compensation?.salaryType
       ),
-      booleanSearch: valueOrDash(data?.searchOptimization?.booleanSearchString),
-      educationQualification: emptyArray(data?.education?.educationQualification || data?.education?.degrees),
-      certifications: emptyArray(data?.education?.certifications),
+      booleanSearch: getBooleanSearchString(data),
+      booleanSearchCards: getBooleanSearchCards(data),
+      educationQualification: compactStringArray(data?.education?.educationQualifications || data?.education?.educationQualification || data?.education?.degrees),
+      certifications: compactStringArray(data?.education?.certifications),
       mandatorySkills: normalizeSkills(data?.skills?.mandatorySkills),
       preferredSkills: normalizeSkills(data?.skills?.preferredSkills),
       softSkills: normalizeSkills(data?.skills?.softSkills),
-      prioritySkills: emptyArray(data?.skills?.prioritySkills),
-      relatedTitles: emptyArray(data?.jobInfo?.relatedTitles),
-      industryDomains: emptyArray(data?.industryDomains),
-      technologies: emptyArray(data?.technologies),
-      keywords: emptyArray(data?.searchOptimization?.keywords),
-      summary: valueOrDash(data?.summary?.jdSummary || data?.summary?.jobDiscriptionSummary),
+      prioritySkills: compactStringArray(data?.skills?.prioritySkills),
+      dealBreakerSkills: compactStringArray(data?.skills?.dealBreakerSkills),
+      hiringManagerPriority: valueOrDash(data?.skills?.hiringManagerPriority),
+      relatedTitles: compactStringArray(data?.jobInfo?.relatedTitles),
+      industryDomains: compactStringArray(data?.industryDomains),
+      technologies: compactStringArray(data?.technologies),
+      keywords: compactStringArray(data?.searchOptimization?.keywords),
+      summary: valueOrDash(data?.summary?.jobDescriptionSummary || data?.summary?.jdSummary || data?.summary?.jobDiscriptionSummary),
       recruiterNotes: valueOrDash(data?.summary?.recruiterNotes),
+      candidateAvoidPoints: compactStringArray(data?.summary?.candidateAvoidPoints),
+      clientName: valueOrDash(data?.clientInfo?.clientName),
+      clientIndustry: valueOrDash(data?.clientInfo?.industry),
+      workAuthorization: compactStringArray(data?.workAuthorization?.requirements),
+      keyResponsibilities: compactStringArray(data?.responsibilities?.keyResponsibilities),
+      competitorCompanies: compactStringArray(data?.marketIntelligence?.competitorCompanies),
+      similarEnvironments: compactStringArray(data?.marketIntelligence?.similarEnvironments),
+      talentMarketDifficulty: valueOrDash(data?.marketIntelligence?.talentMarketDifficulty),
+      hiddenExpectations: emptyArray(data?.hiddenExpectations)
+        .map((item) => ({
+          expectation: valueOrDash(item?.expectation),
+          reason: valueOrDash(item?.reason),
+        }))
+        .filter((item) => item.expectation !== "-"),
+      questionGroups: getQuestionGroups(data),
       skillExperienceRequirements: emptyArray(data?.skillExperienceRequirements),
     }),
     [data, requestPayload]
   );
 
-  const copyBooleanSearch = async () => {
+  const copyBooleanSearch = async (value = view.booleanSearch) => {
     if (typeof navigator !== "undefined" && navigator.clipboard) {
-      await navigator.clipboard.writeText(view.booleanSearch);
+      await navigator.clipboard.writeText(value);
       toast.success("Boolean search copied");
       return;
     }
@@ -453,6 +547,23 @@ export default function JobAnalysis() {
 
   const hasJobOverview = view.summary !== "-";
   const hasRecruiterNotes = view.recruiterNotes !== "-";
+  const hasSkills =
+    view.mandatorySkills.length > 0 ||
+    view.preferredSkills.length > 0 ||
+    view.softSkills.length > 0 ||
+    view.prioritySkills.length > 0;
+  const hasMarketIntelligence =
+    view.competitorCompanies.length > 0 ||
+    view.similarEnvironments.length > 0;
+  const visibleQuestionGroups = view.questionGroups.filter((group) => group.items.length > 0);
+  const dialogQuestionGroups = activeQuestionGroup
+    ? visibleQuestionGroups.filter((group) => group.key === activeQuestionGroup)
+    : visibleQuestionGroups;
+  const activeQuestionTitle = activeQuestionGroup
+    ? visibleQuestionGroups.find((group) => group.key === activeQuestionGroup)?.title || "Screening Questions"
+    : "All Screening Questions";
+  const totalQuestionCount = visibleQuestionGroups.reduce((total, group) => total + group.items.length, 0);
+  const hasClientInfo = view.clientName !== "-" || view.clientIndustry !== "-";
 
   if (loading) {
     return (
@@ -487,21 +598,22 @@ export default function JobAnalysis() {
   return (
     <main className="ja-page">
       <Box className="ja-shell ja-pdf-template">
-        <Stack className="ja-topbar" direction={{ xs: "column", md: "row" }}>
-          <Stack className="ja-header-line" direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
-            <Typography className="ja-kicker">Job ID: {view.jobId}</Typography>
-            <Chip size="small" className="ja-ai-chip" icon={<AutoAwesomeIcon />} label="AI Powered" />
-          </Stack>
+        {!isEmbedded && (
+          <Stack className="ja-topbar" direction={{ xs: "column", md: "row" }}>
+            <Stack className="ja-header-line" direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
+              <Typography className="ja-kicker">Job ID: {view.jobId}</Typography>
+            </Stack>
 
-          {/* <Stack className="ja-export-controls" direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-            <Button className="ja-back-btn" startIcon={<ArrowBackOutlinedIcon />} onClick={goBack} variant="outlined">
-              Back
-            </Button>
-            <Button className="ja-action-btn ja-export-btn" startIcon={<FileDownloadOutlinedIcon />} endIcon={<ExpandMoreOutlinedIcon />} onClick={exportPdf} variant="outlined">
-              Export
-            </Button>
-          </Stack> */}
-        </Stack>
+            {/* <Stack className="ja-export-controls" direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+              <Button className="ja-back-btn" startIcon={<ArrowBackOutlinedIcon />} onClick={goBack} variant="outlined">
+                Back
+              </Button>
+              <Button className="ja-action-btn ja-export-btn" startIcon={<FileDownloadOutlinedIcon />} endIcon={<ExpandMoreOutlinedIcon />} onClick={exportPdf} variant="outlined">
+                Export
+              </Button>
+            </Stack> */}
+          </Stack>
+        )}
 
         <Box className="ja-grid ja-hero-grid">
           <Card className="ja-hero-card">
@@ -527,19 +639,36 @@ export default function JobAnalysis() {
                       {view.workModel !== "-" && <Pill tone="green">{view.workModel}</Pill>}
                     </Stack>
                   </Stack>
+                  <Chip size="small" className="ja-ai-chip ja-title-ai-chip" icon={<AutoAwesomeIcon />} label="AI Powered" />
                 </Box>
               </Box>
             </Stack>
 
-            <Box className="ja-meta-grid">
-              {view.remoteAllowed !== "-" && <Meta label="Remote Allowed" value={view.remoteAllowed} icon={<WifiOutlinedIcon />} chipTone={(val) => val === "No" ? "orange" : "green"} />}
-              {view.experienceDisplay !== "-" && <Meta label="Experience" value={view.experienceDisplay} icon={<TimelineOutlinedIcon />} />}
-              {view.educationQualification.length > 0 && <Meta label="Education" value={view.educationQualification.join(", ")} icon={<SchoolOutlinedIcon />} />}
-              {view.certifications.length > 0 && <Meta label="Certifications" value={view.certifications.join(", ")} icon={<WorkspacePremiumOutlinedIcon />} />}
-              {view.salaryDisplay !== "-" && <Meta label="Salary" value={view.salaryDisplay} icon={<AttachMoneyOutlinedIcon />} />}
-              {view.department !== "-" && <Meta label="Department" value={view.department} icon={<CorporateFareOutlinedIcon />} />}
-              {view.employment !== "-" && <Meta label="Employment" value={view.employment} icon={<PersonOutlinedIcon />} />}
-              {view.level !== "-" && <Meta label="Level" value={view.level} icon={<TrendingUpOutlinedIcon />} />}
+            <Box className="ja-summary-badge-grid">
+              {view.experienceDisplay !== "-" && <SummaryBadge label="Experience" value={view.experienceDisplay} />}
+              {view.salaryDisplay !== "-" && <SummaryBadge label="Salary" value={view.salaryDisplay} />}
+              {view.employment !== "-" && <SummaryBadge label="Employment" value={view.employment} />}
+              {view.level !== "-" && <SummaryBadge label="Level" value={view.level} />}
+              {view.talentMarketDifficulty !== "-" && <SummaryBadge label="Talent Availability" value={view.talentMarketDifficulty} tone="orange" />}
+            </Box>
+
+            <Box className="ja-info-grid">
+              {view.department !== "-" && <InfoMeta label="Department" value={view.department} icon={<CorporateFareOutlinedIcon />} />}
+              {view.educationQualification.length > 0 && <InfoMeta label="Education" value={view.educationQualification.join(", ")} icon={<SchoolOutlinedIcon />} />}
+              {view.certifications.length > 0 && <InfoMeta label="Certifications" value={view.certifications.join(", ")} icon={<WorkspacePremiumOutlinedIcon />} />}
+              {view.workAuthorization.length > 0 && <InfoMeta label="Work Authorization" value={view.workAuthorization.join(", ")} icon={<FlagOutlinedIcon />} />}
+              {hasClientInfo && (
+                <InfoMeta
+                  label="Client Information"
+                  value={(
+                    <>
+                      {view.clientName !== "-" && <span>{view.clientName}</span>}
+                      {view.clientIndustry !== "-" && <span>{view.clientIndustry}</span>}
+                    </>
+                  )}
+                  icon={<BusinessCenterOutlinedIcon />}
+                />
+              )}
             </Box>
 
             {(hasJobOverview || hasRecruiterNotes) && (
@@ -554,68 +683,89 @@ export default function JobAnalysis() {
                   <Box className="ja-note-panel ja-recruiter-panel">
                     <InfoTitle icon={<ChecklistRtlOutlinedIcon />} title="Recruitment Notes" />
                     <Typography className="ja-body-text" sx={{ whiteSpace: "pre-line" }}>{view.recruiterNotes}</Typography>
+                    {view.hiringManagerPriority !== "-" && (
+                      <Box className="ja-manager-priority">
+                        <Typography className="ja-label ja-manager-priority-label">
+                          <FlagOutlinedIcon />
+                          Manager Priority
+                        </Typography>
+                        <Typography className="ja-body-text">{view.hiringManagerPriority}</Typography>
+                      </Box>
+                    )}
                   </Box>
                 )}
+              </Box>
+            )}
+            {view.candidateAvoidPoints.length > 0 && (
+              <Box className="ja-warning-panel">
+                <InfoTitle icon={<FlagOutlinedIcon />} title="Candidate Avoid Points" />
+                <Stack spacing={0.8}>
+                  {view.candidateAvoidPoints.map((item) => (
+                    <Stack key={item} direction="row" spacing={0.8} alignItems="flex-start" className="ja-avoid-row">
+                      <CancelOutlinedIcon />
+                      <Typography className="ja-body-text">{item}</Typography>
+                    </Stack>
+                  ))}
+                </Stack>
               </Box>
             )}
           </Card>
         </Box>
 
-        <Card>
-          <Box className="ja-four-grid">
-            <Section className="ja-wide-section" icon={<PsychologyOutlinedIcon />} title="Skills">
-              <Box className="ja-skill-grid">
-                <SkillGroup title="Must Have" tone="green" items={view.mandatorySkills} />
-                <SkillGroup title="Nice To Have" tone="orange" items={view.preferredSkills} />
-                <SkillGroup title="Soft Skills" tone="purple" items={view.softSkills} />
-                {view.prioritySkills.length > 0 && (
-                  <Box className="ja-skill-group">
-                    <Typography className="ja-label">Key Skills by Priority</Typography>
-                    <Stack spacing={1.1}>
-                      {view.prioritySkills.map((skill, index) => (
-                        <Stack key={skill} direction="row" alignItems="center" spacing={1}>
-                          <span className="ja-rank">{index + 1}</span>
-                          <Typography className="ja-row-value">{skill}</Typography>
-                        </Stack>
-                      ))}
-                    </Stack>
-                  </Box>
-                )}
+        {hasSkills && (
+          <Card>
+            <Box className="ja-four-grid">
+              <Section className="ja-wide-section" icon={<PsychologyOutlinedIcon />} title="Skills">
+                <Box className="ja-skill-grid">
+                  {view.mandatorySkills.length > 0 && <SkillGroup title="Must Have" tone="green" items={view.mandatorySkills} />}
+                  {view.preferredSkills.length > 0 && <SkillGroup title="Nice To Have" tone="orange" items={view.preferredSkills} />}
+                  {view.softSkills.length > 0 && <SkillGroup title="Soft Skills" tone="purple" items={view.softSkills} />}
+                  {view.prioritySkills.length > 0 && (
+                    <Box className="ja-skill-group">
+                      <Typography className="ja-label">Key Skills by Priority</Typography>
+                      <Stack spacing={1.1}>
+                        {view.prioritySkills.map((skill, index) => (
+                          <Stack key={skill} direction="row" alignItems="center" spacing={1}>
+                            <span className="ja-rank">{index + 1}</span>
+                            <Typography className="ja-row-value">{skill}</Typography>
+                          </Stack>
+                        ))}
+                      </Stack>
+                    </Box>
+                  )}
+                </Box>
+              </Section>
+            </Box>
+          </Card>
+        )}
+
+        {view.booleanSearchCards.length > 0 && (
+          <Box className="ja-grid">
+            <Section className="ja-wide-section ja-plain-section" icon={<ManageSearchOutlinedIcon />} title="Boolean Search">
+              <Box className="ja-boolean-grid">
+                {view.booleanSearchCards.map((item) => (
+                  <BooleanSearchCard key={item.title} title={item.title} value={item.value} onCopy={() => copyBooleanSearch(item.value)} />
+                ))}
               </Box>
             </Section>
           </Box>
-        </Card>
-
-        <Box className="ja-grid">
-          <Card>
-            <Stack direction="row" spacing={0.5} alignItems="baseline" className="ja-section-title" style={{ marginBottom: "8px" }}>
-              <span className="ja-icon-bubble"><ManageSearchOutlinedIcon /></span>
-              <Typography style={{ display: "flex", alignItems: "baseline", gap: "4px" }}>
-                Boolean Search String <span className="ja-muted">(Optimized search string for candidate discovery)</span>
-              </Typography>
-            </Stack>
-            <Box className="ja-code-box">
-              <Typography component="pre">{view.booleanSearch}</Typography>
-              <IconButton className="ja-copy-btn" onClick={copyBooleanSearch} aria-label="Copy boolean search">
-                <ContentCopyOutlinedIcon />
-              </IconButton>
-            </Box>
-          </Card>
-        </Box>
+        )}
 
         <Box className="ja-grid ja-detail-grid">
 
-          <Card>
-            <InfoTitle icon={<AutoAwesomeIcon />} title="Related Job Titles" />
-            <Stack direction="row" gap={0.8} flexWrap="wrap">
-              <Pill tone="blue">{view.title}</Pill>
-              {view.relatedTitles.map((title) => (
-                <Pill key={title} tone="purple">
-                  {title}
-                </Pill>
-              ))}
-            </Stack>
-          </Card>
+          {(view.title !== "-" || view.relatedTitles.length > 0) && (
+            <Card>
+              <InfoTitle icon={<AutoAwesomeIcon />} title="Related Job Titles" />
+              <Stack direction="row" gap={0.8} flexWrap="wrap">
+                {view.title !== "-" && <Pill tone="blue">{view.title}</Pill>}
+                {view.relatedTitles.map((title) => (
+                  <Pill key={title} tone="purple">
+                    {title}
+                  </Pill>
+                ))}
+              </Stack>
+            </Card>
+          )}
 
           {view.industryDomains.length > 0 && (
             <Card>
@@ -630,16 +780,97 @@ export default function JobAnalysis() {
             </Card>
           )}
 
-          <Card>
-            <InfoTitle icon={<LocalOfferOutlinedIcon />} title="Additional Keywords" />
-            <Stack direction="row" gap={0.8} flexWrap="wrap">
-              {view.keywords.map((item) => (
-                <Pill key={item} tone="gray">
-                  {item}
-                </Pill>
-              ))}
-            </Stack>
-          </Card>
+          {view.technologies.length > 0 && (
+            <Card>
+              <InfoTitle icon={<LightbulbOutlinedIcon />} title="Technologies" />
+              <Stack direction="row" gap={0.8} flexWrap="wrap">
+                {view.technologies.map((item) => (
+                  <Pill key={item} tone="blue">
+                    {item}
+                  </Pill>
+                ))}
+              </Stack>
+            </Card>
+          )}
+
+          {view.keywords.length > 0 && (
+            <Card>
+              <InfoTitle icon={<LocalOfferOutlinedIcon />} title="Additional Keywords" />
+              <Stack direction="row" gap={0.8} flexWrap="wrap">
+                {view.keywords.map((item) => (
+                  <Pill key={item} tone="gray">
+                    {item}
+                  </Pill>
+                ))}
+              </Stack>
+            </Card>
+          )}
+
+          {totalQuestionCount > 0 && (
+            <Card>
+              <InfoTitle icon={<ManageSearchOutlinedIcon />} title="Screening Questions" />
+              <Typography className="ja-question-helper">
+                Use these questions to qualify fit, risk, and domain depth before submission.
+              </Typography>
+              <Box className="ja-question-count-grid">
+                {view.questionGroups.map((group) => (
+                  <Box className={`ja-question-count ${group.items.length === 0 ? "ja-question-count-empty" : ""}`} key={group.key}>
+                    <Typography className="ja-question-count-label">{group.title.replace(" Questions", "")}</Typography>
+                    {group.items.length > 0 ? (
+                      <button
+                        className="ja-question-count-link"
+                        onClick={() => {
+                          setActiveQuestionGroup(group.key);
+                          setQuestionsOpen(true);
+                        }}
+                        type="button"
+                      >
+                        {group.items.length}
+                      </button>
+                    ) : (
+                      <Typography className="ja-question-count-value">0</Typography>
+                    )}
+                  </Box>
+                ))}
+              </Box>
+              <Button
+                className="ja-question-btn"
+                variant="outlined"
+                onClick={() => {
+                  setActiveQuestionGroup(null);
+                  setQuestionsOpen(true);
+                }}
+              >
+                View All Questions ({totalQuestionCount})
+              </Button>
+            </Card>
+          )}
+
+          {hasMarketIntelligence && (
+            <Card>
+              <InfoTitle icon={<TrendingUpOutlinedIcon />} title="Market Intelligence" />
+              {view.competitorCompanies.length > 0 && (
+                <Box className="ja-chip-section">
+                  <Typography className="ja-label">Competitor Companies</Typography>
+                  <Stack direction="row" gap={0.8} flexWrap="wrap">
+                    {view.competitorCompanies.map((item) => (
+                      <Pill key={item} tone="blue">{item}</Pill>
+                    ))}
+                  </Stack>
+                </Box>
+              )}
+              {view.similarEnvironments.length > 0 && (
+                <Box className="ja-chip-section">
+                  <Typography className="ja-label">Similar Environments</Typography>
+                  <Stack direction="row" gap={0.8} flexWrap="wrap">
+                    {view.similarEnvironments.map((item) => (
+                      <Pill key={item} tone="purple">{item}</Pill>
+                    ))}
+                  </Stack>
+                </Box>
+              )}
+            </Card>
+          )}
           {/*<Card>
             <InfoTitle icon={<LocationOnOutlinedIcon />} title="Location & Work Details" />
             <DetailRows
@@ -649,11 +880,71 @@ export default function JobAnalysis() {
                 ["Country", valueOrDash(data?.location?.country)],
                 ["ZIP Code", valueOrDash(data?.location?.zipCode)],
                 ["Work Model", <Pill key="work-model" tone="green">{view.workModel}</Pill>],
-                ["Remote", <Pill key="remote" tone="green">{view.remoteAllowed}</Pill>],
+                ["Remote", <Pill key="remote" tone="green">{toYesNo(data?.location?.remoteAllowed)}</Pill>],
               ]}
             />
           </Card> */}
         </Box>
+
+        {(view.keyResponsibilities.length > 0 || view.hiddenExpectations.length > 0) && (
+          <Box className="ja-grid ja-bottom-full-grid">
+            {view.keyResponsibilities.length > 0 && (
+              <Card className="ja-overview-style-card">
+                <InfoTitle icon={<ChecklistRtlOutlinedIcon />} title="Key Responsibilities" />
+                <Stack spacing={0.8}>
+                  {view.keyResponsibilities.map((item) => (
+                    <Stack key={item} direction="row" spacing={0.8} alignItems="flex-start" className="ja-check-row">
+                      <CheckCircleOutlineOutlinedIcon />
+                      <Typography className="ja-body-text">{item}</Typography>
+                    </Stack>
+                  ))}
+                </Stack>
+              </Card>
+            )}
+
+            {view.hiddenExpectations.length > 0 && (
+              <Card className="ja-overview-style-card">
+                <InfoTitle icon={<LightbulbOutlinedIcon />} title="Hidden Expectations" />
+                <Stack spacing={0.8}>
+                  {view.hiddenExpectations.map((item) => (
+                    <Stack key={`${item.expectation}-${item.reason}`} direction="row" spacing={0.8} alignItems="flex-start" className="ja-check-row">
+                      <CheckCircleOutlineOutlinedIcon />
+                      <Box minWidth={0}>
+                        <Typography className="ja-body-text"><strong>{item.expectation}</strong></Typography>
+                        {item.reason !== "-" && <Typography className="ja-muted">{item.reason}</Typography>}
+                      </Box>
+                    </Stack>
+                  ))}
+                </Stack>
+              </Card>
+            )}
+          </Box>
+        )}
+
+        <Dialog open={questionsOpen} onClose={() => setQuestionsOpen(false)} fullWidth maxWidth="md">
+          <DialogTitle className="ja-dialog-title">
+            {activeQuestionTitle}
+            <IconButton aria-label="Close screening questions" onClick={() => setQuestionsOpen(false)}>
+              <CloseOutlinedIcon />
+            </IconButton>
+          </DialogTitle>
+          <DialogContent dividers>
+            <Stack spacing={2}>
+              {dialogQuestionGroups.map((group) => (
+                <Box className="ja-question-dialog-group" key={group.key}>
+                  <Typography className="ja-row-value">{group.title}</Typography>
+                  <Stack component="ol" className="ja-question-list" spacing={0.8}>
+                    {group.items.map((question) => (
+                      <Typography component="li" className="ja-body-text" key={question}>
+                        {question}
+                      </Typography>
+                    ))}
+                  </Stack>
+                </Box>
+              ))}
+            </Stack>
+          </DialogContent>
+        </Dialog>
       </Box>
     </main>
   );
@@ -699,25 +990,34 @@ function Section({
   );
 }
 
-function Meta({
-  label,
-  value,
-  icon,
-  chipTone,
-}: {
-  label: string;
-  value: string;
-  icon?: ReactNode;
-  chipTone?: PillTone | ((val: string) => PillTone);
-}) {
-  const resolvedTone = typeof chipTone === "function" ? chipTone(value) : chipTone;
+function SummaryBadge({ label, value, tone = "blue" }: { label: string; value: string; tone?: PillTone }) {
   return (
-    <Box className="ja-meta">
-      <Typography className="ja-meta-label">
-        {icon}
-        {label}
-      </Typography>
-      {resolvedTone ? <Pill tone={resolvedTone}>{value}</Pill> : <Typography className="ja-meta-value">{value}</Typography>}
+    <Box className={`ja-summary-badge ja-summary-badge-${tone}`}>
+      <span>{label}</span>
+      <strong>{value}</strong>
+    </Box>
+  );
+}
+
+function InfoMeta({ label, value, icon }: { label: string; value: ReactNode; icon?: ReactNode }) {
+  return (
+    <Box className="ja-info-meta">
+      <Typography className="ja-meta-label">{icon}{label}</Typography>
+      <Typography component="div" className="ja-meta-value">{value}</Typography>
+    </Box>
+  );
+}
+
+function BooleanSearchCard({ title, value, onCopy }: { title: string; value: string; onCopy: () => void }) {
+  return (
+    <Box className="ja-boolean-card">
+      <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={1}>
+        <Typography className="ja-label">{title}</Typography>
+        <IconButton className="ja-copy-btn" onClick={onCopy} aria-label={`Copy ${title}`}>
+          <ContentCopyOutlinedIcon />
+        </IconButton>
+      </Stack>
+      <Typography component="pre">{value}</Typography>
     </Box>
   );
 }
@@ -737,9 +1037,23 @@ function SkillGroup({ title, items, tone }: { title: string; items: SkillDisplay
 
 function SkillBlock({ item, tone }: { item: SkillDisplayItem; tone: PillTone }) {
   const label = item.experience ? `${item.label} (${item.experience})` : item.label;
+  const hasTooltip = Boolean(item.tooltip || item.synonyms?.length);
+  const tooltipTitle = hasTooltip ? (
+    <Box className="ja-skill-tooltip">
+      {item.tooltip && <Typography>{item.tooltip}</Typography>}
+      {item.synonyms?.length ? (
+        <Box>
+          <Typography className="ja-skill-tooltip-heading">Common resume terms</Typography>
+          {item.synonyms.map((synonym) => (
+            <Typography key={synonym}>{synonym}</Typography>
+          ))}
+        </Box>
+      ) : null}
+    </Box>
+  ) : "";
 
   return (
-    <Tooltip title={label} arrow placement="top">
+    <Tooltip title={tooltipTitle} arrow placement="top" disableHoverListener={!hasTooltip}>
       <span className={`ja-skill-block ja-skill-block-${tone}`}>
         {label}
       </span>
@@ -758,9 +1072,11 @@ function Pill({ children, tone }: { children: ReactNode; tone: PillTone }) {
 }
 
 function DetailRows({ rows, divided = false }: { rows: Array<[string, ReactNode]>; divided?: boolean }) {
+  const visibleRows = rows.filter(([, value]) => value !== "-");
+
   return (
     <Stack className={divided ? "ja-detail-rows ja-detail-divided" : "ja-detail-rows"} spacing={0.7}>
-      {rows.map(([label, value]) => (
+      {visibleRows.map(([label, value]) => (
         <Stack key={label} direction="row" justifyContent="space-between" spacing={2}>
           <Typography className="ja-muted">{label}</Typography>
           <Box className="ja-detail-value">{value}</Box>
