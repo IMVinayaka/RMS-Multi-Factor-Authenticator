@@ -11,7 +11,16 @@ export type SkillValue =
   | {
       skill?: string | null;
       skillExperienceRequirement?: string | null;
+      minimumYears?: string | number | null;
+      tooltip?: string | null;
+      resumeSynonyms?: string[] | null;
     };
+
+export type BooleanSearch = {
+  eliteTightBoolean?: string | null;
+  corePrecisionBoolean?: string | null;
+  broadMustHaveBoolean?: string | null;
+};
 
 export type JobAnalysisResponse = {
   jobId: number | string;
@@ -46,6 +55,8 @@ export type JobAnalysisResponse = {
     preferredSkills?: SkillValue[];
     softSkills?: SkillValue[];
     prioritySkills?: string[];
+    dealBreakerSkills?: string[];
+    hiringManagerPriority?: string | null;
   };
   skillExperienceRequirements?: Array<{
     skill?: string;
@@ -53,6 +64,7 @@ export type JobAnalysisResponse = {
   }>;
   education?: {
     educationQualification?: string[];
+    educationQualifications?: string[];
     degrees?: string[];
     certifications?: string[];
   };
@@ -67,11 +79,39 @@ export type JobAnalysisResponse = {
     };
     booleanSearchString?: string;
   };
+  booleanSearch?: BooleanSearch | null;
   summary?: {
     jdSummary?: string;
+    jobDescriptionSummary?: string;
     jobDiscriptionSummary?: string;
     recruiterNotes?: string;
+    candidateAvoidPoints?: string[];
   };
+  clientInfo?: {
+    clientName?: string | null;
+    industry?: string | null;
+  } | null;
+  workAuthorization?: {
+    requirements?: string[];
+  } | null;
+  marketIntelligence?: {
+    competitorCompanies?: string[];
+    similarEnvironments?: string[];
+    talentMarketDifficulty?: string | null;
+  } | null;
+  responsibilities?: {
+    keyResponsibilities?: string[];
+  } | null;
+  hiddenExpectations?: Array<{
+    expectation?: string | null;
+    reason?: string | null;
+  }>;
+  screeningQuestions?: {
+    technicalQuestions?: string[];
+    experienceQuestions?: string[];
+    domainQuestions?: string[];
+    riskQuestions?: string[];
+  } | null;
 };
 
 const JD_ANALYSE_SERVICE_URL =
