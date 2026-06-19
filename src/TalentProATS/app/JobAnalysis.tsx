@@ -600,6 +600,11 @@ export default function JobAnalysis() {
     setQuestionsOpen(true);
   };
 
+  const closeQuestions = () => {
+    setQuestionsOpen(false);
+    setQuestionPopoverPosition(null);
+  };
+
   if (loading) {
     return (
       <main className="ja-page ja-loader-page">
@@ -882,7 +887,7 @@ export default function JobAnalysis() {
                 >
                   <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={1} className="ja-embedded-questions-title">
                     <Typography className="ja-row-value">{activeQuestionTitle}</Typography>
-                    <IconButton aria-label="Close screening questions" onClick={() => setQuestionsOpen(false)}>
+                    <IconButton aria-label="Close screening questions" onClick={closeQuestions}>
                       <CloseOutlinedIcon />
                     </IconButton>
                   </Stack>
@@ -968,10 +973,10 @@ export default function JobAnalysis() {
         )}
 
         {!isEmbedded && (
-          <Dialog open={questionsOpen} onClose={() => setQuestionsOpen(false)} fullWidth maxWidth="md">
+          <Dialog open={questionsOpen} onClose={closeQuestions} fullWidth maxWidth="md">
             <DialogTitle className="ja-dialog-title">
               {activeQuestionTitle}
-              <IconButton aria-label="Close screening questions" onClick={() => setQuestionsOpen(false)}>
+              <IconButton aria-label="Close screening questions" onClick={closeQuestions}>
                 <CloseOutlinedIcon />
               </IconButton>
             </DialogTitle>
