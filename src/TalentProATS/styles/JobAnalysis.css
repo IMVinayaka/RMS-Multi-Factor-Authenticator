@@ -862,6 +862,30 @@
   font-weight: 650 !important;
 }
 
+.ja-embedded-questions-panel {
+  margin-top: 12px;
+  padding: 10px;
+  border: 1px solid #bfd4ff;
+  border-radius: 8px;
+  background: linear-gradient(180deg, #ffffff 0%, #f5f9ff 100%);
+  box-shadow: 0 8px 18px rgba(20, 35, 65, 0.07);
+}
+
+.ja-embedded-questions-title {
+  margin-bottom: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #dfe7f2;
+}
+
+.ja-embedded-questions-title .MuiIconButton-root {
+  width: 30px;
+  height: 30px;
+}
+
+.ja-embedded-questions-title svg {
+  font-size: 17px;
+}
+
 .ja-question-list {
   margin: 8px 0 0 !important;
   padding-left: 20px !important;

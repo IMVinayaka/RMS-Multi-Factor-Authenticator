@@ -300,7 +300,9 @@ export default function JobAnalysis() {
     const sendHeight = () => {
       const height = Math.max(
         document.body.scrollHeight,
-        document.documentElement.scrollHeight
+        document.documentElement.scrollHeight,
+        document.body.offsetHeight,
+        document.documentElement.offsetHeight
       );
 
       if (embedded) {
@@ -314,17 +316,25 @@ export default function JobAnalysis() {
       }
     };
 
-    sendHeight();
+    const scheduleHeight = () => {
+      sendHeight();
+      requestAnimationFrame(sendHeight);
+    };
 
-    const timer = setTimeout(sendHeight, 500);
+    scheduleHeight();
 
+    const timers = [100, 300, 700, 1200].map((delay) => setTimeout(sendHeight, delay));
+    const resizeObserver = typeof ResizeObserver !== "undefined" ? new ResizeObserver(scheduleHeight) : null;
+    resizeObserver?.observe(document.body);
+    resizeObserver?.observe(document.documentElement);
     window.addEventListener("resize", sendHeight);
 
     return () => {
-      clearTimeout(timer);
+      timers.forEach(clearTimeout);
+      resizeObserver?.disconnect();
       window.removeEventListener("resize", sendHeight);
     };
-  }, [data]);
+  }, [data, loading, questionsOpen, activeQuestionGroup]);
 
   const view = useMemo(
     () => ({
@@ -843,6 +853,17 @@ export default function JobAnalysis() {
               >
                 View All Questions ({totalQuestionCount})
               </Button>
+              {isEmbedded && questionsOpen && (
+                <Box className="ja-embedded-questions-panel">
+                  <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={1} className="ja-embedded-questions-title">
+                    <Typography className="ja-row-value">{activeQuestionTitle}</Typography>
+                    <IconButton aria-label="Close screening questions" onClick={() => setQuestionsOpen(false)}>
+                      <CloseOutlinedIcon />
+                    </IconButton>
+                  </Stack>
+                  <QuestionsContent groups={dialogQuestionGroups} />
+                </Box>
+              )}
             </Card>
           )}
 
@@ -921,30 +942,19 @@ export default function JobAnalysis() {
           </Box>
         )}
 
-        <Dialog open={questionsOpen} onClose={() => setQuestionsOpen(false)} fullWidth maxWidth="md">
-          <DialogTitle className="ja-dialog-title">
-            {activeQuestionTitle}
-            <IconButton aria-label="Close screening questions" onClick={() => setQuestionsOpen(false)}>
-              <CloseOutlinedIcon />
-            </IconButton>
-          </DialogTitle>
-          <DialogContent dividers>
-            <Stack spacing={2}>
-              {dialogQuestionGroups.map((group) => (
-                <Box className="ja-question-dialog-group" key={group.key}>
-                  <Typography className="ja-row-value">{group.title}</Typography>
-                  <Stack component="ol" className="ja-question-list" spacing={0.8}>
-                    {group.items.map((question) => (
-                      <Typography component="li" className="ja-body-text" key={question}>
-                        {question}
-                      </Typography>
-                    ))}
-                  </Stack>
-                </Box>
-              ))}
-            </Stack>
-          </DialogContent>
-        </Dialog>
+        {!isEmbedded && (
+          <Dialog open={questionsOpen} onClose={() => setQuestionsOpen(false)} fullWidth maxWidth="md">
+            <DialogTitle className="ja-dialog-title">
+              {activeQuestionTitle}
+              <IconButton aria-label="Close screening questions" onClick={() => setQuestionsOpen(false)}>
+                <CloseOutlinedIcon />
+              </IconButton>
+            </DialogTitle>
+            <DialogContent dividers>
+              <QuestionsContent groups={dialogQuestionGroups} />
+            </DialogContent>
+          </Dialog>
+        )}
       </Box>
     </main>
   );
@@ -1019,6 +1029,25 @@ function BooleanSearchCard({ title, value, onCopy }: { title: string; value: str
       </Stack>
       <Typography component="pre">{value}</Typography>
     </Box>
+  );
+}
+
+function QuestionsContent({ groups }: { groups: QuestionGroup[] }) {
+  return (
+    <Stack spacing={2}>
+      {groups.map((group) => (
+        <Box className="ja-question-dialog-group" key={group.key}>
+          <Typography className="ja-row-value">{group.title}</Typography>
+          <Stack component="ol" className="ja-question-list" spacing={0.8}>
+            {group.items.map((question) => (
+              <Typography component="li" className="ja-body-text" key={question}>
+                {question}
+              </Typography>
+            ))}
+          </Stack>
+        </Box>
+      ))}
+    </Stack>
   );
 }
 
