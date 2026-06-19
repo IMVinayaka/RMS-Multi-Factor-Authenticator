@@ -55,6 +55,11 @@ type QuestionGroup = {
   items: string[];
 };
 
+type PopoverPosition = {
+  left: number;
+  top: number;
+};
+
 const emptyArray = <T,>(value?: T[] | null) => (Array.isArray(value) ? value : []);
 
 const compactStringArray = (value?: Array<string | null | undefined> | null) =>
@@ -233,6 +238,7 @@ export default function JobAnalysis() {
   const [isEmbedded, setIsEmbedded] = useState(false);
   const [questionsOpen, setQuestionsOpen] = useState(false);
   const [activeQuestionGroup, setActiveQuestionGroup] = useState<string | null>(null);
+  const [questionPopoverPosition, setQuestionPopoverPosition] = useState<PopoverPosition | null>(null);
 
   useEffect(() => {
     if (!router.isReady) return;
@@ -575,6 +581,25 @@ export default function JobAnalysis() {
   const totalQuestionCount = visibleQuestionGroups.reduce((total, group) => total + group.items.length, 0);
   const hasClientInfo = view.clientName !== "-" || view.clientIndustry !== "-";
 
+  const openQuestions = (groupKey: string | null, anchor: HTMLElement) => {
+    setActiveQuestionGroup(groupKey);
+
+    if (isEmbedded) {
+      const card = anchor.closest(".ja-question-card") as HTMLElement | null;
+      const cardRect = card?.getBoundingClientRect();
+      const anchorRect = anchor.getBoundingClientRect();
+
+      if (cardRect) {
+        setQuestionPopoverPosition({
+          left: anchorRect.left - cardRect.left + anchorRect.width / 2,
+          top: anchorRect.bottom - cardRect.top + 8,
+        });
+      }
+    }
+
+    setQuestionsOpen(true);
+  };
+
   if (loading) {
     return (
       <main className="ja-page ja-loader-page">
@@ -817,7 +842,7 @@ export default function JobAnalysis() {
           )}
 
           {totalQuestionCount > 0 && (
-            <Card>
+            <Card className="ja-question-card">
               <InfoTitle icon={<ManageSearchOutlinedIcon />} title="Screening Questions" />
               <Typography className="ja-question-helper">
                 Use these questions to qualify fit, risk, and domain depth before submission.
@@ -829,10 +854,7 @@ export default function JobAnalysis() {
                     {group.items.length > 0 ? (
                       <button
                         className="ja-question-count-link"
-                        onClick={() => {
-                          setActiveQuestionGroup(group.key);
-                          setQuestionsOpen(true);
-                        }}
+                        onClick={(event) => openQuestions(group.key, event.currentTarget)}
                         type="button"
                       >
                         {group.items.length}
@@ -846,15 +868,18 @@ export default function JobAnalysis() {
               <Button
                 className="ja-question-btn"
                 variant="outlined"
-                onClick={() => {
-                  setActiveQuestionGroup(null);
-                  setQuestionsOpen(true);
-                }}
+                onClick={(event) => openQuestions(null, event.currentTarget)}
               >
                 View All Questions ({totalQuestionCount})
               </Button>
-              {isEmbedded && questionsOpen && (
-                <Box className="ja-embedded-questions-panel">
+              {isEmbedded && questionsOpen && questionPopoverPosition && (
+                <Box
+                  className="ja-embedded-questions-panel"
+                  style={{
+                    left: questionPopoverPosition.left,
+                    top: questionPopoverPosition.top,
+                  }}
+                >
                   <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={1} className="ja-embedded-questions-title">
                     <Typography className="ja-row-value">{activeQuestionTitle}</Typography>
                     <IconButton aria-label="Close screening questions" onClick={() => setQuestionsOpen(false)}>
