@@ -55,6 +55,11 @@ type QuestionGroup = {
   items: string[];
 };
 
+type PopoverPosition = {
+  left: number;
+  top: number;
+};
+
 const emptyArray = <T,>(value?: T[] | null) => (Array.isArray(value) ? value : []);
 
 const compactStringArray = (value?: Array<string | null | undefined> | null) =>
@@ -233,6 +238,7 @@ export default function JobAnalysis() {
   const [isEmbedded, setIsEmbedded] = useState(false);
   const [questionsOpen, setQuestionsOpen] = useState(false);
   const [activeQuestionGroup, setActiveQuestionGroup] = useState<string | null>(null);
+  const [questionPopoverPosition, setQuestionPopoverPosition] = useState<PopoverPosition | null>(null);
 
   useEffect(() => {
     if (!router.isReady) return;
@@ -300,7 +306,9 @@ export default function JobAnalysis() {
     const sendHeight = () => {
       const height = Math.max(
         document.body.scrollHeight,
-        document.documentElement.scrollHeight
+        document.documentElement.scrollHeight,
+        document.body.offsetHeight,
+        document.documentElement.offsetHeight
       );
 
       if (embedded) {
@@ -314,17 +322,25 @@ export default function JobAnalysis() {
       }
     };
 
-    sendHeight();
+    const scheduleHeight = () => {
+      sendHeight();
+      requestAnimationFrame(sendHeight);
+    };
 
-    const timer = setTimeout(sendHeight, 500);
+    scheduleHeight();
 
+    const timers = [100, 300, 700, 1200].map((delay) => setTimeout(sendHeight, delay));
+    const resizeObserver = typeof ResizeObserver !== "undefined" ? new ResizeObserver(scheduleHeight) : null;
+    resizeObserver?.observe(document.body);
+    resizeObserver?.observe(document.documentElement);
     window.addEventListener("resize", sendHeight);
 
     return () => {
-      clearTimeout(timer);
+      timers.forEach(clearTimeout);
+      resizeObserver?.disconnect();
       window.removeEventListener("resize", sendHeight);
     };
-  }, [data]);
+  }, [data, loading, questionsOpen, activeQuestionGroup]);
 
   const view = useMemo(
     () => ({
@@ -564,6 +580,30 @@ export default function JobAnalysis() {
     : "All Screening Questions";
   const totalQuestionCount = visibleQuestionGroups.reduce((total, group) => total + group.items.length, 0);
   const hasClientInfo = view.clientName !== "-" || view.clientIndustry !== "-";
+
+  const openQuestions = (groupKey: string | null, anchor: HTMLElement) => {
+    setActiveQuestionGroup(groupKey);
+
+    if (isEmbedded) {
+      const card = anchor.closest(".ja-question-card") as HTMLElement | null;
+      const cardRect = card?.getBoundingClientRect();
+      const anchorRect = anchor.getBoundingClientRect();
+
+      if (cardRect) {
+        setQuestionPopoverPosition({
+          left: anchorRect.left - cardRect.left + anchorRect.width / 2,
+          top: anchorRect.bottom - cardRect.top + 8,
+        });
+      }
+    }
+
+    setQuestionsOpen(true);
+  };
+
+  const closeQuestions = () => {
+    setQuestionsOpen(false);
+    setQuestionPopoverPosition(null);
+  };
 
   if (loading) {
     return (
@@ -807,7 +847,7 @@ export default function JobAnalysis() {
           )}
 
           {totalQuestionCount > 0 && (
-            <Card>
+            <Card className="ja-question-card">
               <InfoTitle icon={<ManageSearchOutlinedIcon />} title="Screening Questions" />
               <Typography className="ja-question-helper">
                 Use these questions to qualify fit, risk, and domain depth before submission.
@@ -819,10 +859,7 @@ export default function JobAnalysis() {
                     {group.items.length > 0 ? (
                       <button
                         className="ja-question-count-link"
-                        onClick={() => {
-                          setActiveQuestionGroup(group.key);
-                          setQuestionsOpen(true);
-                        }}
+                        onClick={(event) => openQuestions(group.key, event.currentTarget)}
                         type="button"
                       >
                         {group.items.length}
@@ -836,13 +873,27 @@ export default function JobAnalysis() {
               <Button
                 className="ja-question-btn"
                 variant="outlined"
-                onClick={() => {
-                  setActiveQuestionGroup(null);
-                  setQuestionsOpen(true);
-                }}
+                onClick={(event) => openQuestions(null, event.currentTarget)}
               >
                 View All Questions ({totalQuestionCount})
               </Button>
+              {isEmbedded && questionsOpen && questionPopoverPosition && (
+                <Box
+                  className="ja-embedded-questions-panel"
+                  style={{
+                    left: questionPopoverPosition.left,
+                    top: questionPopoverPosition.top,
+                  }}
+                >
+                  <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={1} className="ja-embedded-questions-title">
+                    <Typography className="ja-row-value">{activeQuestionTitle}</Typography>
+                    <IconButton aria-label="Close screening questions" onClick={closeQuestions}>
+                      <CloseOutlinedIcon />
+                    </IconButton>
+                  </Stack>
+                  <QuestionsContent groups={dialogQuestionGroups} />
+                </Box>
+              )}
             </Card>
           )}
 
@@ -921,30 +972,19 @@ export default function JobAnalysis() {
           </Box>
         )}
 
-        <Dialog open={questionsOpen} onClose={() => setQuestionsOpen(false)} fullWidth maxWidth="md">
-          <DialogTitle className="ja-dialog-title">
-            {activeQuestionTitle}
-            <IconButton aria-label="Close screening questions" onClick={() => setQuestionsOpen(false)}>
-              <CloseOutlinedIcon />
-            </IconButton>
-          </DialogTitle>
-          <DialogContent dividers>
-            <Stack spacing={2}>
-              {dialogQuestionGroups.map((group) => (
-                <Box className="ja-question-dialog-group" key={group.key}>
-                  <Typography className="ja-row-value">{group.title}</Typography>
-                  <Stack component="ol" className="ja-question-list" spacing={0.8}>
-                    {group.items.map((question) => (
-                      <Typography component="li" className="ja-body-text" key={question}>
-                        {question}
-                      </Typography>
-                    ))}
-                  </Stack>
-                </Box>
-              ))}
-            </Stack>
-          </DialogContent>
-        </Dialog>
+        {!isEmbedded && (
+          <Dialog open={questionsOpen} onClose={closeQuestions} fullWidth maxWidth="md">
+            <DialogTitle className="ja-dialog-title">
+              {activeQuestionTitle}
+              <IconButton aria-label="Close screening questions" onClick={closeQuestions}>
+                <CloseOutlinedIcon />
+              </IconButton>
+            </DialogTitle>
+            <DialogContent dividers>
+              <QuestionsContent groups={dialogQuestionGroups} />
+            </DialogContent>
+          </Dialog>
+        )}
       </Box>
     </main>
   );
@@ -1019,6 +1059,25 @@ function BooleanSearchCard({ title, value, onCopy }: { title: string; value: str
       </Stack>
       <Typography component="pre">{value}</Typography>
     </Box>
+  );
+}
+
+function QuestionsContent({ groups }: { groups: QuestionGroup[] }) {
+  return (
+    <Stack spacing={2}>
+      {groups.map((group) => (
+        <Box className="ja-question-dialog-group" key={group.key}>
+          <Typography className="ja-row-value">{group.title}</Typography>
+          <Stack component="ol" className="ja-question-list" spacing={0.8}>
+            {group.items.map((question) => (
+              <Typography component="li" className="ja-body-text" key={question}>
+                {question}
+              </Typography>
+            ))}
+          </Stack>
+        </Box>
+      ))}
+    </Stack>
   );
 }
 
