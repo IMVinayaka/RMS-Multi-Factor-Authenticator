@@ -745,19 +745,6 @@ export default function JobAnalysis() {
                 )}
               </Box>
             )}
-            {view.candidateAvoidPoints.length > 0 && (
-              <Box className="ja-warning-panel">
-                <InfoTitle icon={<FlagOutlinedIcon />} title="Candidate Avoid Points" />
-                <Stack spacing={0.8}>
-                  {view.candidateAvoidPoints.map((item) => (
-                    <Stack key={item} direction="row" spacing={0.8} alignItems="flex-start" className="ja-avoid-row">
-                      <CancelOutlinedIcon />
-                      <Typography className="ja-body-text">{item}</Typography>
-                    </Stack>
-                  ))}
-                </Stack>
-              </Box>
-            )}
           </Card>
         </Box>
 
@@ -946,7 +933,7 @@ export default function JobAnalysis() {
           </Card> */}
         </Box>
 
-        {(view.keyResponsibilities.length > 0 || view.hiddenExpectations.length > 0) && (
+        {(view.keyResponsibilities.length > 0 || view.hiddenExpectations.length > 0 || view.candidateAvoidPoints.length > 0) && (
           <Box className="ja-grid ja-bottom-full-grid">
             {view.keyResponsibilities.length > 0 && (
               <Card className="ja-overview-style-card">
@@ -973,6 +960,20 @@ export default function JobAnalysis() {
                         <Typography className="ja-body-text"><strong>{item.expectation}</strong></Typography>
                         {item.reason !== "-" && <Typography className="ja-muted">{item.reason}</Typography>}
                       </Box>
+                    </Stack>
+                  ))}
+                </Stack>
+              </Card>
+            )}
+
+            {view.candidateAvoidPoints.length > 0 && (
+              <Card className="ja-warning-card">
+                <InfoTitle icon={<FlagOutlinedIcon />} title="Candidate Avoid Points" />
+                <Stack spacing={0.8}>
+                  {view.candidateAvoidPoints.map((item) => (
+                    <Stack key={item} direction="row" spacing={0.8} alignItems="flex-start" className="ja-avoid-row">
+                      <CancelOutlinedIcon />
+                      <Typography className="ja-body-text">{item}</Typography>
                     </Stack>
                   ))}
                 </Stack>
