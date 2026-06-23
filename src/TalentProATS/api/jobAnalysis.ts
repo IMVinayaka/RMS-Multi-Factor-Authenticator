@@ -22,6 +22,19 @@ export type BooleanSearch = {
   broadMustHaveBoolean?: string | null;
 };
 
+export type ScreeningQuestionsInfo = {
+  technicalQuestions?: string[];
+  TechnicalQuestions?: string[];
+  experienceQuestions?: string[];
+  ExperienceQuestions?: string[];
+  domainQuestions?: string[];
+  DomainQuestions?: string[];
+  riskQuestions?: string[];
+  RiskQuestions?: string[];
+  softSkillQuestions?: string[];
+  SoftSkillQuestions?: string[];
+};
+
 export type JobAnalysisResponse = {
   jobId: number | string;
   jobInfo: {
@@ -106,12 +119,9 @@ export type JobAnalysisResponse = {
     expectation?: string | null;
     reason?: string | null;
   }>;
-  screeningQuestions?: {
-    technicalQuestions?: string[];
-    experienceQuestions?: string[];
-    domainQuestions?: string[];
-    riskQuestions?: string[];
-  } | null;
+  screeningQuestions?: ScreeningQuestionsInfo | null;
+  screeningQuestionsInfo?: ScreeningQuestionsInfo | null;
+  ScreeningQuestionsInfo?: ScreeningQuestionsInfo | null;
 };
 
 const JD_ANALYSE_SERVICE_URL =
