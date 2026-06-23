@@ -159,28 +159,37 @@ const getBooleanSearchCards = (data?: JobAnalysisResponse | null) => [
   },
 ].filter((item) => item.value !== "-");
 
-const getQuestionGroups = (data?: JobAnalysisResponse | null): QuestionGroup[] => [
-  {
-    key: "technical",
-    title: "Technical Questions",
-    items: compactStringArray(data?.screeningQuestions?.technicalQuestions),
-  },
-  {
-    key: "experience",
-    title: "Experience Questions",
-    items: compactStringArray(data?.screeningQuestions?.experienceQuestions),
-  },
-  {
-    key: "domain",
-    title: "Domain Questions",
-    items: compactStringArray(data?.screeningQuestions?.domainQuestions),
-  },
-  {
-    key: "risk",
-    title: "Risk Questions",
-    items: compactStringArray(data?.screeningQuestions?.riskQuestions),
-  },
-];
+const getQuestionGroups = (data?: JobAnalysisResponse | null): QuestionGroup[] => {
+  const questions = data?.ScreeningQuestionsInfo || data?.screeningQuestionsInfo || data?.screeningQuestions;
+
+  return [
+    {
+      key: "technical",
+      title: "Technical Questions",
+      items: compactStringArray(questions?.TechnicalQuestions || questions?.technicalQuestions),
+    },
+    {
+      key: "experience",
+      title: "Experience Questions",
+      items: compactStringArray(questions?.ExperienceQuestions || questions?.experienceQuestions),
+    },
+    {
+      key: "domain",
+      title: "Domain Questions",
+      items: compactStringArray(questions?.DomainQuestions || questions?.domainQuestions),
+    },
+    {
+      key: "risk",
+      title: "Risk Questions",
+      items: compactStringArray(questions?.RiskQuestions || questions?.riskQuestions),
+    },
+    {
+      key: "softSkill",
+      title: "Soft Skill Questions",
+      items: compactStringArray(questions?.SoftSkillQuestions || questions?.softSkillQuestions),
+    },
+  ];
+};
 
 const maskRequest = (request: JobAnalysisRequest | null) => {
   if (!request) return null;
@@ -689,7 +698,7 @@ export default function JobAnalysis() {
               {view.salaryDisplay !== "-" && <SummaryBadge label="Salary" value={view.salaryDisplay} />}
               {view.employment !== "-" && <SummaryBadge label="Employment" value={view.employment} />}
               {view.level !== "-" && <SummaryBadge label="Level" value={view.level} />}
-              {view.talentMarketDifficulty !== "-" && <SummaryBadge label="Talent Availability" value={view.talentMarketDifficulty} tone="orange" />}
+              {/*{view.talentMarketDifficulty !== "-" && <SummaryBadge label="Talent Availability" value={view.talentMarketDifficulty} tone="orange" />}*/}
             </Box>
 
             <Box className="ja-info-grid">
