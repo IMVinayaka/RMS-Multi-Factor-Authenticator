@@ -601,7 +601,7 @@ export default function JobAnalysis() {
 
       if (cardRect) {
         setQuestionPopoverPosition({
-          left: anchorRect.left - cardRect.left + anchorRect.width / 2,
+          left: window.innerWidth / 2 - cardRect.left,
           top: anchorRect.bottom - cardRect.top + 8,
         });
       }
@@ -759,8 +759,8 @@ export default function JobAnalysis() {
                   {view.softSkills.length > 0 && <SkillGroup title="Soft Skills" tone="purple" items={view.softSkills} />}
                   {view.prioritySkills.length > 0 && (
                     <Box className="ja-skill-group">
-                      <Typography className="ja-label">Key Skills by Priority</Typography>
-                      <Stack spacing={1.1}>
+                      <Typography className="ja-label" sx={{ mb: 1 }}>Key Skills by Priority</Typography>
+                      <Stack spacing={1.1} >
                         {view.prioritySkills.map((skill, index) => (
                           <Stack key={skill} direction="row" alignItems="center" spacing={1}>
                             <span className="ja-rank">{index + 1}</span>
