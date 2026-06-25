@@ -868,6 +868,24 @@
   font-weight: 650 !important;
 }
 
+.ja-dialog-content-compact {
+  position: relative;
+  padding-top: 14px !important;
+}
+
+.ja-dialog-close-floating {
+  position: absolute !important;
+  top: 8px;
+  right: 8px;
+  width: 30px;
+  height: 30px;
+  z-index: 1;
+}
+
+.ja-dialog-content-compact .ja-question-dialog-group:first-child > .ja-row-value {
+  padding-right: 34px;
+}
+
 .ja-embedded-questions-overlay {
   position: absolute;
   width: min(620px, calc(100vw - 44px));
@@ -908,6 +926,19 @@
 
 .ja-embedded-questions-title svg {
   font-size: 17px;
+}
+
+.ja-embedded-questions-close {
+  position: absolute !important;
+  top: 8px;
+  right: 8px;
+  width: 30px;
+  height: 30px;
+  z-index: 1;
+}
+
+.ja-embedded-questions-overlay .ja-question-dialog-group:first-child > .ja-row-value {
+  padding-right: 34px;
 }
 
 .ja-question-list {
