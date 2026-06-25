@@ -55,11 +55,6 @@ type QuestionGroup = {
   items: string[];
 };
 
-type PopoverPosition = {
-  left: number;
-  top: number;
-};
-
 const emptyArray = <T,>(value?: T[] | null) => (Array.isArray(value) ? value : []);
 
 const compactStringArray = (value?: Array<string | null | undefined> | null) =>
@@ -146,17 +141,18 @@ const getBooleanSearchString = (data?: JobAnalysisResponse | null) =>
 
 const getBooleanSearchCards = (data?: JobAnalysisResponse | null) => [
   {
-    title: "Best Match Search",
-    value: valueOrDash(data?.booleanSearch?.eliteTightBoolean || data?.searchOptimization?.booleanSearchString),
+    title: "Expanded Search",
+    value: valueOrDash(data?.booleanSearch?.broadMustHaveBoolean),
   },
   {
     title: "Balanced Search",
     value: valueOrDash(data?.booleanSearch?.corePrecisionBoolean),
   },
   {
-    title: "Expanded Talent Search",
-    value: valueOrDash(data?.booleanSearch?.broadMustHaveBoolean),
+    title: "Targeted Search",
+    value: valueOrDash(data?.booleanSearch?.eliteTightBoolean || data?.searchOptimization?.booleanSearchString),
   },
+  
 ].filter((item) => item.value !== "-");
 
 const getQuestionGroups = (data?: JobAnalysisResponse | null): QuestionGroup[] => {
@@ -247,7 +243,6 @@ export default function JobAnalysis() {
   const [isEmbedded, setIsEmbedded] = useState(false);
   const [questionsOpen, setQuestionsOpen] = useState(false);
   const [activeQuestionGroup, setActiveQuestionGroup] = useState<string | null>(null);
-  const [questionPopoverPosition, setQuestionPopoverPosition] = useState<PopoverPosition | null>(null);
 
   useEffect(() => {
     if (!router.isReady) return;
@@ -590,28 +585,13 @@ export default function JobAnalysis() {
   const totalQuestionCount = visibleQuestionGroups.reduce((total, group) => total + group.items.length, 0);
   const hasClientInfo = view.clientName !== "-" || view.clientIndustry !== "-";
 
-  const openQuestions = (groupKey: string | null, anchor: HTMLElement) => {
+  const openQuestions = (groupKey: string | null) => {
     setActiveQuestionGroup(groupKey);
-
-    if (isEmbedded) {
-      const card = anchor.closest(".ja-question-card") as HTMLElement | null;
-      const cardRect = card?.getBoundingClientRect();
-      const anchorRect = anchor.getBoundingClientRect();
-
-      if (cardRect) {
-        setQuestionPopoverPosition({
-          left: anchorRect.left - cardRect.left + anchorRect.width / 2,
-          top: anchorRect.bottom - cardRect.top + 8,
-        });
-      }
-    }
-
     setQuestionsOpen(true);
   };
 
   const closeQuestions = () => {
     setQuestionsOpen(false);
-    setQuestionPopoverPosition(null);
   };
 
   if (loading) {
@@ -855,7 +835,7 @@ export default function JobAnalysis() {
                     {group.items.length > 0 ? (
                       <button
                         className="ja-question-count-link"
-                        onClick={(event) => openQuestions(group.key, event.currentTarget)}
+                        onClick={() => openQuestions(group.key)}
                         type="button"
                       >
                         {group.items.length}
@@ -869,18 +849,12 @@ export default function JobAnalysis() {
               <Button
                 className="ja-question-btn"
                 variant="outlined"
-                onClick={(event) => openQuestions(null, event.currentTarget)}
+                onClick={() => openQuestions(null)}
               >
                 View All Questions ({totalQuestionCount})
               </Button>
-              {isEmbedded && questionsOpen && questionPopoverPosition && (
-                <Box
-                  className="ja-embedded-questions-panel"
-                  style={{
-                    left: questionPopoverPosition.left,
-                    top: questionPopoverPosition.top,
-                  }}
-                >
+              {isEmbedded && questionsOpen && (
+                <Box className="ja-embedded-questions-panel">
                   <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={1} className="ja-embedded-questions-title">
                     <Typography className="ja-row-value">{activeQuestionTitle}</Typography>
                     <IconButton aria-label="Close screening questions" onClick={closeQuestions}>
@@ -1078,11 +1052,12 @@ function QuestionsContent({ groups }: { groups: QuestionGroup[] }) {
       {groups.map((group) => (
         <Box className="ja-question-dialog-group" key={group.key}>
           <Typography className="ja-row-value">{group.title}</Typography>
-          <Stack component="ol" className="ja-question-list" spacing={0.8}>
-            {group.items.map((question) => (
-              <Typography component="li" className="ja-body-text" key={question}>
-                {question}
-              </Typography>
+          <Stack className="ja-question-list" spacing={0.8}>
+            {group.items.map((question, index) => (
+              <Stack direction="row" spacing={1} alignItems="flex-start" className="ja-question-row" key={question}>
+                <span className="ja-question-number">{index + 1}</span>
+                <Typography className="ja-body-text">{question}</Typography>
+              </Stack>
             ))}
           </Stack>
         </Box>
