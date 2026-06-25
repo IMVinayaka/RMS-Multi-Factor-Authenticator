@@ -868,16 +868,19 @@
   font-weight: 650 !important;
 }
 
-.ja-embedded-questions-panel {
-  width: 100%;
-  max-height: 420px;
+.ja-embedded-questions-overlay {
+  position: fixed;
+  top: 14px;
+  left: 14px;
+  right: 14px;
+  z-index: 1000;
+  max-height: min(72vh, 560px);
   overflow: auto;
-  margin-top: 12px;
-  padding: 10px;
+  padding: 12px;
   border: 1px solid #bfd4ff;
-  border-radius: 8px;
+  border-radius: 10px;
   background: linear-gradient(180deg, #ffffff 0%, #f5f9ff 100%);
-  box-shadow: 0 16px 38px rgba(20, 35, 65, 0.18);
+  box-shadow: 0 20px 48px rgba(20, 35, 65, 0.22);
 }
 
 .ja-embedded-questions-title {

@@ -853,17 +853,6 @@ export default function JobAnalysis() {
               >
                 View All Questions ({totalQuestionCount})
               </Button>
-              {isEmbedded && questionsOpen && (
-                <Box className="ja-embedded-questions-panel">
-                  <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={1} className="ja-embedded-questions-title">
-                    <Typography className="ja-row-value">{activeQuestionTitle}</Typography>
-                    <IconButton aria-label="Close screening questions" onClick={closeQuestions}>
-                      <CloseOutlinedIcon />
-                    </IconButton>
-                  </Stack>
-                  <QuestionsContent groups={dialogQuestionGroups} />
-                </Box>
-              )}
             </Card>
           )}
 
@@ -968,6 +957,17 @@ export default function JobAnalysis() {
               <QuestionsContent groups={dialogQuestionGroups} />
             </DialogContent>
           </Dialog>
+        )}
+        {isEmbedded && questionsOpen && (
+          <Box className="ja-embedded-questions-overlay">
+            <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={1} className="ja-embedded-questions-title">
+              <Typography className="ja-row-value">{activeQuestionTitle}</Typography>
+              <IconButton aria-label="Close screening questions" onClick={closeQuestions}>
+                <CloseOutlinedIcon />
+              </IconButton>
+            </Stack>
+            <QuestionsContent groups={dialogQuestionGroups} />
+          </Box>
         )}
       </Box>
     </main>
