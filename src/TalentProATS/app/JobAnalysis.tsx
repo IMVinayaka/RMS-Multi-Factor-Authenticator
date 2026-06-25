@@ -55,6 +55,11 @@ type QuestionGroup = {
   items: string[];
 };
 
+type PopoverPosition = {
+  left: number;
+  top: number;
+};
+
 const emptyArray = <T,>(value?: T[] | null) => (Array.isArray(value) ? value : []);
 
 const compactStringArray = (value?: Array<string | null | undefined> | null) =>
@@ -243,6 +248,7 @@ export default function JobAnalysis() {
   const [isEmbedded, setIsEmbedded] = useState(false);
   const [questionsOpen, setQuestionsOpen] = useState(false);
   const [activeQuestionGroup, setActiveQuestionGroup] = useState<string | null>(null);
+  const [questionPopoverPosition, setQuestionPopoverPosition] = useState<PopoverPosition | null>(null);
 
   useEffect(() => {
     if (!router.isReady) return;
@@ -585,13 +591,28 @@ export default function JobAnalysis() {
   const totalQuestionCount = visibleQuestionGroups.reduce((total, group) => total + group.items.length, 0);
   const hasClientInfo = view.clientName !== "-" || view.clientIndustry !== "-";
 
-  const openQuestions = (groupKey: string | null) => {
+  const openQuestions = (groupKey: string | null, anchor?: HTMLElement) => {
     setActiveQuestionGroup(groupKey);
+
+    if (isEmbedded && anchor) {
+      const card = anchor.closest(".ja-question-card") as HTMLElement | null;
+      const cardRect = card?.getBoundingClientRect();
+      const anchorRect = anchor.getBoundingClientRect();
+
+      if (cardRect) {
+        setQuestionPopoverPosition({
+          left: anchorRect.left - cardRect.left + anchorRect.width / 2,
+          top: anchorRect.bottom - cardRect.top + 8,
+        });
+      }
+    }
+
     setQuestionsOpen(true);
   };
 
   const closeQuestions = () => {
     setQuestionsOpen(false);
+    setQuestionPopoverPosition(null);
   };
 
   if (loading) {
@@ -835,7 +856,7 @@ export default function JobAnalysis() {
                     {group.items.length > 0 ? (
                       <button
                         className="ja-question-count-link"
-                        onClick={() => openQuestions(group.key)}
+                        onClick={(event) => openQuestions(group.key, event.currentTarget)}
                         type="button"
                       >
                         {group.items.length}
@@ -849,10 +870,27 @@ export default function JobAnalysis() {
               <Button
                 className="ja-question-btn"
                 variant="outlined"
-                onClick={() => openQuestions(null)}
+                onClick={(event) => openQuestions(null, event.currentTarget)}
               >
                 View All Questions ({totalQuestionCount})
               </Button>
+              {isEmbedded && questionsOpen && questionPopoverPosition && (
+                <Box
+                  className="ja-embedded-questions-overlay"
+                  style={{
+                    left: questionPopoverPosition.left,
+                    top: questionPopoverPosition.top,
+                  }}
+                >
+                  <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={1} className="ja-embedded-questions-title">
+                    <Typography className="ja-row-value">{activeQuestionTitle}</Typography>
+                    <IconButton aria-label="Close screening questions" onClick={closeQuestions}>
+                      <CloseOutlinedIcon />
+                    </IconButton>
+                  </Stack>
+                  <QuestionsContent groups={dialogQuestionGroups} />
+                </Box>
+              )}
             </Card>
           )}
 
@@ -957,17 +995,6 @@ export default function JobAnalysis() {
               <QuestionsContent groups={dialogQuestionGroups} />
             </DialogContent>
           </Dialog>
-        )}
-        {isEmbedded && questionsOpen && (
-          <Box className="ja-embedded-questions-overlay">
-            <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={1} className="ja-embedded-questions-title">
-              <Typography className="ja-row-value">{activeQuestionTitle}</Typography>
-              <IconButton aria-label="Close screening questions" onClick={closeQuestions}>
-                <CloseOutlinedIcon />
-              </IconButton>
-            </Stack>
-            <QuestionsContent groups={dialogQuestionGroups} />
-          </Box>
         )}
       </Box>
     </main>
