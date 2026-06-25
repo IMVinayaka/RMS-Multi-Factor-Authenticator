@@ -882,12 +882,18 @@ export default function JobAnalysis() {
                     top: questionPopoverPosition.top,
                   }}
                 >
-                  <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={1} className="ja-embedded-questions-title">
-                    <Typography className="ja-row-value">{activeQuestionTitle}</Typography>
-                    <IconButton aria-label="Close screening questions" onClick={closeQuestions}>
+                  {activeQuestionGroup ? (
+                    <IconButton className="ja-embedded-questions-close" aria-label="Close screening questions" onClick={closeQuestions}>
                       <CloseOutlinedIcon />
                     </IconButton>
-                  </Stack>
+                  ) : (
+                    <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={1} className="ja-embedded-questions-title">
+                      <Typography className="ja-row-value">{activeQuestionTitle}</Typography>
+                      <IconButton aria-label="Close screening questions" onClick={closeQuestions}>
+                        <CloseOutlinedIcon />
+                      </IconButton>
+                    </Stack>
+                  )}
                   <QuestionsContent groups={dialogQuestionGroups} />
                 </Box>
               )}
@@ -985,13 +991,20 @@ export default function JobAnalysis() {
 
         {!isEmbedded && (
           <Dialog open={questionsOpen} onClose={closeQuestions} fullWidth maxWidth="md">
-            <DialogTitle className="ja-dialog-title">
-              {activeQuestionTitle}
-              <IconButton aria-label="Close screening questions" onClick={closeQuestions}>
-                <CloseOutlinedIcon />
-              </IconButton>
-            </DialogTitle>
-            <DialogContent dividers>
+            {!activeQuestionGroup && (
+              <DialogTitle className="ja-dialog-title">
+                {activeQuestionTitle}
+                <IconButton aria-label="Close screening questions" onClick={closeQuestions}>
+                  <CloseOutlinedIcon />
+                </IconButton>
+              </DialogTitle>
+            )}
+            <DialogContent dividers className={activeQuestionGroup ? "ja-dialog-content-compact" : ""}>
+              {activeQuestionGroup && (
+                <IconButton className="ja-dialog-close-floating" aria-label="Close screening questions" onClick={closeQuestions}>
+                  <CloseOutlinedIcon />
+                </IconButton>
+              )}
               <QuestionsContent groups={dialogQuestionGroups} />
             </DialogContent>
           </Dialog>
