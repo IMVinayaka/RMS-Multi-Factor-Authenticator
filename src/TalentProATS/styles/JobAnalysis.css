@@ -680,6 +680,34 @@
   color: #25375d;
 }
 
+.ja-skill-block-tooltip-target {
+  cursor: help;
+  transition:
+    background-color 140ms ease,
+    border-color 140ms ease,
+    box-shadow 140ms ease,
+    transform 140ms ease;
+}
+
+.ja-skill-block-tooltip-target:hover,
+.ja-skill-block-tooltip-target:focus-visible {
+  transform: translateY(-1px);
+  box-shadow: 0 0 0 3px rgba(20, 94, 232, 0.08);
+  outline: none;
+}
+
+.ja-skill-block-green.ja-skill-block-tooltip-target:hover,
+.ja-skill-block-green.ja-skill-block-tooltip-target:focus-visible {
+  border-color: #78cea0;
+  background: #dff5e8;
+}
+
+.ja-skill-block-orange.ja-skill-block-tooltip-target:hover,
+.ja-skill-block-orange.ja-skill-block-tooltip-target:focus-visible {
+  border-color: #ffc074;
+  background: #ffecd7;
+}
+
 .ja-pill {
   height: 25px !important;
   border-radius: 6px !important;

@@ -4,6 +4,8 @@ export type JobAnalysisRequest = {
   jobId: number | string;
   jobInstance: string;
   clientReference: string;
+  userId?: number | string;
+  userInstance?: string;
 };
 
 export type SkillValue =

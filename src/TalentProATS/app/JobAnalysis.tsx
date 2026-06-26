@@ -200,6 +200,8 @@ const maskRequest = (request: JobAnalysisRequest | null) => {
     jobId: request.jobId,
     jobInstance: request.jobInstance,
     clientReference: request.clientReference ? "********" : "",
+    userId: request.userId ?? 40,
+    userInstance: request.userInstance ?? "RADIANT",
   };
 };
 
@@ -1159,7 +1161,7 @@ function SkillGroup({
       </Stack>
       <Box className="ja-skill-block-grid">
         {items.map((item) => (
-          <SkillBlock key={`${item.label}-${item.experience || ""}`} item={item} tone={tone} />
+          <SkillBlock key={`${item.label}-${item.experience || ""}`} item={item} tone={tone} highlightOnTooltip={showDetailsAction} />
         ))}
       </Box>
       {isEmbedded && detailsOpen && detailsPopoverPosition && (
@@ -1223,9 +1225,10 @@ function SkillDetailsContent({ items, tone }: { items: SkillDisplayItem[]; tone:
   );
 }
 
-function SkillBlock({ item, tone }: { item: SkillDisplayItem; tone: PillTone }) {
+function SkillBlock({ item, tone, highlightOnTooltip = false }: { item: SkillDisplayItem; tone: PillTone; highlightOnTooltip?: boolean }) {
   const label = item.experience ? `${item.label} (${item.experience})` : item.label;
   const hasTooltip = Boolean(item.tooltip || item.synonyms?.length);
+  const highlightClass = highlightOnTooltip && hasTooltip ? "ja-skill-block-tooltip-target" : "";
   const tooltipTitle = hasTooltip ? (
     <Box className="ja-skill-tooltip">
       {item.tooltip && <Typography>{item.tooltip}</Typography>}
@@ -1242,7 +1245,7 @@ function SkillBlock({ item, tone }: { item: SkillDisplayItem; tone: PillTone }) 
 
   return (
     <Tooltip title={tooltipTitle} arrow placement="top" disableHoverListener={!hasTooltip}>
-      <span className={`ja-skill-block ja-skill-block-${tone}`}>
+      <span className={`ja-skill-block ja-skill-block-${tone} ${highlightClass}`}>
         {label}
       </span>
     </Tooltip>
