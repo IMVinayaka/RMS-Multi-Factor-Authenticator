@@ -596,6 +596,27 @@
   border-left: 1px solid #dfe7f2;
 }
 
+.ja-skill-group-header {
+  min-height: 30px;
+}
+
+.ja-skill-group-header .ja-label {
+  margin-bottom: 0 !important;
+}
+
+.ja-skill-details-btn {
+  width: 28px;
+  height: 28px;
+  border: 1px solid #d0dae9 !important;
+  border-radius: 7px !important;
+  color: #0d5fec !important;
+  background: #ffffff !important;
+}
+
+.ja-skill-details-btn svg {
+  font-size: 16px;
+}
+
 .ja-skill-block-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(138px, 1fr));
@@ -723,6 +744,56 @@
 .ja-skill-tooltip .ja-skill-tooltip-heading {
   font-weight: 800 !important;
   margin-bottom: 3px !important;
+}
+
+.ja-skill-detail-card {
+  display: grid;
+  gap: 9px;
+  padding: 10px;
+  border: 1px solid #dfe7f2;
+  border-radius: 8px;
+  background: #f8fbff;
+}
+
+.ja-skill-detail-card .ja-skill-block {
+  width: fit-content;
+  max-width: 100%;
+}
+
+.ja-skill-detail-text {
+  color: #25375d;
+  font-size: 12px !important;
+  line-height: 1.45 !important;
+  font-weight: 500 !important;
+}
+
+.ja-skill-detail-synonyms {
+  display: grid;
+  gap: 5px;
+}
+
+.ja-skill-synonym-chip {
+  height: 24px !important;
+  border: 1px solid #d0dae9 !important;
+  border-radius: 6px !important;
+  background: #ffffff !important;
+  color: #25375d !important;
+  font-size: 11px !important;
+  font-weight: 550 !important;
+}
+
+.ja-embedded-skill-details-overlay {
+  position: absolute;
+  width: min(620px, calc(100vw - 44px));
+  max-height: 420px;
+  overflow: auto;
+  transform: translateX(-50%);
+  z-index: 20;
+  padding: 10px;
+  border: 1px solid #bfd4ff;
+  border-radius: 8px;
+  background: linear-gradient(180deg, #ffffff 0%, #f5f9ff 100%);
+  box-shadow: 0 16px 38px rgba(20, 35, 65, 0.18);
 }
 
 .ja-boolean-card,

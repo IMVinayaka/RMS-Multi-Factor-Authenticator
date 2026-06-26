@@ -25,6 +25,7 @@ import CorporateFareOutlinedIcon from "@mui/icons-material/CorporateFareOutlined
 import ExpandMoreOutlinedIcon from "@mui/icons-material/ExpandMoreOutlined";
 import FileDownloadOutlinedIcon from "@mui/icons-material/FileDownloadOutlined";
 import FlagOutlinedIcon from "@mui/icons-material/FlagOutlined";
+import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import LocationOnOutlinedIcon from "@mui/icons-material/LocationOnOutlined";
 import LocalOfferOutlinedIcon from "@mui/icons-material/LocalOfferOutlined";
 import ManageSearchOutlinedIcon from "@mui/icons-material/ManageSearchOutlined";
@@ -146,7 +147,7 @@ const getBooleanSearchString = (data?: JobAnalysisResponse | null) =>
 
 const getBooleanSearchCards = (data?: JobAnalysisResponse | null) => [
   {
-    title: "Expanded Search",
+    title: "Targeted Search",
     value: valueOrDash(data?.booleanSearch?.broadMustHaveBoolean),
   },
   {
@@ -154,7 +155,7 @@ const getBooleanSearchCards = (data?: JobAnalysisResponse | null) => [
     value: valueOrDash(data?.booleanSearch?.corePrecisionBoolean),
   },
   {
-    title: "Targeted Search",
+    title: "Expanded Search",
     value: valueOrDash(data?.booleanSearch?.eliteTightBoolean || data?.searchOptimization?.booleanSearchString),
   },
   
@@ -754,8 +755,8 @@ export default function JobAnalysis() {
             <Box className="ja-four-grid">
               <Section className="ja-wide-section" icon={<PsychologyOutlinedIcon />} title="Skills">
                 <Box className="ja-skill-grid">
-                  {view.mandatorySkills.length > 0 && <SkillGroup title="Must Have" tone="green" items={view.mandatorySkills} />}
-                  {view.preferredSkills.length > 0 && <SkillGroup title="Nice To Have" tone="orange" items={view.preferredSkills} />}
+                  {view.mandatorySkills.length > 0 && <SkillGroup title="Must Have" tone="green" items={view.mandatorySkills} showDetailsAction isEmbedded={isEmbedded} />}
+                  {view.preferredSkills.length > 0 && <SkillGroup title="Nice To Have" tone="orange" items={view.preferredSkills} showDetailsAction isEmbedded={isEmbedded} />}
                   {view.softSkills.length > 0 && <SkillGroup title="Soft Skills" tone="purple" items={view.softSkills} />}
                   {view.prioritySkills.length > 0 && (
                     <Box className="ja-skill-group">
@@ -1106,16 +1107,119 @@ function QuestionsContent({ groups }: { groups: QuestionGroup[] }) {
   );
 }
 
-function SkillGroup({ title, items, tone }: { title: string; items: SkillDisplayItem[]; tone: PillTone }) {
+function SkillGroup({
+  title,
+  items,
+  tone,
+  showDetailsAction = false,
+  isEmbedded = false,
+}: {
+  title: string;
+  items: SkillDisplayItem[];
+  tone: PillTone;
+  showDetailsAction?: boolean;
+  isEmbedded?: boolean;
+}) {
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [detailsPopoverPosition, setDetailsPopoverPosition] = useState<PopoverPosition | null>(null);
+
+  const openDetails = (anchor: HTMLElement) => {
+    if (isEmbedded) {
+      const group = anchor.closest(".ja-skill-group") as HTMLElement | null;
+      const groupRect = group?.getBoundingClientRect();
+      const anchorRect = anchor.getBoundingClientRect();
+
+      if (groupRect) {
+        setDetailsPopoverPosition({
+          left: window.innerWidth / 2 - groupRect.left,
+          top: anchorRect.bottom - groupRect.top + 8,
+        });
+      }
+    }
+
+    setDetailsOpen(true);
+  };
+
+  const closeDetails = () => {
+    setDetailsOpen(false);
+    setDetailsPopoverPosition(null);
+  };
+
   return (
     <Box className="ja-skill-group">
-      <Typography className="ja-label">{title}</Typography>
+      <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={1} className="ja-skill-group-header">
+        <Typography className="ja-label">{title}</Typography>
+        {showDetailsAction && (
+          <Tooltip title={`View ${title} skill details`} arrow placement="top">
+            <IconButton className="ja-skill-details-btn" aria-label={`View ${title} skill details`} onClick={(event) => openDetails(event.currentTarget)}>
+              <InfoOutlinedIcon />
+            </IconButton>
+          </Tooltip>
+        )}
+      </Stack>
       <Box className="ja-skill-block-grid">
         {items.map((item) => (
           <SkillBlock key={`${item.label}-${item.experience || ""}`} item={item} tone={tone} />
         ))}
       </Box>
+      {isEmbedded && detailsOpen && detailsPopoverPosition && (
+        <Box
+          className="ja-embedded-skill-details-overlay"
+          style={{
+            left: detailsPopoverPosition.left,
+            top: detailsPopoverPosition.top,
+          }}
+        >
+          <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={1} className="ja-embedded-questions-title">
+            <Typography className="ja-row-value">{title} Skill Details</Typography>
+            <IconButton aria-label={`Close ${title} skill details`} onClick={closeDetails}>
+              <CloseOutlinedIcon />
+            </IconButton>
+          </Stack>
+          <SkillDetailsContent items={items} tone={tone} />
+        </Box>
+      )}
+      {!isEmbedded && (
+        <Dialog open={detailsOpen} onClose={closeDetails} fullWidth maxWidth="md">
+          <DialogTitle className="ja-dialog-title">
+            {title} Skill Details
+            <IconButton aria-label={`Close ${title} skill details`} onClick={closeDetails}>
+              <CloseOutlinedIcon />
+            </IconButton>
+          </DialogTitle>
+          <DialogContent dividers>
+            <SkillDetailsContent items={items} tone={tone} />
+          </DialogContent>
+        </Dialog>
+      )}
     </Box>
+  );
+}
+
+function SkillDetailsContent({ items, tone }: { items: SkillDisplayItem[]; tone: PillTone }) {
+  return (
+    <Stack spacing={1}>
+      {items.map((item) => (
+        <Box className="ja-skill-detail-card" key={`${item.label}-${item.experience || ""}`}>
+          <Stack direction="row" alignItems="center" spacing={1} flexWrap="wrap" useFlexGap>
+            <span className={`ja-skill-block ja-skill-block-${tone}`}>{item.experience ? `${item.label} (${item.experience})` : item.label}</span>
+          </Stack>
+          <Typography className="ja-skill-detail-text">{item.tooltip || "No explanation available."}</Typography>
+          <Box className="ja-skill-detail-synonyms">
+            <Typography className="ja-skill-tooltip-heading">Common resume terms</Typography>
+            {item.synonyms?.length ? (
+              <Stack direction="row" gap={0.7} flexWrap="wrap">
+                {item.synonyms.map((synonym) => (
+                  <Chip key={synonym} size="small" className="ja-skill-synonym-chip" label={synonym} />
+                ))}
+              </Stack>
+            ) : (
+              <Typography className="ja-muted">No synonyms available.</Typography>
+            )}
+          </Box>
+        </Box>
+      ))}
+    </Stack>
   );
 }
 
