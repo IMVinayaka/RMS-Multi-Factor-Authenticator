@@ -25,12 +25,14 @@ import CorporateFareOutlinedIcon from "@mui/icons-material/CorporateFareOutlined
 import ExpandMoreOutlinedIcon from "@mui/icons-material/ExpandMoreOutlined";
 import FileDownloadOutlinedIcon from "@mui/icons-material/FileDownloadOutlined";
 import FlagOutlinedIcon from "@mui/icons-material/FlagOutlined";
+import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import LocationOnOutlinedIcon from "@mui/icons-material/LocationOnOutlined";
 import LocalOfferOutlinedIcon from "@mui/icons-material/LocalOfferOutlined";
 import ManageSearchOutlinedIcon from "@mui/icons-material/ManageSearchOutlined";
 import PersonOutlinedIcon from "@mui/icons-material/PersonOutlined";
 import PsychologyOutlinedIcon from "@mui/icons-material/PsychologyOutlined";
 import SchoolOutlinedIcon from "@mui/icons-material/SchoolOutlined";
+import SearchOutlinedIcon from "@mui/icons-material/SearchOutlined";
 import TimelineOutlinedIcon from "@mui/icons-material/TimelineOutlined";
 import TrendingUpOutlinedIcon from "@mui/icons-material/TrendingUpOutlined";
 import LightbulbOutlinedIcon from "@mui/icons-material/LightbulbOutlined";
@@ -54,6 +56,8 @@ type QuestionGroup = {
   title: string;
   items: string[];
 };
+
+type BooleanSearchType = "Targeted" | "Balanced" | "Expanded";
 
 type PopoverPosition = {
   left: number;
@@ -146,15 +150,18 @@ const getBooleanSearchString = (data?: JobAnalysisResponse | null) =>
 
 const getBooleanSearchCards = (data?: JobAnalysisResponse | null) => [
   {
-    title: "Expanded Search",
+    title: "Targeted Search",
+    searchType: "Targeted" as const,
     value: valueOrDash(data?.booleanSearch?.broadMustHaveBoolean),
   },
   {
     title: "Balanced Search",
+    searchType: "Balanced" as const,
     value: valueOrDash(data?.booleanSearch?.corePrecisionBoolean),
   },
   {
-    title: "Targeted Search",
+    title: "Expanded Search",
+    searchType: "Expanded" as const,
     value: valueOrDash(data?.booleanSearch?.eliteTightBoolean || data?.searchOptimization?.booleanSearchString),
   },
   
@@ -199,6 +206,8 @@ const maskRequest = (request: JobAnalysisRequest | null) => {
     jobId: request.jobId,
     jobInstance: request.jobInstance,
     clientReference: request.clientReference ? "********" : "",
+    userId: request.userId ?? 40,
+    userInstance: request.userInstance ?? "RADIANT",
   };
 };
 
@@ -210,6 +219,32 @@ const getQueryParam = (query: Record<string, string | string[] | undefined>, ...
   return undefined;
 };
 
+const getTalentSearchBaseUrl = (jobInstance?: string | null) => {
+  switch (jobInstance?.trim().toUpperCase()) {
+    case "RADIANT":
+      return "https://intranet.radiants.com/DigiSign/RMS/SearchCandidate_Adv.aspx";
+    case "RADGOV":
+      return "https://intranet.radgov.com/RgovEsign/RMS/SearchCandidate_Adv.aspx";
+    case "ATEECA":
+      return "https://intranet.radgov.com/AteecaEsign/RMS/SearchCandidate_Adv.aspx";
+    default:
+      return "";
+  }
+};
+
+const getTalentSearchUrl = (request: JobAnalysisRequest | null, searchType: BooleanSearchType) => {
+  const baseUrl = getTalentSearchBaseUrl(request?.jobInstance);
+  if (!baseUrl || !request?.jobId) return "";
+
+  const url = new URL(baseUrl);
+  url.searchParams.set("JobID", String(request.jobId));
+  url.searchParams.set("UserID", String(request.userId ?? ""));
+  url.searchParams.set("RecruiterInstance", String(request.userInstance ?? ""));
+  url.searchParams.set("SearchType", searchType);
+
+  return url.toString();
+};
+
 const parseJobAnalysisRequest = (query: Record<string, string | string[] | undefined>): JobAnalysisRequest | null => {
   const token = Array.isArray(query.token) ? query.token[0] : query.token;
   if (token) return decryptJobAnalysisToken(token);
@@ -217,11 +252,13 @@ const parseJobAnalysisRequest = (query: Record<string, string | string[] | undef
   const requestValue = Array.isArray(query.request) ? query.request[0] : query.request;
   const tildeParts = requestValue?.split("~").map((part) => part.trim()).filter(Boolean);
 
-  if (tildeParts?.length === 3) {
+  if (tildeParts && tildeParts.length >= 3) {
     return {
       jobId: tildeParts[0],
       jobInstance: tildeParts[1],
       clientReference: tildeParts[2],
+      userId: tildeParts[3],
+      userInstance: tildeParts[4],
     };
   }
 
@@ -229,6 +266,8 @@ const parseJobAnalysisRequest = (query: Record<string, string | string[] | undef
   const jobId = getQueryParam(query, "jobId", "jobid");
   const jobInstance = getQueryParam(query, "jobInstance", "jobinstance");
   const clientReference = getQueryParam(query, "clientReference", "clientreference");
+  const userId = getQueryParam(query, "userId", "UserID", "userid");
+  const userInstance = getQueryParam(query, "userInstance", "UserInstance", "userinstance");
 
   if (!jobId || !jobInstance || !clientReference) return null;
 
@@ -236,6 +275,8 @@ const parseJobAnalysisRequest = (query: Record<string, string | string[] | undef
     jobId,
     jobInstance,
     clientReference,
+    userId,
+    userInstance,
   };
 };
 
@@ -305,7 +346,18 @@ export default function JobAnalysis() {
     return () => {
       active = false;
     };
-  }, [router.isReady, router.query.clientReference, router.query.jobId, router.query.jobInstance, router.query.request, router.query.token]);
+  }, [
+    router.isReady,
+    router.query.clientReference,
+    router.query.jobId,
+    router.query.jobInstance,
+    router.query.request,
+    router.query.token,
+    router.query.UserID,
+    router.query.userId,
+    router.query.UserInstance,
+    router.query.userInstance,
+  ]);
   
 
   // Added this for handling height changes on iframe embedding, on RMS
@@ -413,8 +465,13 @@ export default function JobAnalysis() {
     toast.info("Copy is not available in this browser");
   };
 
-  const showActionToast = (label: string) => {
-    toast.info(`${label} clicked`);
+  const openTalentSearch = (searchType: BooleanSearchType) => {
+    if (typeof window === "undefined") return;
+
+    const talentSearchUrl = getTalentSearchUrl(requestPayload, searchType);
+    if (!talentSearchUrl) return;
+
+    window.open(talentSearchUrl, "_blank", "noopener,noreferrer");
   };
 
   const exportPdf = () => {
@@ -623,7 +680,7 @@ export default function JobAnalysis() {
             <AutoAwesomeIcon />
           </Box>
           <Typography className="ja-loader-title">Job ID: {view.jobId}</Typography>
-          <Chip size="small" className="ja-ai-chip ja-loader-chip" icon={<AutoAwesomeIcon />} label="AI Powered" />
+          <Chip size="small" className="ja-ai-chip ja-loader-chip" icon={<AutoAwesomeIcon />} label="RAD IQ Powered" />
         </Box>
       </main>
     );
@@ -754,8 +811,8 @@ export default function JobAnalysis() {
             <Box className="ja-four-grid">
               <Section className="ja-wide-section" icon={<PsychologyOutlinedIcon />} title="Skills">
                 <Box className="ja-skill-grid">
-                  {view.mandatorySkills.length > 0 && <SkillGroup title="Must Have" tone="green" items={view.mandatorySkills} />}
-                  {view.preferredSkills.length > 0 && <SkillGroup title="Nice To Have" tone="orange" items={view.preferredSkills} />}
+                  {view.mandatorySkills.length > 0 && <SkillGroup title="Must Have" tone="green" items={view.mandatorySkills} showDetailsAction isEmbedded={isEmbedded} />}
+                  {view.preferredSkills.length > 0 && <SkillGroup title="Nice To Have" tone="orange" items={view.preferredSkills} showDetailsAction isEmbedded={isEmbedded} />}
                   {view.softSkills.length > 0 && <SkillGroup title="Soft Skills" tone="purple" items={view.softSkills} />}
                   {view.prioritySkills.length > 0 && (
                     <Box className="ja-skill-group">
@@ -781,7 +838,14 @@ export default function JobAnalysis() {
             <Section className="ja-wide-section ja-plain-section" icon={<ManageSearchOutlinedIcon />} title="Boolean Search">
               <Box className="ja-boolean-grid">
                 {view.booleanSearchCards.map((item) => (
-                  <BooleanSearchCard key={item.title} title={item.title} value={item.value} onCopy={() => copyBooleanSearch(item.value)} />
+                  <BooleanSearchCard
+                    key={item.title}
+                    title={item.title}
+                    value={item.value}
+                    canOpenTalentSearch={Boolean(getTalentSearchUrl(requestPayload, item.searchType))}
+                    onOpenTalentSearch={() => openTalentSearch(item.searchType)}
+                    onCopy={() => copyBooleanSearch(item.value)}
+                  />
                 ))}
               </Box>
             </Section>
@@ -1072,14 +1136,37 @@ function InfoMeta({ label, value, icon }: { label: string; value: ReactNode; ico
   );
 }
 
-function BooleanSearchCard({ title, value, onCopy }: { title: string; value: string; onCopy: () => void }) {
+function BooleanSearchCard({
+  title,
+  value,
+  canOpenTalentSearch,
+  onOpenTalentSearch,
+  onCopy,
+}: {
+  title: string;
+  value: string;
+  canOpenTalentSearch: boolean;
+  onOpenTalentSearch: () => void;
+  onCopy: () => void;
+}) {
   return (
     <Box className="ja-boolean-card">
       <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={1}>
         <Typography className="ja-label">{title}</Typography>
-        <IconButton className="ja-copy-btn" onClick={onCopy} aria-label={`Copy ${title}`}>
-          <ContentCopyOutlinedIcon />
-        </IconButton>
+        <Stack direction="row" spacing={0.6}>
+          {canOpenTalentSearch && (
+            <Tooltip title={`Open ${title} in Talent Search`} arrow placement="top">
+              <IconButton className="ja-copy-btn" onClick={onOpenTalentSearch} aria-label={`Open ${title} in Talent Search`}>
+                <SearchOutlinedIcon />
+              </IconButton>
+            </Tooltip>
+          )}
+          <Tooltip title={`Copy ${title}`} arrow placement="top">
+            <IconButton className="ja-copy-btn" onClick={onCopy} aria-label={`Copy ${title}`}>
+              <ContentCopyOutlinedIcon />
+            </IconButton>
+          </Tooltip>
+        </Stack>
       </Stack>
       <Typography component="pre">{value}</Typography>
     </Box>
@@ -1106,22 +1193,126 @@ function QuestionsContent({ groups }: { groups: QuestionGroup[] }) {
   );
 }
 
-function SkillGroup({ title, items, tone }: { title: string; items: SkillDisplayItem[]; tone: PillTone }) {
+function SkillGroup({
+  title,
+  items,
+  tone,
+  showDetailsAction = false,
+  isEmbedded = false,
+}: {
+  title: string;
+  items: SkillDisplayItem[];
+  tone: PillTone;
+  showDetailsAction?: boolean;
+  isEmbedded?: boolean;
+}) {
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [detailsPopoverPosition, setDetailsPopoverPosition] = useState<PopoverPosition | null>(null);
+
+  const openDetails = (anchor: HTMLElement) => {
+    if (isEmbedded) {
+      const group = anchor.closest(".ja-skill-group") as HTMLElement | null;
+      const groupRect = group?.getBoundingClientRect();
+      const anchorRect = anchor.getBoundingClientRect();
+
+      if (groupRect) {
+        setDetailsPopoverPosition({
+          left: window.innerWidth / 2 - groupRect.left,
+          top: anchorRect.bottom - groupRect.top + 8,
+        });
+      }
+    }
+
+    setDetailsOpen(true);
+  };
+
+  const closeDetails = () => {
+    setDetailsOpen(false);
+    setDetailsPopoverPosition(null);
+  };
+
   return (
     <Box className="ja-skill-group">
-      <Typography className="ja-label">{title}</Typography>
+      <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={1} className="ja-skill-group-header">
+        <Typography className="ja-label">{title}</Typography>
+        {showDetailsAction && (
+          <Tooltip title={`View ${title} skill details`} arrow placement="top">
+            <IconButton className="ja-skill-details-btn" aria-label={`View ${title} skill details`} onClick={(event) => openDetails(event.currentTarget)}>
+              <InfoOutlinedIcon />
+            </IconButton>
+          </Tooltip>
+        )}
+      </Stack>
       <Box className="ja-skill-block-grid">
         {items.map((item) => (
-          <SkillBlock key={`${item.label}-${item.experience || ""}`} item={item} tone={tone} />
+          <SkillBlock key={`${item.label}-${item.experience || ""}`} item={item} tone={tone} highlightOnTooltip={showDetailsAction} />
         ))}
       </Box>
+      {isEmbedded && detailsOpen && detailsPopoverPosition && (
+        <Box
+          className="ja-embedded-skill-details-overlay"
+          style={{
+            left: detailsPopoverPosition.left,
+            top: detailsPopoverPosition.top,
+          }}
+        >
+          <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={1} className="ja-embedded-questions-title">
+            <Typography className="ja-row-value">{title} Skill Details</Typography>
+            <IconButton aria-label={`Close ${title} skill details`} onClick={closeDetails}>
+              <CloseOutlinedIcon />
+            </IconButton>
+          </Stack>
+          <SkillDetailsContent items={items} tone={tone} />
+        </Box>
+      )}
+      {!isEmbedded && (
+        <Dialog open={detailsOpen} onClose={closeDetails} fullWidth maxWidth="md">
+          <DialogTitle className="ja-dialog-title">
+            {title} Skill Details
+            <IconButton aria-label={`Close ${title} skill details`} onClick={closeDetails}>
+              <CloseOutlinedIcon />
+            </IconButton>
+          </DialogTitle>
+          <DialogContent dividers>
+            <SkillDetailsContent items={items} tone={tone} />
+          </DialogContent>
+        </Dialog>
+      )}
     </Box>
   );
 }
 
-function SkillBlock({ item, tone }: { item: SkillDisplayItem; tone: PillTone }) {
+function SkillDetailsContent({ items, tone }: { items: SkillDisplayItem[]; tone: PillTone }) {
+  return (
+    <Stack spacing={1}>
+      {items.map((item) => (
+        <Box className="ja-skill-detail-card" key={`${item.label}-${item.experience || ""}`}>
+          <Stack direction="row" alignItems="center" spacing={1} flexWrap="wrap" useFlexGap>
+            <span className={`ja-skill-block ja-skill-block-${tone}`}>{item.experience ? `${item.label} (${item.experience})` : item.label}</span>
+          </Stack>
+          <Typography className="ja-skill-detail-text">{item.tooltip || "No explanation available."}</Typography>
+          <Box className="ja-skill-detail-synonyms">
+            <Typography className="ja-skill-tooltip-heading">Common resume terms</Typography>
+            {item.synonyms?.length ? (
+              <Stack direction="row" gap={0.7} flexWrap="wrap">
+                {item.synonyms.map((synonym) => (
+                  <Chip key={synonym} size="small" className="ja-skill-synonym-chip" label={synonym} />
+                ))}
+              </Stack>
+            ) : (
+              <Typography className="ja-muted">No synonyms available.</Typography>
+            )}
+          </Box>
+        </Box>
+      ))}
+    </Stack>
+  );
+}
+
+function SkillBlock({ item, tone, highlightOnTooltip = false }: { item: SkillDisplayItem; tone: PillTone; highlightOnTooltip?: boolean }) {
   const label = item.experience ? `${item.label} (${item.experience})` : item.label;
   const hasTooltip = Boolean(item.tooltip || item.synonyms?.length);
+  const highlightClass = highlightOnTooltip && hasTooltip ? "ja-skill-block-tooltip-target" : "";
   const tooltipTitle = hasTooltip ? (
     <Box className="ja-skill-tooltip">
       {item.tooltip && <Typography>{item.tooltip}</Typography>}
@@ -1138,7 +1329,7 @@ function SkillBlock({ item, tone }: { item: SkillDisplayItem; tone: PillTone }) 
 
   return (
     <Tooltip title={tooltipTitle} arrow placement="top" disableHoverListener={!hasTooltip}>
-      <span className={`ja-skill-block ja-skill-block-${tone}`}>
+      <span className={`ja-skill-block ja-skill-block-${tone} ${highlightClass}`}>
         {label}
       </span>
     </Tooltip>
