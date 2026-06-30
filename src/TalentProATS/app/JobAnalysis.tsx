@@ -680,7 +680,7 @@ export default function JobAnalysis() {
             <AutoAwesomeIcon />
           </Box>
           <Typography className="ja-loader-title">Job ID: {view.jobId}</Typography>
-          <Chip size="small" className="ja-ai-chip ja-loader-chip" icon={<AutoAwesomeIcon />} label="RAD IQ Powered" />
+          <Chip size="small" className="ja-ai-chip ja-loader-chip" icon={<AutoAwesomeIcon />} label="Insights by RAD IQ" />
         </Box>
       </main>
     );
@@ -746,7 +746,7 @@ export default function JobAnalysis() {
                       {view.workModel !== "-" && <Pill tone="green">{view.workModel}</Pill>}
                     </Stack>
                   </Stack>
-                  <Chip size="small" className="ja-ai-chip ja-title-ai-chip" icon={<AutoAwesomeIcon />} label="AI Powered" />
+                  <Chip size="small" className="ja-ai-chip ja-title-ai-chip" icon={<AutoAwesomeIcon />} label="Powered by RAD IQ" />
                 </Box>
               </Box>
             </Stack>
