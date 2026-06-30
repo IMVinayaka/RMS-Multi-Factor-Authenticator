@@ -680,7 +680,7 @@ export default function JobAnalysis() {
             <AutoAwesomeIcon />
           </Box>
           <Typography className="ja-loader-title">Job ID: {view.jobId}</Typography>
-          <Chip size="small" className="ja-ai-chip ja-loader-chip" icon={<AutoAwesomeIcon />} label="AI Powered" />
+          <Chip size="small" className="ja-ai-chip ja-loader-chip" icon={<AutoAwesomeIcon />} label="RAD IQ Powered" />
         </Box>
       </main>
     );
