@@ -31,6 +31,8 @@ export const decryptJobAnalysisToken = (token: string): JobAnalysisRequest | nul
       jobId: parsed.jobId,
       jobInstance: parsed.jobInstance,
       clientReference: parsed.clientReference,
+      userId: parsed.userId,
+      userInstance: parsed.userInstance,
     };
   } catch (error) {
     console.error("[JobAnalysis URL] Token decrypt failed", error);

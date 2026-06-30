@@ -32,6 +32,7 @@ import ManageSearchOutlinedIcon from "@mui/icons-material/ManageSearchOutlined";
 import PersonOutlinedIcon from "@mui/icons-material/PersonOutlined";
 import PsychologyOutlinedIcon from "@mui/icons-material/PsychologyOutlined";
 import SchoolOutlinedIcon from "@mui/icons-material/SchoolOutlined";
+import SearchOutlinedIcon from "@mui/icons-material/SearchOutlined";
 import TimelineOutlinedIcon from "@mui/icons-material/TimelineOutlined";
 import TrendingUpOutlinedIcon from "@mui/icons-material/TrendingUpOutlined";
 import LightbulbOutlinedIcon from "@mui/icons-material/LightbulbOutlined";
@@ -55,6 +56,8 @@ type QuestionGroup = {
   title: string;
   items: string[];
 };
+
+type BooleanSearchType = "Targeted" | "Balanced" | "Expanded";
 
 type PopoverPosition = {
   left: number;
@@ -148,14 +151,17 @@ const getBooleanSearchString = (data?: JobAnalysisResponse | null) =>
 const getBooleanSearchCards = (data?: JobAnalysisResponse | null) => [
   {
     title: "Targeted Search",
+    searchType: "Targeted" as const,
     value: valueOrDash(data?.booleanSearch?.broadMustHaveBoolean),
   },
   {
     title: "Balanced Search",
+    searchType: "Balanced" as const,
     value: valueOrDash(data?.booleanSearch?.corePrecisionBoolean),
   },
   {
     title: "Expanded Search",
+    searchType: "Expanded" as const,
     value: valueOrDash(data?.booleanSearch?.eliteTightBoolean || data?.searchOptimization?.booleanSearchString),
   },
   
@@ -213,6 +219,32 @@ const getQueryParam = (query: Record<string, string | string[] | undefined>, ...
   return undefined;
 };
 
+const getTalentSearchBaseUrl = (jobInstance?: string | null) => {
+  switch (jobInstance?.trim().toUpperCase()) {
+    case "RADIANT":
+      return "https://intranet.radiants.com/DigiSign/RMS/SearchCandidate_Adv.aspx";
+    case "RADGOV":
+      return "https://intranet.radgov.com/RgovEsign/RMS/SearchCandidate_Adv.aspx";
+    case "ATEECA":
+      return "https://intranet.radgov.com/AteecaEsign/RMS/SearchCandidate_Adv.aspx";
+    default:
+      return "";
+  }
+};
+
+const getTalentSearchUrl = (request: JobAnalysisRequest | null, searchType: BooleanSearchType) => {
+  const baseUrl = getTalentSearchBaseUrl(request?.jobInstance);
+  if (!baseUrl || !request?.jobId) return "";
+
+  const url = new URL(baseUrl);
+  url.searchParams.set("JobID", String(request.jobId));
+  url.searchParams.set("UserID", String(request.userId ?? ""));
+  url.searchParams.set("RecruiterInstance", String(request.userInstance ?? ""));
+  url.searchParams.set("SearchType", searchType);
+
+  return url.toString();
+};
+
 const parseJobAnalysisRequest = (query: Record<string, string | string[] | undefined>): JobAnalysisRequest | null => {
   const token = Array.isArray(query.token) ? query.token[0] : query.token;
   if (token) return decryptJobAnalysisToken(token);
@@ -220,11 +252,13 @@ const parseJobAnalysisRequest = (query: Record<string, string | string[] | undef
   const requestValue = Array.isArray(query.request) ? query.request[0] : query.request;
   const tildeParts = requestValue?.split("~").map((part) => part.trim()).filter(Boolean);
 
-  if (tildeParts?.length === 3) {
+  if (tildeParts && tildeParts.length >= 3) {
     return {
       jobId: tildeParts[0],
       jobInstance: tildeParts[1],
       clientReference: tildeParts[2],
+      userId: tildeParts[3],
+      userInstance: tildeParts[4],
     };
   }
 
@@ -232,6 +266,8 @@ const parseJobAnalysisRequest = (query: Record<string, string | string[] | undef
   const jobId = getQueryParam(query, "jobId", "jobid");
   const jobInstance = getQueryParam(query, "jobInstance", "jobinstance");
   const clientReference = getQueryParam(query, "clientReference", "clientreference");
+  const userId = getQueryParam(query, "userId", "UserID", "userid");
+  const userInstance = getQueryParam(query, "userInstance", "UserInstance", "userinstance");
 
   if (!jobId || !jobInstance || !clientReference) return null;
 
@@ -239,6 +275,8 @@ const parseJobAnalysisRequest = (query: Record<string, string | string[] | undef
     jobId,
     jobInstance,
     clientReference,
+    userId,
+    userInstance,
   };
 };
 
@@ -308,7 +346,18 @@ export default function JobAnalysis() {
     return () => {
       active = false;
     };
-  }, [router.isReady, router.query.clientReference, router.query.jobId, router.query.jobInstance, router.query.request, router.query.token]);
+  }, [
+    router.isReady,
+    router.query.clientReference,
+    router.query.jobId,
+    router.query.jobInstance,
+    router.query.request,
+    router.query.token,
+    router.query.UserID,
+    router.query.userId,
+    router.query.UserInstance,
+    router.query.userInstance,
+  ]);
   
 
   // Added this for handling height changes on iframe embedding, on RMS
@@ -416,8 +465,13 @@ export default function JobAnalysis() {
     toast.info("Copy is not available in this browser");
   };
 
-  const showActionToast = (label: string) => {
-    toast.info(`${label} clicked`);
+  const openTalentSearch = (searchType: BooleanSearchType) => {
+    if (typeof window === "undefined") return;
+
+    const talentSearchUrl = getTalentSearchUrl(requestPayload, searchType);
+    if (!talentSearchUrl) return;
+
+    window.open(talentSearchUrl, "_blank", "noopener,noreferrer");
   };
 
   const exportPdf = () => {
@@ -784,7 +838,14 @@ export default function JobAnalysis() {
             <Section className="ja-wide-section ja-plain-section" icon={<ManageSearchOutlinedIcon />} title="Boolean Search">
               <Box className="ja-boolean-grid">
                 {view.booleanSearchCards.map((item) => (
-                  <BooleanSearchCard key={item.title} title={item.title} value={item.value} onCopy={() => copyBooleanSearch(item.value)} />
+                  <BooleanSearchCard
+                    key={item.title}
+                    title={item.title}
+                    value={item.value}
+                    canOpenTalentSearch={Boolean(getTalentSearchUrl(requestPayload, item.searchType))}
+                    onOpenTalentSearch={() => openTalentSearch(item.searchType)}
+                    onCopy={() => copyBooleanSearch(item.value)}
+                  />
                 ))}
               </Box>
             </Section>
@@ -1075,14 +1136,37 @@ function InfoMeta({ label, value, icon }: { label: string; value: ReactNode; ico
   );
 }
 
-function BooleanSearchCard({ title, value, onCopy }: { title: string; value: string; onCopy: () => void }) {
+function BooleanSearchCard({
+  title,
+  value,
+  canOpenTalentSearch,
+  onOpenTalentSearch,
+  onCopy,
+}: {
+  title: string;
+  value: string;
+  canOpenTalentSearch: boolean;
+  onOpenTalentSearch: () => void;
+  onCopy: () => void;
+}) {
   return (
     <Box className="ja-boolean-card">
       <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={1}>
         <Typography className="ja-label">{title}</Typography>
-        <IconButton className="ja-copy-btn" onClick={onCopy} aria-label={`Copy ${title}`}>
-          <ContentCopyOutlinedIcon />
-        </IconButton>
+        <Stack direction="row" spacing={0.6}>
+          {canOpenTalentSearch && (
+            <Tooltip title={`Open ${title} in Talent Search`} arrow placement="top">
+              <IconButton className="ja-copy-btn" onClick={onOpenTalentSearch} aria-label={`Open ${title} in Talent Search`}>
+                <SearchOutlinedIcon />
+              </IconButton>
+            </Tooltip>
+          )}
+          <Tooltip title={`Copy ${title}`} arrow placement="top">
+            <IconButton className="ja-copy-btn" onClick={onCopy} aria-label={`Copy ${title}`}>
+              <ContentCopyOutlinedIcon />
+            </IconButton>
+          </Tooltip>
+        </Stack>
       </Stack>
       <Typography component="pre">{value}</Typography>
     </Box>
