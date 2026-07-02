@@ -746,7 +746,7 @@ export default function JobAnalysis() {
                       {view.workModel !== "-" && <Pill tone="green">{view.workModel}</Pill>}
                     </Stack>
                   </Stack>
-                  <Chip size="small" className="ja-ai-chip ja-title-ai-chip" icon={<AutoAwesomeIcon />} label="Powered by RAD IQ" />
+                  <Chip size="small" className="ja-ai-chip ja-title-ai-chip" icon={<AutoAwesomeIcon />} label="RAD IQ" />
                 </Box>
               </Box>
             </Stack>

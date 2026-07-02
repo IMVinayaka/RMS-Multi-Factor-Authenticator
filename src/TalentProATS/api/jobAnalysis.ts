@@ -133,7 +133,9 @@ const JD_ANALYSE_SERVICE_URL =
 const maskPayload = (payload: JobAnalysisRequest) => ({
   jobId: payload.jobId,
   jobInstance: payload.jobInstance,
-  clientReference: payload.clientReference ? "********" : "",
+  ...(payload.clientReference && { clientReference: payload.clientReference }),
+  ...(payload.userId && { userId: payload.userId }),
+  ...(payload.userInstance && { userInstance: payload.userInstance }),
 });
 
 export const analyseJobDescription = async (payload: JobAnalysisRequest) => {
