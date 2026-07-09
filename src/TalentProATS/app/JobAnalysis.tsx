@@ -133,10 +133,13 @@ const normalizeSkills = (items?: SkillValue[] | null): SkillDisplayItem[] =>
     if (typeof item === "string") return { label: item };
 
     return {
-      label: valueOrDash(item?.skill),
-      experience: item?.skillExperienceRequirement || formatSkillYears(item?.minimumYears),
-      tooltip: item?.tooltip || undefined,
-      synonyms: compactStringArray(item?.resumeSynonyms),
+      label: valueOrDash(item?.skill || item?.Skill),
+      experience:
+        item?.skillExperienceRequirement ||
+        item?.SkillExperienceRequirement ||
+        formatSkillYears(item?.minimumYears ?? item?.MinimumYears),
+      tooltip: item?.tooltip || item?.Tooltip || undefined,
+      synonyms: compactStringArray(item?.resumeSynonyms || item?.ResumeSynonyms),
     };
   }).filter((item) => item.label !== "-");
 

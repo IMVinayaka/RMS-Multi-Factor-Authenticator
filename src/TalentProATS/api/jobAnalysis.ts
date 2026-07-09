@@ -12,10 +12,15 @@ export type SkillValue =
   | string
   | {
       skill?: string | null;
+      Skill?: string | null;
       skillExperienceRequirement?: string | null;
+      SkillExperienceRequirement?: string | null;
       minimumYears?: string | number | null;
+      MinimumYears?: string | number | null;
       tooltip?: string | null;
+      Tooltip?: string | null;
       resumeSynonyms?: string[] | null;
+      ResumeSynonyms?: string[] | null;
     };
 
 export type BooleanSearch = {
