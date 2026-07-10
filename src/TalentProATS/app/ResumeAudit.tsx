@@ -36,6 +36,9 @@ import { useRouter } from "next/router";
 import { toast } from "react-toastify";
 import {
   auditResume,
+  type ResumeAuditEmailContact,
+  type ResumeAuditImprovement,
+  type ResumeAuditPhoneContact,
   type ResumeAuditQuestion,
   type ResumeAuditRequest,
   type ResumeAuditResponse,
@@ -63,6 +66,12 @@ const emptyArray = <T,>(value?: T[] | null) => (Array.isArray(value) ? value : [
 
 const compactStringArray = (value?: Array<string | null | undefined> | null) =>
   emptyArray(value).map((item) => String(item || "").trim()).filter(Boolean);
+
+const compactStringList = (value?: string | Array<string | null | undefined> | null) => {
+  if (Array.isArray(value)) return compactStringArray(value);
+  const normalized = String(value || "").trim();
+  return normalized ? [normalized] : [];
+};
 
 const valueOrDash = (value?: string | number | null) => {
   if (value === null || value === undefined || value === "") return "-";
@@ -117,6 +126,28 @@ const formatYears = (value?: number | string | null) => {
   return `${normalized} Years`;
 };
 
+const formatPercent = (value?: number | null) => {
+  if (value === null || value === undefined || Number.isNaN(Number(value))) return "-";
+  const normalized = Number(value);
+  const percent = normalized > 0 && normalized <= 1 ? normalized * 100 : normalized;
+  return `${Math.round(percent)}%`;
+};
+
+const normalizeCommuteTone = (status?: string | null): Tone => {
+  const normalized = status?.trim().toLowerCase();
+  if (normalized === "near") return "green";
+  if (normalized === "midrange") return "orange";
+  if (normalized === "far") return "red";
+  return "gray";
+};
+
+const formatDistanceLabel = (distance?: number | string | null, unit?: string | null) => {
+  if (distance === null || distance === undefined || distance === "") return "-";
+  const normalizedUnit = unit ? unit.trim() : "";
+  const displayUnit = normalizedUnit ? `${normalizedUnit.charAt(0).toUpperCase()}${normalizedUnit.slice(1)}` : "";
+  return [distance, displayUnit].filter(Boolean).join(" ");
+};
+
 const getCurrencySymbol = (currency?: string | null) => {
   const normalized = currency?.trim().toLowerCase();
   if (!normalized) return "";
@@ -130,6 +161,16 @@ const formatMoney = (amount?: number | null, currency?: string | null, type?: st
   const formatted = new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }).format(amount);
   const suffix = type ? ` / ${type.toLowerCase()}` : "";
   return `${getCurrencySymbol(currency)}${formatted}${suffix}`;
+};
+
+const formatLocationWorkModel = (location?: string | null, workModel?: string | null) => {
+  const normalizedLocation = valueOrDash(location);
+  const normalizedWorkModel = valueOrDash(workModel);
+
+  if (normalizedLocation !== "-" && normalizedWorkModel !== "-") return `${normalizedLocation} (${normalizedWorkModel})`;
+  if (normalizedLocation !== "-") return normalizedLocation;
+  if (normalizedWorkModel !== "-") return normalizedWorkModel;
+  return "-";
 };
 
 const formatDate = (value?: string | null) => {
@@ -161,15 +202,41 @@ const getSeverityTone = (value?: string | null): Tone => {
   return "blue";
 };
 
-const getPrimaryEmail = (data?: ResumeAuditResponse | null) =>
-  emptyArray(data?.candidate?.ContactInfo?.Emails).find((item) => item.Primary)?.Email ||
-  data?.candidate?.ContactInfo?.Emails?.[0]?.Email ||
-  "-";
+const isPrimaryContact = (value: unknown) => {
+  if (value === true || value === 1) return true;
+  if (typeof value === "string") return ["true", "yes", "y", "1", "primary"].includes(value.trim().toLowerCase());
+  return false;
+};
 
-const getPrimaryPhone = (data?: ResumeAuditResponse | null) =>
-  emptyArray(data?.candidate?.ContactInfo?.Phones).find((item) => item.Primary)?.Number ||
-  data?.candidate?.ContactInfo?.Phones?.[0]?.Number ||
-  "-";
+const getContactInfo = (data?: ResumeAuditResponse | null) => data?.candidate?.ContactInfo || data?.candidate?.contactInfo || null;
+
+const getEmailValue = (item?: ResumeAuditEmailContact | null) =>
+  valueOrDash(item?.Email || item?.email || item?.Address || item?.address || item?.Value || item?.value);
+
+const getPhoneValue = (item?: ResumeAuditPhoneContact | null) =>
+  valueOrDash(item?.Number || item?.number || item?.Phone || item?.phone || item?.Value || item?.value);
+
+const isPrimaryEmail = (item?: ResumeAuditEmailContact | null) =>
+  isPrimaryContact(item?.Primary ?? item?.primary ?? item?.IsPrimary ?? item?.isPrimary);
+
+const isPrimaryPhone = (item?: ResumeAuditPhoneContact | null) =>
+  isPrimaryContact(item?.Primary ?? item?.primary ?? item?.IsPrimary ?? item?.isPrimary);
+
+const getPrimaryEmail = (data?: ResumeAuditResponse | null) => {
+  const contactInfo = getContactInfo(data);
+  const emails = emptyArray(contactInfo?.Emails || contactInfo?.emails).filter((item) => getEmailValue(item) !== "-");
+  const primaryEmail = emails.find(isPrimaryEmail);
+
+  return getEmailValue(primaryEmail || (emails.length === 1 ? emails[0] : null));
+};
+
+const getPrimaryPhone = (data?: ResumeAuditResponse | null) => {
+  const contactInfo = getContactInfo(data);
+  const phones = emptyArray(contactInfo?.Phones || contactInfo?.phones).filter((item) => getPhoneValue(item) !== "-");
+  const primaryPhone = phones.find(isPrimaryPhone);
+
+  return getPhoneValue(primaryPhone || (phones.length === 1 ? phones[0] : null));
+};
 
 const getQuestionGroups = (data?: ResumeAuditResponse | null): QuestionGroup[] => [
   { key: "technical", title: "Technical Questions", items: emptyArray(data?.screeningQuestions?.technicalQuestions) },
@@ -185,13 +252,25 @@ const getInitials = (name?: string | null) => {
   return parts.slice(0, 2).map((part) => part[0]?.toUpperCase()).join("");
 };
 
-const getImprovementRows = (data: ResumeAuditResponse["ResumeImprovement"]) => [
-  ["Missing Information", compactStringArray(data?.MissingInformation).length],
-  ["Keyword Suggestions", compactStringArray(data?.KeywordSuggestions).length],
-  ["Achievement Suggestions", compactStringArray(data?.AchievementSuggestions).length],
-  ["Project Suggestions", compactStringArray(data?.ProjectSuggestions).length],
-  ["Improvement Suggestions", compactStringArray(data?.ImprovementSuggestions).length],
-].filter(([, count]) => Number(count) > 0) as Array<[string, number]>;
+const getResumeImprovement = (data?: ResumeAuditResponse | null) => data?.ResumeImprovement || data?.resumeImprovement || null;
+
+const getImprovementSections = (data?: ResumeAuditImprovement | null) =>
+  [
+    { title: "Missing Information", tone: "orange" as Tone, items: compactStringArray(data?.MissingInformation || data?.missingInformation) },
+    { title: "Improvement Suggestions", tone: "blue" as Tone, items: compactStringArray(data?.ImprovementSuggestions || data?.improvementSuggestions) },
+    { title: "Achievement Suggestions", tone: "green" as Tone, items: compactStringArray(data?.AchievementSuggestions || data?.achievementSuggestions) },
+    { title: "Keyword Suggestions", tone: "purple" as Tone, items: compactStringArray(data?.KeywordSuggestions || data?.keywordSuggestions), variant: "tags" },
+    { title: "Project Suggestions", tone: "blue" as Tone, items: compactStringArray(data?.ProjectSuggestions || data?.projectSuggestions) },
+  ].filter((section) => section.items.length > 0);
+
+const getAdditionalRequirementSkills = (mandatorySkills: ResumeAuditSkill[], preferredSkills: ResumeAuditSkill[]) => {
+  const mandatoryNames = new Set(mandatorySkills.map((item) => valueOrDash(item.skill).trim().toLowerCase()).filter((item) => item && item !== "-"));
+
+  return preferredSkills.filter((item) => {
+    const skillName = valueOrDash(item.skill).trim().toLowerCase();
+    return skillName && skillName !== "-" && !mandatoryNames.has(skillName);
+  });
+};
 
 export default function ResumeAudit() {
   const router = useRouter();
@@ -303,7 +382,16 @@ export default function ResumeAudit() {
       salary?.ExpectedSalary?.Amount !== null && salary?.ExpectedSalary?.Amount !== undefined ||
       salary?.SalaryMatch?.Score !== null && salary?.SalaryMatch?.Score !== undefined
     );
-    const location = [candidate?.location?.city, candidate?.location?.state, candidate?.location?.country].filter(Boolean).join(", ");
+    const candidateLocation = candidate?.location || candidate?.Location;
+    const location = [
+      candidateLocation?.city || candidateLocation?.City,
+      candidateLocation?.state || candidateLocation?.State,
+      candidateLocation?.country || candidateLocation?.Country,
+    ].filter(Boolean).join(", ");
+    const commuteStatus = valueOrDash(candidateLocation?.CommuteStatus || candidateLocation?.commuteStatus);
+    const travelDistance = candidateLocation?.TravelDistance ?? candidateLocation?.travelDistance;
+    const distanceUnit = candidateLocation?.DistanceUnit || candidateLocation?.distanceUnit;
+    const distanceLabel = formatDistanceLabel(travelDistance, distanceUnit);
 
     return {
       candidateName: valueOrDash(candidate?.name),
@@ -315,12 +403,17 @@ export default function ResumeAudit() {
       phone: getPrimaryPhone(data),
       education: valueOrDash(candidate?.education),
       location: location || "-",
-      workAuthorization: compactStringArray(candidate?.WorkAuthorization).join(", ") || "-",
+      commuteStatus,
+      commuteTone: normalizeCommuteTone(commuteStatus),
+      commuteDistanceLabel: commuteStatus.toLowerCase() !== "remote" ? distanceLabel : "-",
+      commuteDistanceAnalysis: valueOrDash(candidateLocation?.DistanceAnalysis || candidateLocation?.distanceAnalysis),
+      workAuthorization: compactStringList(candidate?.WorkAuthorization || candidate?.workAuthorization).join(", ") || "-",
       coreSkills: compactStringArray(candidate?.coreSkills),
       jobTitle: valueOrDash(job?.jobTitle),
       jobId: valueOrDash(job?.jobId || requestPayload?.jobId),
       client: valueOrDash(job?.client),
       industry: valueOrDash(job?.industry),
+      jobLocationWorkModel: formatLocationWorkModel(job?.Location || job?.location, job?.WorkModel || job?.workModel),
       jobBudget: formatMoney(job?.salary?.amount, job?.salary?.currency, job?.salary?.type),
       hasCandidateSalary,
       overallScore: audit?.overallScore ?? 0,
@@ -331,7 +424,7 @@ export default function ResumeAudit() {
       interviewProbability: audit?.interviewProbability ?? 0,
       summary: valueOrDash(audit?.summary),
       decisionReason: valueOrDash(audit?.decisionReason),
-      scoreBreakdown: emptyArray(data?.scoreBreakdown),
+      scoreBreakdown: emptyArray(data?.scoreBreakdown).filter((item) => Number(item.maxScore) !== 0),
       mandatorySkills: emptyArray(data?.skillsAnalysis?.mandatorySkills),
       preferredSkills: emptyArray(data?.skillsAnalysis?.preferredSkills),
       softSkills: emptyArray(data?.skillsAnalysis?.softSkills),
@@ -340,7 +433,7 @@ export default function ResumeAudit() {
       strengths: compactStringArray(data?.strengths),
       concerns: emptyArray(data?.candidateConcerns),
       questionGroups: getQuestionGroups(data),
-      resumeImprovement: data?.ResumeImprovement,
+      resumeImprovement: getResumeImprovement(data),
       submissionSummary: data?.submissionSummary,
       clientConcerns: compactStringArray(data?.submissionSummary?.clientConcerns),
       executiveInsights: data?.executiveInsights,
@@ -355,12 +448,15 @@ export default function ResumeAudit() {
     };
   }, [data, requestPayload]);
 
-  const improvementRows = getImprovementRows(view.resumeImprovement);
+  const improvementSections = getImprovementSections(view.resumeImprovement);
   const sellingPoints = compactStringArray(view.submissionSummary?.sellingPoints);
   const hasCandidateSummary = valueOrDash(view.submissionSummary?.candidateSummary) !== "-";
   const hasSubmissionNotes = valueOrDash(view.submissionSummary?.submissionNotes) !== "-";
   const hasAuditSummary = view.summary !== "-";
   const hasDecisionReason = view.decisionReason !== "-";
+  const additionalRequirementSkills = getAdditionalRequirementSkills(view.mandatorySkills, view.preferredSkills);
+  const skillsRequirementItems = [...view.mandatorySkills, ...additionalRequirementSkills];
+  const hasSkillsRequirementCoverage = skillsRequirementItems.length > 0;
   const hasExecutiveInsights =
     compactStringArray(view.executiveInsights?.whyRecommended).length > 0 ||
     compactStringArray(view.executiveInsights?.whyNotPerfect).length > 0 ||
@@ -505,7 +601,14 @@ export default function ResumeAudit() {
                   <InlineMeta icon={<BusinessCenterOutlinedIcon />} text={`${view.currentTitle} | ${view.experience}`} />
                   <InlineMeta icon={<MailOutlineOutlinedIcon />} text={view.email} />
                   <InlineMeta icon={<PhoneOutlinedIcon />} text={view.phone} />
-                  <InlineMeta icon={<PlaceOutlinedIcon />} text={view.location} />
+                  <CandidateLocationMeta
+                    location={view.location}
+                    commuteDistanceLabel={view.commuteDistanceLabel}
+                    commuteStatus={view.commuteStatus}
+                    commuteTone={view.commuteTone}
+                    distanceAnalysis={view.commuteDistanceAnalysis}
+                  />
+                  <InlineMeta icon={<WorkspacePremiumOutlinedIcon />} text={view.workAuthorization !== "-" ? `Work Authorization: ${view.workAuthorization}` : "-"} />
                   <InlineMeta icon={<WorkspacePremiumOutlinedIcon />} text={`Current: ${view.currentCompany}`} />
                 </Stack>
               </Box>
@@ -521,6 +624,7 @@ export default function ResumeAudit() {
                   <LabeledMeta label="Job ID" value={view.jobId} />
                   <LabeledMeta label="Client" value={view.client} />
                   <LabeledMeta label="Industry" value={view.industry} />
+                  <LabeledMeta label="Location" value={view.jobLocationWorkModel} />
                   <LabeledMeta label="Budget" value={view.jobBudget} />
                 </Stack>
               </Box>
@@ -552,7 +656,7 @@ export default function ResumeAudit() {
           <Box className="ra-half-grid ra-note-grid">
             {hasCandidateSummary && (
               <Card className="ra-note-panel">
-                <InfoTitle icon={<PersonOutlinedIcon />} title="Candidate Summary" />
+                <InfoTitle icon={<PersonOutlinedIcon />} title="Candidate Profile" />
                 <Typography className="ra-body-text" sx={{ whiteSpace: "pre-line" }}>{valueOrDash(view.submissionSummary?.candidateSummary)}</Typography>
               </Card>
             )}
@@ -569,7 +673,7 @@ export default function ResumeAudit() {
           <Box className="ra-half-grid ra-note-grid">
             {hasAuditSummary && (
               <Card className="ra-note-panel">
-                <InfoTitle icon={<AutoAwesomeIcon />} title="Audit Summary" />
+                <InfoTitle icon={<AutoAwesomeIcon />} title="Candidate Assessment" />
                 <Typography className="ra-body-text" sx={{ whiteSpace: "pre-line" }}>{view.summary}</Typography>
               </Card>
             )}
@@ -619,7 +723,7 @@ export default function ResumeAudit() {
           </Card>
         </Box>}
 
-        <Box className="ra-four-grid">
+        <Box className="ra-coverage-grid">
           {view.scoreBreakdown.length > 0 && <Card>
             <InfoTitle
               icon={<TrendingUpOutlinedIcon />}
@@ -634,20 +738,16 @@ export default function ResumeAudit() {
                 </Stack>
               }
             />
-            <Stack spacing={0.8}>
+            <Stack spacing={0.25}>
               {view.scoreBreakdown.map((item) => (
                 <ScoreBreakdownRow key={item.displayName || item.type || item.message || Math.random()} item={item} />
               ))}
             </Stack>
           </Card>}
 
-          {view.mandatorySkills.length > 0 && <Card>
-            <InfoTitle icon={<PsychologyOutlinedIcon />} title="Mandatory Skills Coverage" />
-            <SkillTable items={view.mandatorySkills} />
-          </Card>}
-          {[...view.mandatorySkills, ...view.preferredSkills].length > 0 && <Card>
-            <InfoTitle icon={<WorkspacePremiumOutlinedIcon />} title="JD Requirements Coverage" />
-            <SkillTable items={[...view.mandatorySkills, ...view.preferredSkills].slice(0, 6)} compact />
+          {hasSkillsRequirementCoverage && <Card>
+            <InfoTitle icon={<PsychologyOutlinedIcon />} title="Skills & Requirement Coverage" />
+            <SkillTable items={skillsRequirementItems} />
           </Card>}
 
           {view.questionGroups.length > 0 && <Card className="ra-screening-card">
@@ -719,9 +819,9 @@ export default function ResumeAudit() {
           </Box>
         )}
 
-        {improvementRows.length > 0 && <Card className="ra-full-section">
+        {improvementSections.length > 0 && <Card className="ra-full-section">
           <InfoTitle icon={<HelpOutlineOutlinedIcon />} title="Resume Improvement Suggestions" />
-          <ImprovementList rows={improvementRows} />
+          <ImprovementSections sections={improvementSections} />
         </Card>}
 
         {!isEmbedded && (
@@ -766,6 +866,47 @@ function InlineMeta({ icon, text }: { icon: ReactNode; text: string }) {
     <Stack direction="row" spacing={0.7} alignItems="center" className="ra-inline-meta">
       {icon}
       <Typography>{text}</Typography>
+    </Stack>
+  );
+}
+
+function CandidateLocationMeta({
+  location,
+  commuteDistanceLabel,
+  commuteStatus,
+  commuteTone,
+  distanceAnalysis,
+}: {
+  location: string;
+  commuteDistanceLabel: string;
+  commuteStatus: string;
+  commuteTone: Tone;
+  distanceAnalysis: string;
+}) {
+  if (location === "-") return null;
+
+  const showDistanceBadge = commuteDistanceLabel !== "-" && commuteStatus.toLowerCase() !== "remote";
+  const tooltipTitle = (
+    <Box className="ra-skill-tooltip">
+      <Typography className={`ra-commute-tooltip-status ra-alert-${commuteTone}`}>
+        {commuteStatus}
+      </Typography>
+      <Box>
+        <Typography className="ra-skill-tooltip-heading">Distance Analysis</Typography>
+        <Typography>{distanceAnalysis}</Typography>
+      </Box>
+    </Box>
+  );
+
+  return (
+    <Stack direction="row" spacing={0.7} alignItems="center" className="ra-inline-meta ra-location-meta">
+      <PlaceOutlinedIcon />
+      <Typography>{location}</Typography>
+      {showDistanceBadge && (
+        <Tooltip title={tooltipTitle} arrow placement="top">
+          <Chip size="small" className={`ra-commute-chip ra-commute-${commuteTone}`} label={commuteDistanceLabel} />
+        </Tooltip>
+      )}
     </Stack>
   );
 }
@@ -873,7 +1014,7 @@ function ScoreBreakdownRow({ item }: { item: NonNullable<ResumeAuditResponse["sc
 }
 
 function SkillTable({ items, compact = false }: { items: ResumeAuditSkill[]; compact?: boolean }) {
-  const visibleItems = items.slice(0, compact ? 6 : 7);
+  const visibleItems = compact ? items.slice(0, 6) : items;
 
   if (!visibleItems.length) {
     return <Typography className="ra-muted">No skill coverage available.</Typography>;
@@ -916,7 +1057,7 @@ function SkillTableRow({ item }: { item: ResumeAuditSkill }) {
       <Box className="ra-skill-table-row">
         <Typography className="ra-row-strong">{valueOrDash(item.skill)}</Typography>
         <span className={`ra-match-dot ${item.matched ? "ra-match-yes" : "ra-match-no"}`}>{item.matched ? "Yes" : "No"}</span>
-        <Typography className="ra-row-strong">{Math.round((item.confidence ?? 0) * 100)}%</Typography>
+        <Typography className="ra-row-strong">{formatPercent(item.confidence)}</Typography>
       </Box>
     </Tooltip>
   );
@@ -940,16 +1081,27 @@ function ConcernItem({ item }: { item: NonNullable<ResumeAuditResponse["candidat
   );
 }
 
-function ImprovementList({ rows }: { rows: Array<[string, number]> }) {
+function ImprovementSections({ sections }: { sections: ReturnType<typeof getImprovementSections> }) {
   return (
-    <Stack spacing={0.8} className="ra-improvement-list">
-      {rows.map(([label, count]) => (
-        <Stack key={String(label)} className="ra-question-count-row" direction="row" justifyContent="space-between" alignItems="center">
-          <Typography className="ra-body-text">{label}</Typography>
-          <span>{count}</span>
-        </Stack>
+    <Box className="ra-improvement-grid">
+      {sections.map((section) => (
+        <Box className="ra-improvement-panel" key={section.title}>
+          <Stack direction="row" spacing={0.8} alignItems="center" justifyContent="space-between">
+            <Typography className="ra-row-strong">{section.title}</Typography>
+            <Chip size="small" className={`ra-severity-chip ra-severity-${section.tone}`} label={section.items.length} />
+          </Stack>
+          {section.variant === "tags" ? (
+            <Box className="ra-keyword-cloud">
+              {section.items.map((item) => (
+                <Chip className="ra-keyword-chip" size="small" label={item} key={item} />
+              ))}
+            </Box>
+          ) : (
+            <BulletList items={section.items} tone={section.tone} compact />
+          )}
+        </Box>
       ))}
-    </Stack>
+    </Box>
   );
 }
 

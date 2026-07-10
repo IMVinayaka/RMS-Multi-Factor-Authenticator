@@ -10,8 +10,42 @@ export type ResumeAuditRequest = {
 };
 
 export type ResumeAuditContactInfo = {
-  Emails?: Array<{ Email?: string | null; Type?: string | null; Primary?: boolean | null }>;
-  Phones?: Array<{ Number?: string | null; Type?: string | null; Primary?: boolean | null }>;
+  Emails?: ResumeAuditEmailContact[] | null;
+  emails?: ResumeAuditEmailContact[] | null;
+  Phones?: ResumeAuditPhoneContact[] | null;
+  phones?: ResumeAuditPhoneContact[] | null;
+};
+
+export type ResumeAuditPrimaryFlag = boolean | string | number | null;
+
+export type ResumeAuditEmailContact = {
+  Email?: string | null;
+  email?: string | null;
+  Address?: string | null;
+  address?: string | null;
+  Value?: string | null;
+  value?: string | null;
+  Type?: string | null;
+  type?: string | null;
+  Primary?: ResumeAuditPrimaryFlag;
+  primary?: ResumeAuditPrimaryFlag;
+  IsPrimary?: ResumeAuditPrimaryFlag;
+  isPrimary?: ResumeAuditPrimaryFlag;
+};
+
+export type ResumeAuditPhoneContact = {
+  Number?: string | null;
+  number?: string | null;
+  Phone?: string | null;
+  phone?: string | null;
+  Value?: string | null;
+  value?: string | null;
+  Type?: string | null;
+  type?: string | null;
+  Primary?: ResumeAuditPrimaryFlag;
+  primary?: ResumeAuditPrimaryFlag;
+  IsPrimary?: ResumeAuditPrimaryFlag;
+  isPrimary?: ResumeAuditPrimaryFlag;
 };
 
 export type ResumeAuditSalaryAmount = {
@@ -30,13 +64,10 @@ export type ResumeAuditResponse = {
     currentCompany?: string | null;
     experienceYears?: number | string | null;
     education?: string | null;
-    location?: {
-      city?: string | null;
-      state?: string | null;
-      country?: string | null;
-      zipCode?: string | null;
-    } | null;
+    location?: ResumeAuditCandidateLocation | null;
+    Location?: ResumeAuditCandidateLocation | null;
     ContactInfo?: ResumeAuditContactInfo | null;
+    contactInfo?: ResumeAuditContactInfo | null;
     Salary?: {
       CurrentSalary?: ResumeAuditSalaryAmount | null;
       ExpectedSalary?: ResumeAuditSalaryAmount | null;
@@ -51,7 +82,8 @@ export type ResumeAuditResponse = {
       NoticePeriod?: string | null;
       AvailableFrom?: string | null;
     } | null;
-    WorkAuthorization?: string[] | null;
+    WorkAuthorization?: string[] | string | null;
+    workAuthorization?: string[] | string | null;
     coreSkills?: string[] | null;
   } | null;
   job?: {
@@ -59,6 +91,10 @@ export type ResumeAuditResponse = {
     jobTitle?: string | null;
     client?: string | null;
     industry?: string | null;
+    Location?: string | null;
+    location?: string | null;
+    WorkModel?: string | null;
+    workModel?: string | null;
     salary?: {
       amount?: number | null;
       currency?: string | null;
@@ -100,13 +136,8 @@ export type ResumeAuditResponse = {
     recommendation?: string | null;
   }> | null;
   screeningQuestions?: ResumeAuditScreeningQuestions | null;
-  ResumeImprovement?: {
-    MissingInformation?: string[] | null;
-    ImprovementSuggestions?: string[] | null;
-    AchievementSuggestions?: string[] | null;
-    KeywordSuggestions?: string[] | null;
-    ProjectSuggestions?: string[] | null;
-  } | null;
+  ResumeImprovement?: ResumeAuditImprovement | null;
+  resumeImprovement?: ResumeAuditImprovement | null;
   submissionSummary?: {
     candidateSummary?: string | null;
     sellingPoints?: string[] | null;
@@ -123,6 +154,38 @@ export type ResumeAuditResponse = {
     auditedBy?: string | null;
     model?: string | null;
   } | null;
+};
+
+export type ResumeAuditCandidateLocation = {
+  city?: string | null;
+  City?: string | null;
+  state?: string | null;
+  State?: string | null;
+  country?: string | null;
+  Country?: string | null;
+  zipCode?: string | null;
+  ZipCode?: string | null;
+  TravelDistance?: number | string | null;
+  travelDistance?: number | string | null;
+  DistanceUnit?: string | null;
+  distanceUnit?: string | null;
+  DistanceAnalysis?: string | null;
+  distanceAnalysis?: string | null;
+  CommuteStatus?: "Near" | "MidRange" | "Far" | "Remote" | string | null;
+  commuteStatus?: "Near" | "MidRange" | "Far" | "Remote" | string | null;
+};
+
+export type ResumeAuditImprovement = {
+  MissingInformation?: string[] | null;
+  missingInformation?: string[] | null;
+  ImprovementSuggestions?: string[] | null;
+  improvementSuggestions?: string[] | null;
+  AchievementSuggestions?: string[] | null;
+  achievementSuggestions?: string[] | null;
+  KeywordSuggestions?: string[] | null;
+  keywordSuggestions?: string[] | null;
+  ProjectSuggestions?: string[] | null;
+  projectSuggestions?: string[] | null;
 };
 
 export type ResumeAuditSkill = {
