@@ -163,6 +163,19 @@ const buildJobAnalysisComparisonUrl = (asPath: string) => {
   return query ? `/job-analysis?${query}` : "/job-analysis";
 };
 
+const isWordDocumentUrl = (url: string) => {
+  const path = url.split(/[?#]/)[0]?.trim().toLowerCase() || "";
+  return path.endsWith(".doc") || path.endsWith(".docx");
+};
+
+const getResumeDocumentFrameUrl = (url: string) => {
+  if (!url || url === "-") return "";
+  if (isWordDocumentUrl(url)) {
+    return `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(url)}`;
+  }
+  return encodeURI(url);
+};
+
 const formatPercent = (value?: number | null) => {
   if (value === null || value === undefined || Number.isNaN(Number(value))) return "-";
   const normalized = Number(value);
@@ -993,7 +1006,7 @@ function ComparisonPanel({
   const isResume = mode === "resume";
   const title = isResume ? "Resume" : "JD Analysis";
   const sourceUrl = isResume ? resumeUrl : jobAnalysisUrl;
-  const frameUrl = sourceUrl && sourceUrl !== "-" ? encodeURI(sourceUrl) : "";
+  const frameUrl = isResume ? getResumeDocumentFrameUrl(sourceUrl) : sourceUrl && sourceUrl !== "-" ? encodeURI(sourceUrl) : "";
 
   return (
     <Box
