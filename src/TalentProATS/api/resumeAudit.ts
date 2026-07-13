@@ -64,6 +64,9 @@ export type ResumeAuditResponse = {
     currentCompany?: string | null;
     experienceYears?: number | string | null;
     education?: string | null;
+    ResumeFileURL?: string | null;
+    resumeFileURL?: string | null;
+    resumeFileUrl?: string | null;
     location?: ResumeAuditCandidateLocation | null;
     Location?: ResumeAuditCandidateLocation | null;
     ContactInfo?: ResumeAuditContactInfo | null;

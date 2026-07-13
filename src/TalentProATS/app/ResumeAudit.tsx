@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Box,
   Button,
@@ -16,7 +16,9 @@ import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome";
 import BusinessCenterOutlinedIcon from "@mui/icons-material/BusinessCenterOutlined";
 import CheckCircleOutlineOutlinedIcon from "@mui/icons-material/CheckCircleOutlineOutlined";
 import CloseOutlinedIcon from "@mui/icons-material/CloseOutlined";
+import CompareArrowsOutlinedIcon from "@mui/icons-material/CompareArrowsOutlined";
 import ContentCopyOutlinedIcon from "@mui/icons-material/ContentCopyOutlined";
+import DescriptionOutlinedIcon from "@mui/icons-material/DescriptionOutlined";
 import FileDownloadOutlinedIcon from "@mui/icons-material/FileDownloadOutlined";
 import FlagOutlinedIcon from "@mui/icons-material/FlagOutlined";
 import HelpOutlineOutlinedIcon from "@mui/icons-material/HelpOutlineOutlined";
@@ -31,7 +33,7 @@ import PsychologyOutlinedIcon from "@mui/icons-material/PsychologyOutlined";
 import ReportProblemOutlinedIcon from "@mui/icons-material/ReportProblemOutlined";
 import TrendingUpOutlinedIcon from "@mui/icons-material/TrendingUpOutlined";
 import WorkspacePremiumOutlinedIcon from "@mui/icons-material/WorkspacePremiumOutlined";
-import type { ReactNode } from "react";
+import type { PointerEvent as ReactPointerEvent, ReactNode } from "react";
 import { useRouter } from "next/router";
 import { toast } from "react-toastify";
 import {
@@ -61,6 +63,8 @@ type PopoverPosition = {
   left: number;
   top: number;
 };
+
+type ComparisonMode = "resume" | "job" | null;
 
 const emptyArray = <T,>(value?: T[] | null) => (Array.isArray(value) ? value : []);
 
@@ -124,6 +128,39 @@ const formatYears = (value?: number | string | null) => {
   const normalized = String(value);
   if (/years?|yrs?/i.test(normalized)) return normalized;
   return `${normalized} Years`;
+};
+
+const copyFirstQueryAlias = (params: URLSearchParams, aliases: string[], to: string) => {
+  for (const alias of aliases) {
+    const value = params.get(alias);
+    if (value && !params.get(to)) {
+      params.set(to, value);
+      return;
+    }
+  }
+};
+
+const buildJobAnalysisComparisonUrl = (asPath: string) => {
+  const queryText = asPath.split("?")[1]?.split("#")[0] || "";
+  const params = new URLSearchParams(queryText);
+
+  params.delete("talentproRoute");
+  params.delete("token");
+  copyFirstQueryAlias(params, ["JobID", "jobId", "jobid"], "jobId");
+  copyFirstQueryAlias(params, ["JobInstance", "jobInstance", "jobinstance"], "jobInstance");
+  copyFirstQueryAlias(params, ["UserID", "userId", "userid"], "userId");
+  copyFirstQueryAlias(params, ["UserInstance", "userInstance", "userinstance"], "userInstance");
+  copyFirstQueryAlias(
+    params,
+    ["ClientReference", "clientReference", "clientreference", "ClientRef", "clientRef", "clientref", "ClientID", "clientId", "clientid"],
+    "clientReference"
+  );
+  if (!params.get("clientReference") && params.get("jobInstance")) {
+    params.set("clientReference", String(params.get("jobInstance")));
+  }
+
+  const query = params.toString();
+  return query ? `/job-analysis?${query}` : "/job-analysis";
 };
 
 const formatPercent = (value?: number | null) => {
@@ -274,11 +311,15 @@ const getAdditionalRequirementSkills = (mandatorySkills: ResumeAuditSkill[], pre
 
 export default function ResumeAudit() {
   const router = useRouter();
+  const comparisonWorkspaceRef = useRef<HTMLDivElement | null>(null);
   const [data, setData] = useState<ResumeAuditResponse | null>(null);
   const [requestPayload, setRequestPayload] = useState<ResumeAuditRequest | null>(null);
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
   const [isEmbedded, setIsEmbedded] = useState(false);
+  const [comparisonMode, setComparisonMode] = useState<ComparisonMode>(null);
+  const [comparisonLeftPercent, setComparisonLeftPercent] = useState(60);
+  const [isComparisonResizing, setIsComparisonResizing] = useState(false);
   const [questionPopover, setQuestionPopover] = useState<QuestionPopover | null>(null);
   const [questionPopoverPosition, setQuestionPopoverPosition] = useState<PopoverPosition | null>(null);
 
@@ -372,6 +413,10 @@ export default function ResumeAudit() {
     };
   }, [data, loading, questionPopover]);
 
+  useEffect(() => {
+    if (isEmbedded && comparisonMode) setComparisonMode(null);
+  }, [isEmbedded, comparisonMode]);
+
   const view = useMemo(() => {
     const candidate = data?.candidate;
     const job = data?.job;
@@ -395,6 +440,7 @@ export default function ResumeAudit() {
 
     return {
       candidateName: valueOrDash(candidate?.name),
+      resumeFileUrl: valueOrDash(candidate?.ResumeFileURL || candidate?.resumeFileURL || candidate?.resumeFileUrl),
       initials: getInitials(candidate?.name),
       currentTitle: valueOrDash(candidate?.currentTitle),
       currentCompany: valueOrDash(candidate?.currentCompany),
@@ -449,6 +495,9 @@ export default function ResumeAudit() {
   }, [data, requestPayload]);
 
   const improvementSections = getImprovementSections(view.resumeImprovement);
+  const canUseComparisonWorkspace = !isEmbedded;
+  const isComparisonOpen = canUseComparisonWorkspace && Boolean(comparisonMode);
+  const comparisonJobUrl = useMemo(() => buildJobAnalysisComparisonUrl(router.asPath), [router.asPath]);
   const sellingPoints = compactStringArray(view.submissionSummary?.sellingPoints);
   const hasCandidateSummary = valueOrDash(view.submissionSummary?.candidateSummary) !== "-";
   const hasSubmissionNotes = valueOrDash(view.submissionSummary?.submissionNotes) !== "-";
@@ -503,6 +552,36 @@ export default function ResumeAudit() {
   const closeQuestionPopover = () => {
     setQuestionPopover(null);
     setQuestionPopoverPosition(null);
+  };
+
+  const startComparisonResize = (event: ReactPointerEvent<HTMLButtonElement>) => {
+    if (!isComparisonOpen) return;
+
+    event.preventDefault();
+    setIsComparisonResizing(true);
+
+    const updateSplit = (clientX: number) => {
+      const rect = comparisonWorkspaceRef.current?.getBoundingClientRect();
+      if (!rect?.width) return;
+
+      const rawPercent = ((clientX - rect.left) / rect.width) * 100;
+      const clampedPercent = Math.min(70, Math.max(45, rawPercent));
+      setComparisonLeftPercent(Number(clampedPercent.toFixed(1)));
+    };
+
+    updateSplit(event.clientX);
+
+    const handlePointerMove = (moveEvent: PointerEvent) => updateSplit(moveEvent.clientX);
+    const stopResize = () => {
+      setIsComparisonResizing(false);
+      window.removeEventListener("pointermove", handlePointerMove);
+      window.removeEventListener("pointerup", stopResize);
+      window.removeEventListener("pointercancel", stopResize);
+    };
+
+    window.addEventListener("pointermove", handlePointerMove);
+    window.addEventListener("pointerup", stopResize);
+    window.addEventListener("pointercancel", stopResize);
   };
 
   const exportPdf = async () => {
@@ -576,16 +655,44 @@ export default function ResumeAudit() {
   }
 
   return (
-    <main className="ra-page">
-      <Box className="ra-shell ra-pdf-template">
+    <main className={`ra-page ${isComparisonOpen ? "ra-comparison-open" : ""} ${isComparisonResizing ? "ra-comparison-resizing" : ""}`}>
+      <Box className="ra-comparison-workspace" ref={comparisonWorkspaceRef}>
+      <Box
+        className="ra-shell ra-pdf-template ra-audit-pane"
+        style={isComparisonOpen ? { flexBasis: `${comparisonLeftPercent}%` } : undefined}
+      >
         <Box className="ra-topbar">
           <Stack direction="row" alignItems="center" spacing={1}>
             <Typography className="ra-page-title">Resume Assessment</Typography>
             <Chip size="small" className="ja-ai-chip ja-title-ai-chip ra-title-ai-chip" icon={<AutoAwesomeIcon />} label="RAD IQ" />
           </Stack>
-          <Button className="ra-export-btn" variant="outlined" startIcon={<FileDownloadOutlinedIcon />} onClick={exportPdf}>
-            Export PDF
-          </Button>
+          <Stack direction="row" spacing={0.8} alignItems="center" className="ra-topbar-actions">
+            {canUseComparisonWorkspace && (
+              <>
+                {view.resumeFileUrl !== "-" && (
+                  <Button
+                    className={`ra-secondary-btn ra-compare-btn ${comparisonMode === "resume" ? "ra-compare-active" : ""}`}
+                    variant="outlined"
+                    startIcon={<DescriptionOutlinedIcon />}
+                    onClick={() => setComparisonMode("resume")}
+                  >
+                    Compare Resume
+                  </Button>
+                )}
+                <Button
+                  className={`ra-secondary-btn ra-compare-btn ${comparisonMode === "job" ? "ra-compare-active" : ""}`}
+                  variant="outlined"
+                  startIcon={<CompareArrowsOutlinedIcon />}
+                  onClick={() => setComparisonMode("job")}
+                >
+                  Compare JD Analysis
+                </Button>
+              </>
+            )}
+            <Button className="ra-export-btn" variant="outlined" startIcon={<FileDownloadOutlinedIcon />} onClick={exportPdf}>
+              Export PDF
+            </Button>
+          </Stack>
         </Box>
 
         <Card className="ra-hero-card">
@@ -838,12 +945,84 @@ export default function ResumeAudit() {
           </Dialog>
         )}
       </Box>
+      {isComparisonOpen && (
+        <button
+          type="button"
+          className="ra-comparison-resize-handle"
+          aria-label="Resize comparison panel"
+          onPointerDown={startComparisonResize}
+        />
+      )}
+      {isComparisonOpen && (
+        <ComparisonPanel
+          mode={comparisonMode}
+          resumeUrl={view.resumeFileUrl}
+          jobAnalysisUrl={comparisonJobUrl}
+          widthPercent={100 - comparisonLeftPercent}
+          onClose={() => setComparisonMode(null)}
+        />
+      )}
+      </Box>
     </main>
   );
 }
 
 function Card({ children, className = "" }: { children: ReactNode; className?: string }) {
   return <Paper className={`ra-card ${className}`} elevation={0}>{children}</Paper>;
+}
+
+function ComparisonPanel({
+  mode,
+  resumeUrl,
+  jobAnalysisUrl,
+  widthPercent,
+  onClose,
+}: {
+  mode: ComparisonMode;
+  resumeUrl: string;
+  jobAnalysisUrl: string;
+  widthPercent: number;
+  onClose: () => void;
+}) {
+  const isResume = mode === "resume";
+  const title = isResume ? "Resume" : "JD Analysis";
+  const sourceUrl = isResume ? resumeUrl : jobAnalysisUrl;
+  const frameUrl = sourceUrl && sourceUrl !== "-" ? encodeURI(sourceUrl) : "";
+
+  return (
+    <Box
+      className="ra-comparison-panel"
+      aria-label={`${title} comparison panel`}
+      style={{ flexBasis: `calc(${widthPercent}% - 9px)`, maxWidth: `calc(${widthPercent}% - 9px)` }}
+    >
+      <Box className="ra-comparison-header">
+        <Stack direction="row" spacing={0.8} alignItems="center" minWidth={0}>
+          <Box className="ra-comparison-icon">
+            {isResume ? <DescriptionOutlinedIcon /> : <CompareArrowsOutlinedIcon />}
+          </Box>
+          <Box minWidth={0}>
+            <Typography className="ra-comparison-title">Compare {title}</Typography>
+            <Typography className="ra-comparison-subtitle" noWrap>
+              {isResume ? "Candidate resume document" : "Job analysis workspace"}
+            </Typography>
+          </Box>
+        </Stack>
+        <IconButton aria-label="Close comparison" onClick={onClose} className="ra-comparison-close">
+          <CloseOutlinedIcon />
+        </IconButton>
+      </Box>
+      <Box className="ra-comparison-body">
+        {frameUrl ? (
+          <iframe className="ra-comparison-frame" title={`Compare ${title}`} src={frameUrl} />
+        ) : (
+          <Box className="ra-comparison-empty">
+            <Typography className="ra-row-strong">{title} is not available.</Typography>
+            <Typography className="ra-muted">The comparison source was not included in the audit response.</Typography>
+          </Box>
+        )}
+      </Box>
+    </Box>
+  );
 }
 
 function InfoTitle({ icon, title, tooltip }: { icon: ReactNode; title: string; tooltip?: ReactNode }) {

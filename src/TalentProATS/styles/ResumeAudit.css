@@ -12,6 +12,196 @@
   padding: 2px 0 8px;
 }
 
+.ra-comparison-workspace {
+  width: 100%;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 0;
+}
+
+.ra-audit-pane {
+  flex: 1 1 auto;
+  min-width: 0;
+  transition: flex-basis 220ms ease, max-width 220ms ease, width 220ms ease, margin 220ms ease;
+}
+
+.ra-comparison-open .ra-comparison-workspace {
+  justify-content: flex-start;
+  gap: 6px;
+  padding: 0 8px;
+}
+
+.ra-comparison-open .ra-audit-pane {
+  width: auto !important;
+  max-width: none;
+  flex: 0 1 60%;
+  margin: 0 !important;
+}
+
+.ra-comparison-resizing,
+.ra-comparison-resizing * {
+  cursor: col-resize !important;
+  user-select: none !important;
+}
+
+.ra-comparison-resizing .ra-comparison-frame {
+  pointer-events: none;
+}
+
+.ra-comparison-resize-handle {
+  position: sticky;
+  top: 8px;
+  flex: 0 0 12px;
+  width: 12px;
+  height: calc(100vh - 16px);
+  align-self: flex-start;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  cursor: col-resize;
+  touch-action: none;
+}
+
+.ra-comparison-resize-handle::before {
+  content: "";
+  position: absolute;
+  top: 10px;
+  bottom: 10px;
+  left: 50%;
+  width: 3px;
+  border-radius: 999px;
+  background: #c7d6ea;
+  transform: translateX(-50%);
+  transition: width 160ms ease, background 160ms ease, box-shadow 160ms ease;
+}
+
+.ra-comparison-resize-handle::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 18px;
+  height: 42px;
+  border: 1px solid #c7d6ea;
+  border-radius: 999px;
+  background:
+    linear-gradient(#8aa3c7, #8aa3c7) center 12px / 2px 2px no-repeat,
+    linear-gradient(#8aa3c7, #8aa3c7) center 20px / 2px 2px no-repeat,
+    linear-gradient(#8aa3c7, #8aa3c7) center 28px / 2px 2px no-repeat,
+    #ffffff;
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.1);
+  transform: translate(-50%, -50%);
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.ra-comparison-resize-handle:hover::before,
+.ra-comparison-resizing .ra-comparison-resize-handle::before {
+  width: 4px;
+  background: #7fa6ff;
+  box-shadow: 0 0 0 3px rgba(13, 95, 236, 0.1);
+}
+
+.ra-comparison-resize-handle:hover::after,
+.ra-comparison-resizing .ra-comparison-resize-handle::after {
+  border-color: #7fa6ff;
+  box-shadow: 0 10px 24px rgba(13, 95, 236, 0.18);
+}
+
+.ra-comparison-panel {
+  position: sticky;
+  top: 8px;
+  flex: 0 0 calc(40% - 5px);
+  max-width: calc(40% - 5px);
+  height: calc(100vh - 16px);
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid #dbe3ef;
+  border-radius: 9px;
+  background: #ffffff;
+  box-shadow: 0 16px 44px rgba(15, 23, 42, 0.12);
+  animation: raComparisonEnter 180ms ease-out;
+}
+
+.ra-comparison-header {
+  min-height: 54px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 10px;
+  border-bottom: 1px solid #dbe3ef;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+}
+
+.ra-comparison-icon {
+  width: 32px;
+  height: 32px;
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 8px;
+  background: #edf4ff;
+  color: #0d5fec;
+}
+
+.ra-comparison-icon svg {
+  font-size: 19px;
+}
+
+.ra-comparison-title {
+  color: #071127;
+  font-size: 14.5px !important;
+  line-height: 1.2 !important;
+  font-weight: 800 !important;
+}
+
+.ra-comparison-subtitle {
+  color: #52647a;
+  font-size: 12px !important;
+  line-height: 1.25 !important;
+  font-weight: 550 !important;
+}
+
+.ra-comparison-close {
+  width: 31px;
+  height: 31px;
+  border: 1px solid #dbe3ef !important;
+  border-radius: 8px !important;
+  color: #52647a !important;
+}
+
+.ra-comparison-close svg {
+  font-size: 18px;
+}
+
+.ra-comparison-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  background: #f6f8fc;
+}
+
+.ra-comparison-frame {
+  width: 100%;
+  height: 100%;
+  display: block;
+  border: 0;
+  background: #ffffff;
+}
+
+.ra-comparison-empty {
+  height: 100%;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: 6px;
+  padding: 24px;
+  text-align: center;
+}
+
 .ra-topbar {
   min-height: 54px;
   display: flex;
@@ -41,13 +231,52 @@
 
 .ra-export-btn,
 .ra-secondary-btn {
+  height: 31px !important;
+  min-width: 0 !important;
   min-height: 31px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
   border-color: #bfd4ff !important;
   border-radius: 7px !important;
   color: #0d5fec !important;
   text-transform: none !important;
   font-size: 12px !important;
   font-weight: 650 !important;
+  line-height: 1 !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+.ra-export-btn .MuiButton-startIcon,
+.ra-secondary-btn .MuiButton-startIcon {
+  display: inline-flex !important;
+  align-items: center !important;
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+}
+
+.ra-export-btn svg,
+.ra-secondary-btn svg {
+  font-size: 17px !important;
+}
+
+.ra-topbar-actions {
+  min-height: 31px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center !important;
+}
+
+.ra-topbar-actions .MuiButton-root {
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+}
+
+.ra-compare-active {
+  background: #edf4ff !important;
+  border-color: #7fa6ff !important;
+  color: #073fba !important;
 }
 
 .ra-empty-card {
@@ -965,6 +1194,17 @@
   }
 }
 
+@keyframes raComparisonEnter {
+  0% {
+    opacity: 0;
+    transform: translateX(12px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
 .ra-exporting-pdf .ra-page,
 .ra-exporting-pdf .ra-shell {
   background: #f6f8fc !important;
@@ -980,6 +1220,31 @@
 
   .ra-wide-card {
     grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 1099px) {
+  .ra-compare-btn {
+    display: none !important;
+  }
+
+  .ra-comparison-open .ra-comparison-workspace {
+    display: block;
+    padding: 0;
+  }
+
+  .ra-comparison-open .ra-audit-pane {
+    width: calc(100% - 15px) !important;
+    max-width: 1440px;
+    margin: 0 auto !important;
+  }
+
+  .ra-comparison-panel {
+    display: none;
+  }
+
+  .ra-comparison-resize-handle {
+    display: none;
   }
 }
 
