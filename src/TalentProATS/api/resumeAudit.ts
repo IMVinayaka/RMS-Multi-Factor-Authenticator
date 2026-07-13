@@ -116,13 +116,21 @@ export type ResumeAuditResponse = {
   } | null;
   scoreBreakdown?: Array<{
     type?: string | null;
+    Type?: string | null;
     displayName?: string | null;
+    DisplayName?: string | null;
     weight?: number | null;
+    Weight?: number | null;
     scorePercentage?: number | null;
+    ScorePercentage?: number | null;
     score?: number | null;
+    Score?: number | null;
     maxScore?: number | null;
+    MaxScore?: number | null;
     severity?: string | null;
+    Severity?: string | null;
     message?: string | null;
+    Message?: string | null;
   }> | null;
   skillsAnalysis?: {
     mandatorySkills?: ResumeAuditSkill[] | null;

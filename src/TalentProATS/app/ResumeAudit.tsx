@@ -170,6 +170,12 @@ const formatPercent = (value?: number | null) => {
   return `${Math.round(percent)}%`;
 };
 
+const normalizeScorePercentage = (value?: number | null) => {
+  if (value === null || value === undefined || Number.isNaN(Number(value))) return 0;
+  const normalized = Number(value);
+  return normalized > 0 && normalized <= 1 ? normalized * 100 : normalized;
+};
+
 const normalizeCommuteTone = (status?: string | null): Tone => {
   const normalized = status?.trim().toLowerCase();
   if (normalized === "near") return "green";
@@ -470,7 +476,7 @@ export default function ResumeAudit() {
       interviewProbability: audit?.interviewProbability ?? 0,
       summary: valueOrDash(audit?.summary),
       decisionReason: valueOrDash(audit?.decisionReason),
-      scoreBreakdown: emptyArray(data?.scoreBreakdown).filter((item) => Number(item.maxScore) !== 0),
+      scoreBreakdown: emptyArray(data?.scoreBreakdown).filter((item) => Number(item.maxScore ?? item.MaxScore) !== 0),
       mandatorySkills: emptyArray(data?.skillsAnalysis?.mandatorySkills),
       preferredSkills: emptyArray(data?.skillsAnalysis?.preferredSkills),
       softSkills: emptyArray(data?.skillsAnalysis?.softSkills),
@@ -838,8 +844,8 @@ export default function ResumeAudit() {
               tooltip={
                 <Stack spacing={0.7}>
                   {view.scoreBreakdown.map((item) => (
-                    <Typography className="ra-tooltip-text" key={item.displayName || item.type || item.message || "score"}>
-                      {valueOrDash(item.displayName || item.type)}: {valueOrDash(item.score)} / {valueOrDash(item.maxScore)}, Weight {valueOrDash(item.weight)}%
+                    <Typography className="ra-tooltip-text" key={item.displayName || item.DisplayName || item.type || item.Type || item.message || item.Message || "score"}>
+                      {valueOrDash(item.displayName || item.DisplayName || item.type || item.Type)}: {valueOrDash(item.score ?? item.Score)} / {valueOrDash(item.maxScore ?? item.MaxScore)}, Weight {valueOrDash(item.weight ?? item.Weight)}%
                     </Typography>
                   ))}
                 </Stack>
@@ -847,7 +853,7 @@ export default function ResumeAudit() {
             />
             <Stack spacing={0.25}>
               {view.scoreBreakdown.map((item) => (
-                <ScoreBreakdownRow key={item.displayName || item.type || item.message || Math.random()} item={item} />
+                <ScoreBreakdownRow key={item.displayName || item.DisplayName || item.type || item.Type || item.message || item.Message || Math.random()} item={item} />
               ))}
             </Stack>
           </Card>}
@@ -1165,14 +1171,18 @@ function InsightList({ title, items, tone }: { title: string; items: string[]; t
 }
 
 function ScoreBreakdownRow({ item }: { item: NonNullable<ResumeAuditResponse["scoreBreakdown"]>[number] }) {
-  const scorePercentage = item.scorePercentage ?? 0;
-  const tone = getSeverityTone(item.severity);
+  const scorePercentage = normalizeScorePercentage(item.scorePercentage ?? item.ScorePercentage);
+  const displayName = item.displayName || item.DisplayName || item.type || item.Type;
+  const score = item.score ?? item.Score;
+  const maxScore = item.maxScore ?? item.MaxScore;
+  const tone = getSeverityTone(item.severity || item.Severity);
+  const message = item.message || item.Message;
   const tooltipTitle = (
     <Box className="ra-skill-tooltip">
-      <Typography className="ra-skill-tooltip-heading">Score: {valueOrDash(item.score)}/{valueOrDash(item.maxScore)}</Typography>
+      <Typography className="ra-skill-tooltip-heading">Score: {valueOrDash(score)}/{valueOrDash(maxScore)}</Typography>
       <Box>
         <Typography className="ra-skill-tooltip-heading">Message</Typography>
-        <Typography>{valueOrDash(item.message)}</Typography>
+        <Typography>{valueOrDash(message)}</Typography>
       </Box>
     </Box>
   );
@@ -1181,11 +1191,11 @@ function ScoreBreakdownRow({ item }: { item: NonNullable<ResumeAuditResponse["sc
     <Tooltip title={tooltipTitle} arrow placement="top">
       <Box className="ra-score-row ra-score-row-tooltip">
         <Stack direction="row" justifyContent="space-between" spacing={1}>
-          <Typography className="ra-body-text">{valueOrDash(item.displayName || item.type)}</Typography>
+          <Typography className="ra-body-text">{valueOrDash(displayName)}</Typography>
         </Stack>
         <Stack direction="row" alignItems="center" spacing={1}>
           <Box className="ra-progress-track"><span className={`ra-progress-bar ra-progress-${tone}`} style={{ width: `${Math.max(0, Math.min(100, scorePercentage))}%` }} /></Box>
-          <Typography className="ra-row-strong">{scorePercentage}%</Typography>
+          <Typography className="ra-row-strong">{formatPercent(scorePercentage)}</Typography>
         </Stack>
       </Box>
     </Tooltip>
