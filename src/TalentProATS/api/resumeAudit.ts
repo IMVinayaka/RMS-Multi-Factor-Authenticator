@@ -50,8 +50,11 @@ export type ResumeAuditPhoneContact = {
 
 export type ResumeAuditSalaryAmount = {
   Amount?: number | null;
+  amount?: number | null;
   Currency?: string | null;
+  currency?: string | null;
   Type?: string | null;
+  type?: string | null;
 };
 
 export type ResumeAuditResponse = {
@@ -73,12 +76,34 @@ export type ResumeAuditResponse = {
     contactInfo?: ResumeAuditContactInfo | null;
     Salary?: {
       CurrentSalary?: ResumeAuditSalaryAmount | null;
+      currentSalary?: ResumeAuditSalaryAmount | null;
       ExpectedSalary?: ResumeAuditSalaryAmount | null;
+      expectedSalary?: ResumeAuditSalaryAmount | null;
       SalaryMatch?: {
         Score?: number | null;
+        score?: number | null;
         Status?: string | null;
+        status?: string | null;
         DifferencePercentage?: number | null;
+        differencePercentage?: number | null;
         Summary?: string | null;
+        summary?: string | null;
+      } | null;
+    } | null;
+    salary?: {
+      CurrentSalary?: ResumeAuditSalaryAmount | null;
+      currentSalary?: ResumeAuditSalaryAmount | null;
+      ExpectedSalary?: ResumeAuditSalaryAmount | null;
+      expectedSalary?: ResumeAuditSalaryAmount | null;
+      SalaryMatch?: {
+        Score?: number | null;
+        score?: number | null;
+        Status?: string | null;
+        status?: string | null;
+        DifferencePercentage?: number | null;
+        differencePercentage?: number | null;
+        Summary?: string | null;
+        summary?: string | null;
       } | null;
     } | null;
     Availability?: {
@@ -113,6 +138,20 @@ export type ResumeAuditResponse = {
     interviewProbability?: number | null;
     summary?: string | null;
     decisionReason?: string | null;
+    SalaryAssessment?: ResumeAuditSalaryAssessment | null;
+    salaryAssessment?: ResumeAuditSalaryAssessment | null;
+  } | null;
+  AuditResult?: {
+    OverallScore?: number | null;
+    Recommendation?: string | null;
+    Confidence?: string | null;
+    StatusColor?: string | null;
+    SubmissionPriority?: string | null;
+    InterviewProbability?: number | null;
+    Summary?: string | null;
+    DecisionReason?: string | null;
+    SalaryAssessment?: ResumeAuditSalaryAssessment | null;
+    salaryAssessment?: ResumeAuditSalaryAssessment | null;
   } | null;
   scoreBreakdown?: Array<{
     type?: string | null;
@@ -149,6 +188,8 @@ export type ResumeAuditResponse = {
   screeningQuestions?: ResumeAuditScreeningQuestions | null;
   ResumeImprovement?: ResumeAuditImprovement | null;
   resumeImprovement?: ResumeAuditImprovement | null;
+  CandidateSnapshot?: ResumeAuditCandidateSnapshot | null;
+  candidateSnapshot?: ResumeAuditCandidateSnapshot | null;
   submissionSummary?: {
     candidateSummary?: string | null;
     sellingPoints?: string[] | null;
@@ -165,6 +206,17 @@ export type ResumeAuditResponse = {
     auditedBy?: string | null;
     model?: string | null;
   } | null;
+};
+
+export type ResumeAuditSalaryAssessment = {
+  Score?: number | null;
+  score?: number | null;
+  Status?: string | null;
+  status?: string | null;
+  DifferencePercentage?: number | null;
+  differencePercentage?: number | null;
+  Summary?: string | null;
+  summary?: string | null;
 };
 
 export type ResumeAuditCandidateLocation = {
@@ -199,19 +251,37 @@ export type ResumeAuditImprovement = {
   projectSuggestions?: string[] | null;
 };
 
+export type ResumeAuditCandidateSnapshot = {
+  Summary?: string | null;
+  summary?: string | null;
+  Snapshot?: string[] | null;
+  snapshot?: string[] | null;
+};
+
 export type ResumeAuditSkill = {
   skill?: string | null;
   matched?: boolean | null;
   coverage?: number | string | null;
   experience?: string | null;
+  Experience?: string | null;
+  YearLastUsed?: number | null;
+  yearLastUsed?: number | null;
   confidence?: number | null;
   evidence?: string[] | null;
+  ResumeEvidenceTerms?: string[] | null;
+  resumeEvidenceTerms?: string[] | null;
+  skillCategory?: "Mandatory Skills" | "Preferred Skills" | "Soft Skills";
 };
 
 export type ResumeAuditQuestion = {
   question?: string | null;
+  Question?: string | null;
   reason?: string | null;
+  Reason?: string | null;
+  candidateResponseExpected?: string | null;
+  CandidateResponseExpected?: string | null;
   priority?: string | null;
+  Priority?: string | null;
 };
 
 export type ResumeAuditScreeningQuestions = {

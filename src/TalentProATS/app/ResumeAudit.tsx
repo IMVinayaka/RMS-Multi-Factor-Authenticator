@@ -38,6 +38,7 @@ import { useRouter } from "next/router";
 import { toast } from "react-toastify";
 import {
   auditResume,
+  type ResumeAuditCandidateSnapshot,
   type ResumeAuditEmailContact,
   type ResumeAuditImprovement,
   type ResumeAuditPhoneContact,
@@ -46,6 +47,8 @@ import {
   type ResumeAuditResponse,
   type ResumeAuditSkill,
 } from "@/TalentProATS/api/resumeAudit";
+import { CANDIDATE_SNAPSHOT_EMAIL_TEMPLATE } from "@/TalentProATS/templates/CandidateSnapshotEmailTemplate";
+import { InteractiveResumeViewer, type ResumeHighlightSelection } from "@/TalentProATS/app/ResumeComparison";
 
 type Tone = "blue" | "green" | "orange" | "red" | "purple" | "gray";
 type QuestionGroup = {
@@ -81,6 +84,17 @@ const valueOrDash = (value?: string | number | null) => {
   if (value === null || value === undefined || value === "") return "-";
   return String(value);
 };
+
+const escapeHtml = (value?: string | number | null) =>
+  valueOrDash(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+
+const renderTemplate = (template: string, values: Record<string, string>) =>
+  Object.entries(values).reduce((html, [key, value]) => html.replaceAll(`@@${key}`, value), template);
 
 const getQueryParam = (query: Record<string, string | string[] | undefined>, ...keys: string[]) => {
   for (const key of keys) {
@@ -130,6 +144,16 @@ const formatYears = (value?: number | string | null) => {
   return `${normalized} Years`;
 };
 
+const formatSkillExperience = (value?: string | number | null) => {
+  if (value === null || value === undefined || value === "") return "-";
+  return String(value);
+};
+
+const formatYearLastUsed = (value?: number | string | null) => {
+  if (value === null || value === undefined || value === "") return "-";
+  return String(value);
+};
+
 const copyFirstQueryAlias = (params: URLSearchParams, aliases: string[], to: string) => {
   for (const alias of aliases) {
     const value = params.get(alias);
@@ -163,6 +187,11 @@ const buildJobAnalysisComparisonUrl = (asPath: string) => {
   return query ? `/job-analysis?${query}` : "/job-analysis";
 };
 
+const buildInteractiveComparisonUrl = (asPath: string) => {
+  const queryText = asPath.split("?")[1]?.split("#")[0] || "";
+  return queryText ? `/resume-comparison?${queryText}` : "/resume-comparison";
+};
+
 const isWordDocumentUrl = (url: string) => {
   const path = url.split(/[?#]/)[0]?.trim().toLowerCase() || "";
   return path.endsWith(".doc") || path.endsWith(".docx");
@@ -187,6 +216,41 @@ const normalizeScorePercentage = (value?: number | null) => {
   if (value === null || value === undefined || Number.isNaN(Number(value))) return 0;
   const normalized = Number(value);
   return normalized > 0 && normalized <= 1 ? normalized * 100 : normalized;
+};
+
+const formatSalaryAssessmentScore = (value?: number | null) => {
+  if (value === null || value === undefined || Number.isNaN(Number(value))) return "-";
+  const normalized = Number(value);
+  const percent = normalized <= 10 ? normalized * 10 : normalized;
+  return `${Math.round(percent)}%`;
+};
+
+const getSalaryAssessmentTone = (value?: number | null): Tone => {
+  if (value === null || value === undefined || Number.isNaN(Number(value))) return "gray";
+  const normalized = Number(value);
+  if (normalized <= 10) return normalized >= 8 ? "green" : "orange";
+  return normalized >= 80 ? "green" : "orange";
+};
+
+const formatDifferencePercentage = (value?: number | null) => {
+  if (value === null || value === undefined || Number.isNaN(Number(value))) return "-";
+  return `${Number(value).toFixed(1).replace(/\.0$/, "")}%`;
+};
+
+const getSalaryAssessmentTooltip = (
+  summary: string,
+  differencePercentage?: number | null,
+  expectedSalary?: string,
+  budget?: string
+) => {
+  const lines = [];
+  if (summary && summary !== "-") lines.push(summary);
+  if (expectedSalary && expectedSalary !== "-") lines.push(`Expected Salary: ${expectedSalary}`);
+  if (budget && budget !== "-") lines.push(`Budget: ${budget}`);
+  if (differencePercentage !== null && differencePercentage !== undefined && Number(differencePercentage) > 0) {
+    lines.push(`Difference Percentage: ${formatDifferencePercentage(differencePercentage)}`);
+  }
+  return lines.join("\n");
 };
 
 const normalizeCommuteTone = (status?: string | null): Tone => {
@@ -217,6 +281,25 @@ const formatMoney = (amount?: number | null, currency?: string | null, type?: st
   const formatted = new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }).format(amount);
   const suffix = type ? ` / ${type.toLowerCase()}` : "";
   return `${getCurrencySymbol(currency)}${formatted}${suffix}`;
+};
+
+const formatMoneyWithDecimals = (amount?: number | null, currency?: string | null, type?: string | null) => {
+  if (amount === null || amount === undefined) return "-";
+  const formatted = new Intl.NumberFormat("en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(amount);
+  const suffix = type ? ` / ${type.toLowerCase()}` : "";
+  return `${getCurrencySymbol(currency)}${formatted}${suffix}`;
+};
+
+const formatTitleCompany = (title?: string | null, company?: string | null) => {
+  const normalizedTitle = valueOrDash(title);
+  const normalizedCompany = valueOrDash(company);
+
+  if (normalizedTitle !== "-" && normalizedCompany !== "-") return `${normalizedTitle} @ ${normalizedCompany}`;
+  if (normalizedTitle !== "-") return normalizedTitle;
+  return normalizedCompany;
 };
 
 const formatLocationWorkModel = (location?: string | null, workModel?: string | null) => {
@@ -310,6 +393,12 @@ const getInitials = (name?: string | null) => {
 
 const getResumeImprovement = (data?: ResumeAuditResponse | null) => data?.ResumeImprovement || data?.resumeImprovement || null;
 
+const getCandidateSnapshot = (data?: ResumeAuditResponse | null) => data?.CandidateSnapshot || data?.candidateSnapshot || null;
+
+const getSnapshotSummary = (snapshot?: ResumeAuditCandidateSnapshot | null) => valueOrDash(snapshot?.Summary || snapshot?.summary);
+
+const getSnapshotPoints = (snapshot?: ResumeAuditCandidateSnapshot | null) => compactStringArray(snapshot?.Snapshot || snapshot?.snapshot);
+
 const getImprovementSections = (data?: ResumeAuditImprovement | null) =>
   [
     { title: "Missing Information", tone: "orange" as Tone, items: compactStringArray(data?.MissingInformation || data?.missingInformation) },
@@ -337,6 +426,8 @@ export default function ResumeAudit() {
   const [errorMessage, setErrorMessage] = useState("");
   const [isEmbedded, setIsEmbedded] = useState(false);
   const [comparisonMode, setComparisonMode] = useState<ComparisonMode>(null);
+  const [resumeHighlightSelection, setResumeHighlightSelection] = useState<ResumeHighlightSelection | null>(null);
+  const [interactiveComparisonOpen, setInteractiveComparisonOpen] = useState(false);
   const [comparisonLeftPercent, setComparisonLeftPercent] = useState(60);
   const [isComparisonResizing, setIsComparisonResizing] = useState(false);
   const [questionPopover, setQuestionPopover] = useState<QuestionPopover | null>(null);
@@ -440,11 +531,18 @@ export default function ResumeAudit() {
     const candidate = data?.candidate;
     const job = data?.job;
     const audit = data?.auditResult;
-    const salary = candidate?.Salary;
+    const auditPascal = data?.AuditResult;
+    const salary = candidate?.Salary || candidate?.salary;
+    const currentSalary = salary?.CurrentSalary || salary?.currentSalary;
+    const expectedSalary = salary?.ExpectedSalary || salary?.expectedSalary;
+    const salaryAssessment = audit?.SalaryAssessment || audit?.salaryAssessment || auditPascal?.SalaryAssessment || auditPascal?.salaryAssessment || salary?.SalaryMatch;
+    const salaryAssessmentScore = salaryAssessment?.Score ?? salaryAssessment?.score;
+    const salaryAssessmentSummary = valueOrDash(salaryAssessment?.Summary || salaryAssessment?.summary);
+    const salaryAssessmentDifference = salaryAssessment?.DifferencePercentage ?? salaryAssessment?.differencePercentage;
     const hasCandidateSalary = Boolean(
-      salary?.CurrentSalary?.Amount !== null && salary?.CurrentSalary?.Amount !== undefined ||
-      salary?.ExpectedSalary?.Amount !== null && salary?.ExpectedSalary?.Amount !== undefined ||
-      salary?.SalaryMatch?.Score !== null && salary?.SalaryMatch?.Score !== undefined
+      (currentSalary?.Amount ?? currentSalary?.amount) !== null && (currentSalary?.Amount ?? currentSalary?.amount) !== undefined ||
+      (expectedSalary?.Amount ?? expectedSalary?.amount) !== null && (expectedSalary?.Amount ?? expectedSalary?.amount) !== undefined ||
+      salaryAssessmentScore !== null && salaryAssessmentScore !== undefined
     );
     const candidateLocation = candidate?.location || candidate?.Location;
     const location = [
@@ -456,6 +554,10 @@ export default function ResumeAudit() {
     const travelDistance = candidateLocation?.TravelDistance ?? candidateLocation?.travelDistance;
     const distanceUnit = candidateLocation?.DistanceUnit || candidateLocation?.distanceUnit;
     const distanceLabel = formatDistanceLabel(travelDistance, distanceUnit);
+    const jobBudgetDisplay = formatMoney(job?.salary?.amount, job?.salary?.currency, job?.salary?.type);
+    const currentSalaryDisplay = formatMoney(currentSalary?.Amount ?? currentSalary?.amount, currentSalary?.Currency || currentSalary?.currency, currentSalary?.Type || currentSalary?.type);
+    const expectedSalaryCompact = formatMoney(expectedSalary?.Amount ?? expectedSalary?.amount, expectedSalary?.Currency || expectedSalary?.currency, expectedSalary?.Type || expectedSalary?.type);
+    const expectedSalaryDetailed = formatMoneyWithDecimals(expectedSalary?.Amount ?? expectedSalary?.amount, expectedSalary?.Currency || expectedSalary?.currency, expectedSalary?.Type || expectedSalary?.type);
 
     return {
       candidateName: valueOrDash(candidate?.name),
@@ -463,6 +565,7 @@ export default function ResumeAudit() {
       initials: getInitials(candidate?.name),
       currentTitle: valueOrDash(candidate?.currentTitle),
       currentCompany: valueOrDash(candidate?.currentCompany),
+      titleCompanyDisplay: formatTitleCompany(candidate?.currentTitle, candidate?.currentCompany),
       experience: formatYears(candidate?.experienceYears),
       email: getPrimaryEmail(data),
       phone: getPrimaryPhone(data),
@@ -479,34 +582,40 @@ export default function ResumeAudit() {
       client: valueOrDash(job?.client),
       industry: valueOrDash(job?.industry),
       jobLocationWorkModel: formatLocationWorkModel(job?.Location || job?.location, job?.WorkModel || job?.workModel),
-      jobBudget: formatMoney(job?.salary?.amount, job?.salary?.currency, job?.salary?.type),
+      jobBudget: jobBudgetDisplay,
       hasCandidateSalary,
-      overallScore: audit?.overallScore ?? 0,
-      recommendation: formatRecommendation(audit?.recommendation),
-      recommendationTone: getRecommendationTone(audit?.recommendation),
-      confidence: valueOrDash(audit?.confidence),
-      submissionPriority: valueOrDash(audit?.submissionPriority),
-      interviewProbability: audit?.interviewProbability ?? 0,
-      summary: valueOrDash(audit?.summary),
-      decisionReason: valueOrDash(audit?.decisionReason),
+      overallScore: audit?.overallScore ?? auditPascal?.OverallScore ?? 0,
+      recommendation: formatRecommendation(audit?.recommendation || auditPascal?.Recommendation),
+      recommendationTone: getRecommendationTone(audit?.recommendation || auditPascal?.Recommendation),
+      confidence: valueOrDash(audit?.confidence || auditPascal?.Confidence),
+      submissionPriority: valueOrDash(audit?.submissionPriority || auditPascal?.SubmissionPriority),
+      interviewProbability: audit?.interviewProbability ?? auditPascal?.InterviewProbability ?? 0,
+      summary: valueOrDash(audit?.summary || auditPascal?.Summary),
+      decisionReason: valueOrDash(audit?.decisionReason || auditPascal?.DecisionReason),
       scoreBreakdown: emptyArray(data?.scoreBreakdown).filter((item) => Number(item.maxScore ?? item.MaxScore) !== 0),
-      mandatorySkills: emptyArray(data?.skillsAnalysis?.mandatorySkills),
-      preferredSkills: emptyArray(data?.skillsAnalysis?.preferredSkills),
-      softSkills: emptyArray(data?.skillsAnalysis?.softSkills),
+      mandatorySkills: emptyArray(data?.skillsAnalysis?.mandatorySkills).map((item) => ({ ...item, skillCategory: "Mandatory Skills" as const })),
+      preferredSkills: emptyArray(data?.skillsAnalysis?.preferredSkills).map((item) => ({ ...item, skillCategory: "Preferred Skills" as const })),
+      softSkills: emptyArray(data?.skillsAnalysis?.softSkills).map((item) => ({ ...item, skillCategory: "Soft Skills" as const })),
       missingSkills: compactStringArray(data?.skillsAnalysis?.missingSkills),
       additionalStrengthSkills: compactStringArray(data?.skillsAnalysis?.additionalStrengthSkills),
       strengths: compactStringArray(data?.strengths),
       concerns: emptyArray(data?.candidateConcerns),
       questionGroups: getQuestionGroups(data),
       resumeImprovement: getResumeImprovement(data),
+      candidateSnapshot: getCandidateSnapshot(data),
       submissionSummary: data?.submissionSummary,
       clientConcerns: compactStringArray(data?.submissionSummary?.clientConcerns),
       executiveInsights: data?.executiveInsights,
-      currentSalary: formatMoney(salary?.CurrentSalary?.Amount, salary?.CurrentSalary?.Currency, salary?.CurrentSalary?.Type),
-      expectedSalary: formatMoney(salary?.ExpectedSalary?.Amount, salary?.ExpectedSalary?.Currency, salary?.ExpectedSalary?.Type),
-      salaryMatchScore: salary?.SalaryMatch?.Score ?? 0,
-      salaryMatchStatus: valueOrDash(salary?.SalaryMatch?.Status),
-      salaryMatchSummary: valueOrDash(salary?.SalaryMatch?.Summary),
+      nextRecommendedAction: valueOrDash(data?.executiveInsights?.nextRecommendedAction),
+      currentSalary: currentSalaryDisplay,
+      expectedSalary: expectedSalaryCompact,
+      expectedSalaryDisplay: expectedSalaryDetailed,
+      salaryMatchScore: salaryAssessmentScore ?? 0,
+      salaryMatchScoreDisplay: formatSalaryAssessmentScore(salaryAssessmentScore),
+      salaryMatchTone: getSalaryAssessmentTone(salaryAssessmentScore),
+      salaryMatchStatus: valueOrDash(salaryAssessment?.Status || salaryAssessment?.status),
+      salaryMatchSummary: salaryAssessmentSummary,
+      salaryMatchTooltip: getSalaryAssessmentTooltip(salaryAssessmentSummary, salaryAssessmentDifference, expectedSalaryCompact, jobBudgetDisplay),
       availableFrom: formatDate(candidate?.Availability?.AvailableFrom),
       noticePeriod: valueOrDash(candidate?.Availability?.NoticePeriod),
       auditedOn: formatDate(data?.auditMetadata?.auditedOn),
@@ -517,6 +626,21 @@ export default function ResumeAudit() {
   const canUseComparisonWorkspace = !isEmbedded;
   const isComparisonOpen = canUseComparisonWorkspace && Boolean(comparisonMode);
   const comparisonJobUrl = useMemo(() => buildJobAnalysisComparisonUrl(router.asPath), [router.asPath]);
+  const interactiveComparisonUrl = useMemo(() => buildInteractiveComparisonUrl(router.asPath), [router.asPath]);
+
+  useEffect(() => {
+    if (!interactiveComparisonOpen) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setInteractiveComparisonOpen(false);
+    };
+    window.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [interactiveComparisonOpen]);
   const sellingPoints = compactStringArray(view.submissionSummary?.sellingPoints);
   const hasCandidateSummary = valueOrDash(view.submissionSummary?.candidateSummary) !== "-";
   const hasSubmissionNotes = valueOrDash(view.submissionSummary?.submissionNotes) !== "-";
@@ -527,8 +651,7 @@ export default function ResumeAudit() {
   const hasSkillsRequirementCoverage = skillsRequirementItems.length > 0;
   const hasExecutiveInsights =
     compactStringArray(view.executiveInsights?.whyRecommended).length > 0 ||
-    compactStringArray(view.executiveInsights?.whyNotPerfect).length > 0 ||
-    valueOrDash(view.executiveInsights?.nextRecommendedAction) !== "-";
+    compactStringArray(view.executiveInsights?.whyNotPerfect).length > 0;
   const whyRecommendedItems = compactStringArray(view.executiveInsights?.whyRecommended);
   const whyNotPerfectItems = compactStringArray(view.executiveInsights?.whyNotPerfect);
   const showRiskFirst = ["medium", "low"].includes(view.submissionPriority.toLowerCase());
@@ -551,6 +674,88 @@ export default function ResumeAudit() {
     if (right.key === "not-perfect") return 1;
     return 0;
   });
+  const candidateSnapshotSummary = getSnapshotSummary(view.candidateSnapshot);
+  const candidateSnapshotPoints = getSnapshotPoints(view.candidateSnapshot);
+  const hasCandidateSnapshot = candidateSnapshotSummary !== "-" || candidateSnapshotPoints.length > 0;
+  const snapshotSummaryCopy = candidateSnapshotSummary !== "-" ? candidateSnapshotSummary : "";
+  const snapshotPointsCopy = candidateSnapshotPoints.map((item) => `- ${item}`).join("\n");
+  const locationForTemplate =
+    view.location !== "-" && view.commuteStatus.toLowerCase() === "near" && view.commuteDistanceLabel !== "-"
+      ? `${view.location} (${view.commuteDistanceLabel})`
+      : view.location;
+  const candidateSnapshotEmailPlainText = [
+    "Hi,",
+    "",
+    candidateSnapshotSummary !== "-" ? candidateSnapshotSummary : "",
+    "",
+    "Candidate Information",
+    `Candidate Name: ${view.candidateName}`,
+    `Job Title: ${view.jobTitle}`,
+    `Current Company: ${view.currentCompany}`,
+    `Total Experience: ${view.experience}`,
+    `Location: ${locationForTemplate}`,
+    "",
+    "Candidate snapshot:",
+    ...candidateSnapshotPoints.map((item) => `- ${item}`),
+    "",
+    "Regards,",
+  ].filter((line, index, lines) => !(line === "" && lines[index - 1] === "")).join("\n");
+  const candidateSnapshotEmailTemplate = renderTemplate(CANDIDATE_SNAPSHOT_EMAIL_TEMPLATE, {
+    SummaryBlock: candidateSnapshotSummary !== "-" ? `<p style="margin: 0 0 16px;">${escapeHtml(candidateSnapshotSummary)}</p>` : "",
+    CandidateName: escapeHtml(view.candidateName),
+    JobTitle: escapeHtml(view.jobTitle),
+    CurrentCompany: escapeHtml(view.currentCompany),
+    TotalExperience: escapeHtml(view.experience),
+    Location: escapeHtml(locationForTemplate),
+    SnapshotBlock: candidateSnapshotPoints.length > 0 ? `
+      <div style="margin: 0 0 16px;">
+        <div style="margin: 0 0 8px; color: #0d5fec; font-weight: 700;">Candidate Snapshot</div>
+        <ul style="margin: 0; padding-left: 20px;">
+          ${candidateSnapshotPoints.map((item) => `<li style="margin: 0 0 6px;">${escapeHtml(item)}</li>`).join("")}
+        </ul>
+      </div>
+    ` : "",
+  });
+
+  const copyText = async (text: string, label: string) => {
+    if (!text.trim()) {
+      toast.info(`${label} is not available.`);
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success(`${label} copied.`);
+    } catch (error) {
+      console.error(`[ResumeAudit Page] Unable to copy ${label}`, error);
+      toast.error(`Unable to copy ${label}.`);
+    }
+  };
+
+  const copyHtml = async (html: string, plainText: string, label: string) => {
+    if (!html.trim()) {
+      toast.info(`${label} is not available.`);
+      return;
+    }
+
+    try {
+      if (typeof ClipboardItem !== "undefined" && navigator.clipboard.write) {
+        await navigator.clipboard.write([
+          new ClipboardItem({
+            "text/html": new Blob([html], { type: "text/html" }),
+            "text/plain": new Blob([plainText], { type: "text/plain" }),
+          }),
+        ]);
+      } else {
+        await navigator.clipboard.writeText(html);
+      }
+      toast.success(`${label} copied.`);
+    } catch (error) {
+      console.error(`[ResumeAudit Page] Unable to copy ${label}`, error);
+      toast.error(`Unable to copy ${label}.`);
+    }
+  };
+
   const openQuestionPopover = (title: string, groups: QuestionGroup[], anchor: HTMLElement) => {
     if (isEmbedded) {
       const card = anchor.closest(".ra-screening-card") as HTMLElement | null;
@@ -688,12 +893,23 @@ export default function ResumeAudit() {
           <Stack direction="row" spacing={0.8} alignItems="center" className="ra-topbar-actions">
             {canUseComparisonWorkspace && (
               <>
+                <Button
+                  className="ra-secondary-btn ra-compare-btn"
+                  variant="outlined"
+                  startIcon={<CompareArrowsOutlinedIcon />}
+                  onClick={() => setInteractiveComparisonOpen(true)}
+                >
+                  JD vs Resume
+                </Button>
                 {view.resumeFileUrl !== "-" && (
                   <Button
                     className={`ra-secondary-btn ra-compare-btn ${comparisonMode === "resume" ? "ra-compare-active" : ""}`}
                     variant="outlined"
                     startIcon={<DescriptionOutlinedIcon />}
-                    onClick={() => setComparisonMode("resume")}
+                    onClick={() => {
+                      setResumeHighlightSelection(null);
+                      setComparisonMode("resume");
+                    }}
                   >
                     Compare Resume
                   </Button>
@@ -724,7 +940,7 @@ export default function ResumeAudit() {
                   <Chip size="small" className={`ra-status-chip ra-status-${view.recommendationTone}`} label={view.recommendation} />
                 </Stack>
                 <Stack className="ra-meta-lines" spacing={0.7}>
-                  <InlineMeta icon={<BusinessCenterOutlinedIcon />} text={`${view.currentTitle} | ${view.experience}`} />
+                  <InlineMeta icon={<BusinessCenterOutlinedIcon />} text={`${view.titleCompanyDisplay} | ${view.experience}`} />
                   <InlineMeta icon={<MailOutlineOutlinedIcon />} text={view.email} />
                   <InlineMeta icon={<PhoneOutlinedIcon />} text={view.phone} />
                   <CandidateLocationMeta
@@ -735,7 +951,7 @@ export default function ResumeAudit() {
                     distanceAnalysis={view.commuteDistanceAnalysis}
                   />
                   <InlineMeta icon={<WorkspacePremiumOutlinedIcon />} text={view.workAuthorization !== "-" ? `Work Authorization: ${view.workAuthorization}` : "-"} />
-                  <InlineMeta icon={<WorkspacePremiumOutlinedIcon />} text={`Current: ${view.currentCompany}`} />
+                  <InlineMeta icon={<PaidOutlinedIcon />} text={view.expectedSalaryDisplay !== "-" ? `Expected Salary: ${view.expectedSalaryDisplay}` : "-"} />
                 </Stack>
               </Box>
             </Stack>
@@ -775,8 +991,32 @@ export default function ResumeAudit() {
             valueTooltip={view.decisionReason}
           />
           <MetricCard icon={<TrendingUpOutlinedIcon />} title="Interview Probability" value={`${view.interviewProbability}%`} tone="blue" />
-          {view.hasCandidateSalary && <MetricCard icon={<PaidOutlinedIcon />} title="Salary Match" value={`${view.salaryMatchScore}%`} tone={view.salaryMatchScore >= 80 ? "green" : "orange"} helper={view.salaryMatchStatus} />}
+          {view.hasCandidateSalary && (
+            <MetricCard
+              icon={<PaidOutlinedIcon />}
+              title="Salary Match"
+              value={view.salaryMatchScoreDisplay}
+              tone={view.salaryMatchTone}
+              helper={view.salaryMatchStatus}
+              valueTooltip={view.salaryMatchTooltip}
+              className="ra-salary-match-metric"
+            />
+          )}
         </Box>
+
+        {view.nextRecommendedAction !== "-" && (
+          <Card className="ra-next-action-row">
+            <Stack direction="row" spacing={1.1} alignItems="center">
+              <Box className="ra-next-action-icon">
+                <AutoAwesomeIcon />
+              </Box>
+              <Box minWidth={0}>
+                <Typography className="ra-next-action-label">Next Recommended Action</Typography>
+                <Typography className="ra-next-action-text">{view.nextRecommendedAction}</Typography>
+              </Box>
+            </Stack>
+          </Card>
+        )}
 
         {(hasCandidateSummary || hasSubmissionNotes) && (
           <Box className="ra-half-grid ra-note-grid">
@@ -819,35 +1059,9 @@ export default function ResumeAudit() {
               {insightPanels.map((panel) => (
                 panel.items.length > 0 && <InsightList title={panel.title} tone={panel.tone} items={panel.items} key={panel.key} />
               ))}
-              {valueOrDash(view.executiveInsights?.nextRecommendedAction) !== "-" && (
-                <Box className="ra-action-panel">
-                  <Typography className="ra-label">Next Recommended Action</Typography>
-                  <Typography className="ra-action-title">{valueOrDash(view.executiveInsights?.nextRecommendedAction)}</Typography>
-                </Box>
-              )}
             </Box>
           </Card>
         )}
-
-        {view.hasCandidateSalary && <Box className="ra-main-grid">
-          <Card>
-            <InfoTitle icon={<PaidOutlinedIcon />} title="Salary Details" />
-            <DetailRows
-              rows={[
-                ["Current Salary", view.currentSalary],
-                ["Expected Salary", view.expectedSalary],
-                ["JD Budget", view.jobBudget],
-              ]}
-            />
-            <Box className={`ra-salary-match ra-tone-box-${view.salaryMatchScore >= 80 ? "green" : "orange"}`}>
-              <Stack direction="row" justifyContent="space-between" alignItems="center">
-                <Typography className="ra-label">Salary Match</Typography>
-                <Typography className="ra-salary-score">{view.salaryMatchScore}%</Typography>
-              </Stack>
-              <Typography className="ra-body-text">{view.salaryMatchSummary}</Typography>
-            </Box>
-          </Card>
-        </Box>}
 
         <Box className="ra-coverage-grid">
           {view.scoreBreakdown.length > 0 && <Card>
@@ -873,7 +1087,20 @@ export default function ResumeAudit() {
 
           {hasSkillsRequirementCoverage && <Card>
             <InfoTitle icon={<PsychologyOutlinedIcon />} title="Skills & Requirement Coverage" />
-            <SkillTable items={skillsRequirementItems} />
+            <SkillTable
+              items={skillsRequirementItems}
+              highlightingEnabled={comparisonMode === "resume"}
+              activeSkillId={resumeHighlightSelection?.id}
+              onSelectEvidence={(item) => {
+                const terms = compactStringArray(item.ResumeEvidenceTerms || item.resumeEvidenceTerms);
+                if (!terms.length) return;
+                setResumeHighlightSelection({
+                  id: `audit-skill-${valueOrDash(item.skill)}`,
+                  label: valueOrDash(item.skill),
+                  aliases: terms,
+                });
+              }}
+            />
           </Card>}
 
           {view.questionGroups.length > 0 && <Card className="ra-screening-card">
@@ -945,6 +1172,51 @@ export default function ResumeAudit() {
           </Box>
         )}
 
+        {hasCandidateSnapshot && (
+          <Card className="ra-full-section ra-candidate-snapshot-card">
+            <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={1.2} className="ra-section-title-row">
+              <InfoTitle icon={<DescriptionOutlinedIcon />} title="Candidate Snapshot" />
+              <Stack direction="row" spacing={0.7} alignItems="center" className="ra-snapshot-actions">
+                <Button
+                  className="ra-copy-btn"
+                  variant="outlined"
+                  size="small"
+                  startIcon={<ContentCopyOutlinedIcon />}
+                  onClick={() => copyText(snapshotSummaryCopy, "Candidate snapshot summary")}
+                >
+                  Summary
+                </Button>
+                <Button
+                  className="ra-copy-btn"
+                  variant="outlined"
+                  size="small"
+                  startIcon={<ContentCopyOutlinedIcon />}
+                  onClick={() => copyText(snapshotPointsCopy, "Candidate snapshot points")}
+                >
+                  Points
+                </Button>
+                <Button
+                  className="ra-copy-btn"
+                  variant="outlined"
+                  size="small"
+                  startIcon={<MailOutlineOutlinedIcon />}
+                  onClick={() => copyHtml(candidateSnapshotEmailTemplate, candidateSnapshotEmailPlainText, "Client email template")}
+                >
+                  Email
+                </Button>
+              </Stack>
+            </Stack>
+            {candidateSnapshotSummary !== "-" && (
+              <Typography className="ra-body-text ra-snapshot-summary">{candidateSnapshotSummary}</Typography>
+            )}
+            {candidateSnapshotPoints.length > 0 && (
+              <Box className="ra-snapshot-points">
+                <BulletList items={candidateSnapshotPoints} tone="blue" />
+              </Box>
+            )}
+          </Card>
+        )}
+
         {improvementSections.length > 0 && <Card className="ra-full-section">
           <InfoTitle icon={<HelpOutlineOutlinedIcon />} title="Resume Improvement Suggestions" />
           <ImprovementSections sections={improvementSections} />
@@ -979,9 +1251,27 @@ export default function ResumeAudit() {
           jobAnalysisUrl={comparisonJobUrl}
           widthPercent={100 - comparisonLeftPercent}
           onClose={() => setComparisonMode(null)}
+          resumeSelection={resumeHighlightSelection}
         />
       )}
       </Box>
+      {interactiveComparisonOpen && (
+        <Box className="ra-interactive-overlay" role="dialog" aria-modal="true" aria-label="JD versus resume comparison">
+          <Box className="ra-interactive-overlay-header">
+            <Stack direction="row" spacing={1} alignItems="center">
+              <Box className="ra-comparison-icon"><CompareArrowsOutlinedIcon /></Box>
+              <Box>
+                <Typography className="ra-comparison-title">JD vs Resume</Typography>
+                <Typography className="ra-comparison-subtitle">Interactive skill and job title comparison</Typography>
+              </Box>
+            </Stack>
+            <IconButton aria-label="Close JD versus resume comparison" onClick={() => setInteractiveComparisonOpen(false)} className="ra-interactive-overlay-close">
+              <CloseOutlinedIcon />
+            </IconButton>
+          </Box>
+          <iframe className="ra-interactive-overlay-frame" title="JD versus interactive resume" src={interactiveComparisonUrl} />
+        </Box>
+      )}
     </main>
   );
 }
@@ -996,12 +1286,14 @@ function ComparisonPanel({
   jobAnalysisUrl,
   widthPercent,
   onClose,
+  resumeSelection,
 }: {
   mode: ComparisonMode;
   resumeUrl: string;
   jobAnalysisUrl: string;
   widthPercent: number;
   onClose: () => void;
+  resumeSelection: ResumeHighlightSelection | null;
 }) {
   const isResume = mode === "resume";
   const title = isResume ? "Resume" : "JD Analysis";
@@ -1031,7 +1323,9 @@ function ComparisonPanel({
         </IconButton>
       </Box>
       <Box className="ra-comparison-body">
-        {frameUrl ? (
+        {isResume && sourceUrl && sourceUrl !== "-" ? (
+          <InteractiveResumeViewer url={sourceUrl} selection={resumeSelection} />
+        ) : frameUrl ? (
           <iframe className="ra-comparison-frame" title={`Compare ${title}`} src={frameUrl} />
         ) : (
           <Box className="ra-comparison-empty">
@@ -1135,6 +1429,7 @@ function MetricCard({
   tone,
   helper,
   valueTooltip,
+  className,
 }: {
   icon: ReactNode;
   title: string;
@@ -1142,11 +1437,12 @@ function MetricCard({
   tone: Tone;
   helper?: string;
   valueTooltip?: string;
+  className?: string;
 }) {
   const valueNode = <Typography className={`ra-metric-value ra-tone-${tone}`}>{value}</Typography>;
 
   return (
-    <Card className="ra-metric-card">
+    <Card className={`ra-metric-card${className ? ` ${className}` : ""}`}>
       <Box className={`ra-metric-icon ra-tone-box-${tone}`}>{icon}</Box>
       <Box>
         <Typography className="ra-card-kicker">{title}</Typography>
@@ -1215,7 +1511,7 @@ function ScoreBreakdownRow({ item }: { item: NonNullable<ResumeAuditResponse["sc
   );
 }
 
-function SkillTable({ items, compact = false }: { items: ResumeAuditSkill[]; compact?: boolean }) {
+function SkillTable({ items, compact = false, highlightingEnabled = false, activeSkillId, onSelectEvidence }: { items: ResumeAuditSkill[]; compact?: boolean; highlightingEnabled?: boolean; activeSkillId?: string; onSelectEvidence?: (item: ResumeAuditSkill) => void }) {
   const visibleItems = compact ? items.slice(0, 6) : items;
 
   if (!visibleItems.length) {
@@ -1227,20 +1523,32 @@ function SkillTable({ items, compact = false }: { items: ResumeAuditSkill[]; com
       <Box className="ra-skill-table-head">
         <span>Skill</span>
         <span>Match</span>
+        <span>Exp</span>
+        <span>LastUsed</span>
         <span>Confidence</span>
       </Box>
       {visibleItems.map((item) => (
-        <SkillTableRow item={item} key={valueOrDash(item.skill)} />
+        <SkillTableRow item={item} key={valueOrDash(item.skill)} highlightingEnabled={highlightingEnabled} active={activeSkillId === `audit-skill-${valueOrDash(item.skill)}`} onSelectEvidence={onSelectEvidence} />
       ))}
     </Box>
   );
 }
 
-function SkillTableRow({ item }: { item: ResumeAuditSkill }) {
+function SkillTableRow({ item, highlightingEnabled = false, active = false, onSelectEvidence }: { item: ResumeAuditSkill; highlightingEnabled?: boolean; active?: boolean; onSelectEvidence?: (item: ResumeAuditSkill) => void }) {
   const evidence = compactStringArray(item.evidence);
+  const resumeEvidenceTerms = compactStringArray(item.ResumeEvidenceTerms || item.resumeEvidenceTerms);
+  const experience = formatSkillExperience(item.experience || item.Experience);
+  const yearLastUsed = formatYearLastUsed(item.YearLastUsed ?? item.yearLastUsed);
+  const categoryLabel = item.skillCategory?.replace(/\s+Skills$/, "") || "";
+  const categoryTone = item.skillCategory === "Mandatory Skills" ? "red" : item.skillCategory === "Preferred Skills" ? "blue" : "gray";
   const tooltipTitle = (
     <Box className="ra-skill-tooltip">
-      {item.experience && <Typography>{item.experience}</Typography>}
+      {(experience !== "-" || categoryLabel) && (
+        <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={2}>
+          <Typography>{experience !== "-" ? experience : "Experience not specified"}</Typography>
+          {categoryLabel && <Chip size="small" className={`ra-severity-chip ra-severity-${categoryTone}`} label={categoryLabel} />}
+        </Stack>
+      )}
       {evidence.length ? (
         <Box>
           <Typography className="ra-skill-tooltip-heading">Evidence</Typography>
@@ -1251,14 +1559,33 @@ function SkillTableRow({ item }: { item: ResumeAuditSkill }) {
       ) : (
         <Typography>No evidence found.</Typography>
       )}
+      {resumeEvidenceTerms.length > 0 && (
+        <Box>
+          <Typography className="ra-skill-tooltip-heading">Resume evidence terms</Typography>
+          {resumeEvidenceTerms.map((term) => <Typography key={term}>{term}</Typography>)}
+        </Box>
+      )}
     </Box>
   );
 
   return (
     <Tooltip title={tooltipTitle} arrow placement="top">
-      <Box className="ra-skill-table-row">
+      <Box
+        className={`ra-skill-table-row ${highlightingEnabled && resumeEvidenceTerms.length ? "ra-skill-table-row-clickable" : ""} ${active ? "ra-skill-table-row-active" : ""}`}
+        role={highlightingEnabled && resumeEvidenceTerms.length ? "button" : undefined}
+        tabIndex={highlightingEnabled && resumeEvidenceTerms.length ? 0 : undefined}
+        onClick={() => highlightingEnabled && resumeEvidenceTerms.length && onSelectEvidence?.(item)}
+        onKeyDown={(event) => {
+          if (highlightingEnabled && resumeEvidenceTerms.length && (event.key === "Enter" || event.key === " ")) {
+            event.preventDefault();
+            onSelectEvidence?.(item);
+          }
+        }}
+      >
         <Typography className="ra-row-strong">{valueOrDash(item.skill)}</Typography>
         <span className={`ra-match-dot ${item.matched ? "ra-match-yes" : "ra-match-no"}`}>{item.matched ? "Yes" : "No"}</span>
+        <Typography className="ra-row-strong">{experience}</Typography>
+        <Typography className="ra-row-strong">{yearLastUsed}</Typography>
         <Typography className="ra-row-strong">{formatPercent(item.confidence)}</Typography>
       </Box>
     </Tooltip>
@@ -1330,13 +1657,21 @@ function QuestionGroupDetail({ groups }: { groups: QuestionGroup[] }) {
           {groups.length > 1 && <Typography className="ra-row-strong">{group.title}</Typography>}
           <Stack spacing={0.8} className={groups.length > 1 ? "ra-popup-question-list" : ""}>
             {group.items.map((item, index) => (
-              <Box className="ra-popup-question-item" key={`${group.key}-${item.question}-${index}`}>
+              <Box className="ra-popup-question-item" key={`${group.key}-${item.question || item.Question}-${index}`}>
                 <Stack direction="row" spacing={1} alignItems="flex-start">
                   <span className="ra-question-number">{index + 1}</span>
                   <Box>
-                    <Typography className="ra-body-text">{valueOrDash(item.question)}</Typography>
-                    <Typography className="ra-muted">{valueOrDash(item.reason)}</Typography>
-                    <Chip size="small" className={`ra-severity-chip ra-severity-${getSeverityTone(item.priority)}`} label={valueOrDash(item.priority)} />
+                    <Typography className="ra-body-text">{valueOrDash(item.question || item.Question)}</Typography>
+                    <Typography className="ra-muted">{valueOrDash(item.reason || item.Reason)}</Typography>
+                    {valueOrDash(item.candidateResponseExpected || item.CandidateResponseExpected) !== "-" && (
+                      <Box className="ra-question-expected">
+                        <Typography className="ra-question-expected-label">Expected response</Typography>
+                        <Typography className="ra-question-expected-text">
+                          {valueOrDash(item.candidateResponseExpected || item.CandidateResponseExpected)}
+                        </Typography>
+                      </Box>
+                    )}
+                    <Chip size="small" className={`ra-severity-chip ra-severity-${getSeverityTone(item.priority || item.Priority)}`} label={valueOrDash(item.priority || item.Priority)} />
                   </Box>
                 </Stack>
               </Box>

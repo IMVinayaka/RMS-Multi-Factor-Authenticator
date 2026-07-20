@@ -291,6 +291,11 @@
   line-height: 1.25;
 }
 
+.ja-summary-badge[aria-label],
+.MuiTooltip-tooltip + .ja-summary-badge {
+  cursor: help;
+}
+
 .ja-summary-badge span {
   font-weight: 500;
 }

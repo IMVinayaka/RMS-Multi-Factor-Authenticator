@@ -66,6 +66,24 @@ export type JobAnalysisResponse = {
     salaryType?: string | null;
     currency?: string | null;
   } | null;
+  MarketSalary?: {
+    SalaryMin?: number | null;
+    SalaryMedian?: number | null;
+    SalaryMax?: number | null;
+    Currency?: string | null;
+    SalaryType?: string | null;
+    Confidence?: string | null;
+    Summary?: string | null;
+  } | null;
+  marketSalary?: {
+    salaryMin?: number | null;
+    salaryMedian?: number | null;
+    salaryMax?: number | null;
+    currency?: string | null;
+    salaryType?: string | null;
+    confidence?: string | null;
+    summary?: string | null;
+  } | null;
   experience?: {
     minimumYears?: number | null;
     preferredYears?: number | null;

@@ -423,6 +423,14 @@ export default function JobAnalysis() {
         data?.compensation?.currency,
         data?.compensation?.salaryType
       ),
+      marketSalaryDisplay: formatSalaryRange(
+        data?.MarketSalary?.SalaryMin ?? data?.marketSalary?.salaryMin,
+        data?.MarketSalary?.SalaryMax ?? data?.marketSalary?.salaryMax,
+        data?.MarketSalary?.Currency ?? data?.marketSalary?.currency,
+        data?.MarketSalary?.SalaryType ?? data?.marketSalary?.salaryType
+      ),
+      marketSalarySummary: valueOrDash(data?.MarketSalary?.Summary ?? data?.marketSalary?.summary),
+      marketSalaryConfidence: valueOrDash(data?.MarketSalary?.Confidence ?? data?.marketSalary?.confidence),
       booleanSearch: getBooleanSearchString(data),
       booleanSearchCards: getBooleanSearchCards(data),
       educationQualification: compactStringArray(data?.education?.educationQualifications || data?.education?.educationQualification || data?.education?.degrees),
@@ -756,7 +764,21 @@ export default function JobAnalysis() {
 
             <Box className="ja-summary-badge-grid">
               {view.experienceDisplay !== "-" && <SummaryBadge label="Experience" value={view.experienceDisplay} />}
-              {view.salaryDisplay !== "-" && <SummaryBadge label="Salary" value={view.salaryDisplay} />}
+              {view.salaryDisplay !== "-" && (
+                <SummaryBadge
+                  label="Salary"
+                  value={view.salaryDisplay}
+                  tooltip={
+                    view.marketSalaryDisplay !== "-" ? (
+                      <MarketSalaryTooltip
+                        range={view.marketSalaryDisplay}
+                        confidence={view.marketSalaryConfidence}
+                        summary={view.marketSalarySummary}
+                      />
+                    ) : undefined
+                  }
+                />
+              )}
               {view.employment !== "-" && <SummaryBadge label="Employment" value={view.employment} />}
               {view.level !== "-" && <SummaryBadge label="Level" value={view.level} />}
               {/*{view.talentMarketDifficulty !== "-" && <SummaryBadge label="Talent Availability" value={view.talentMarketDifficulty} tone="orange" />}*/}
@@ -1121,11 +1143,29 @@ function Section({
   );
 }
 
-function SummaryBadge({ label, value, tone = "blue" }: { label: string; value: string; tone?: PillTone }) {
-  return (
+function SummaryBadge({ label, value, tone = "blue", tooltip }: { label: string; value: string; tone?: PillTone; tooltip?: ReactNode }) {
+  const badge = (
     <Box className={`ja-summary-badge ja-summary-badge-${tone}`}>
       <span>{label}</span>
       <strong>{value}</strong>
+    </Box>
+  );
+
+  if (!tooltip) return badge;
+
+  return (
+    <Tooltip title={tooltip} arrow placement="top">
+      {badge}
+    </Tooltip>
+  );
+}
+
+function MarketSalaryTooltip({ range, confidence, summary }: { range: string; confidence: string; summary: string }) {
+  return (
+    <Box className="ja-skill-tooltip">
+      <Typography className="ja-skill-tooltip-heading">Market Salary: {range}</Typography>
+      {confidence !== "-" && <Typography className="ja-skill-tooltip-heading">Confidence: {confidence}</Typography>}
+      {summary !== "-" && <Typography>{summary}</Typography>}
     </Box>
   );
 }
