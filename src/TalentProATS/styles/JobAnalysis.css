@@ -3,59 +3,6 @@
   background:
     radial-gradient(circle at 12% 0%, rgba(70, 126, 255, 0.08), transparent 28%),
     linear-gradient(180deg, #f6f8fc 0%, #eef3f8 100%);
-  color: #071127;
-  font-family:
-    Inter,
-    ui-sans-serif,
-    system-ui,
-    -apple-system,
-    BlinkMacSystemFont,
-    "Segoe UI",
-    sans-serif !important;
-}
-
-.ja-page :where(strong, b) {
-  font-weight: 600;
-}
-
-.ja-page .MuiTypography-root,
-.ja-page .MuiButton-root,
-.ja-page .MuiChip-root,
-.ja-page .MuiTableCell-root,
-.ja-page .MuiInputBase-root,
-.ja-page .MuiMenuItem-root {
-  font-family: inherit !important;
-}
-
-.ja-page *,
-.ja-page *::before,
-.ja-page *::after {
-  font-family: inherit !important;
-}
-
-.MuiTooltip-tooltip {
-  border: 1px solid #cfdaf0 !important;
-  border-radius: 7px !important;
-  background: #ffffff !important;
-  color: #071127 !important;
-  box-shadow: 0 10px 28px rgba(20, 35, 65, 0.16) !important;
-  font-family:
-    Inter,
-    ui-sans-serif,
-    system-ui,
-    -apple-system,
-    BlinkMacSystemFont,
-    "Segoe UI",
-    sans-serif !important;
-  font-size: 12px !important;
-  font-weight: 500 !important;
-  line-height: 1.35 !important;
-  max-width: 320px !important;
-  padding: 7px 9px !important;
-}
-
-.MuiTooltip-arrow {
-  color: #ffffff !important;
 }
 
 .ja-shell {
@@ -151,22 +98,6 @@
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
   gap: 12px;
   margin-top: 8px;
-}
-
-.ja-card {
-  border: 1px solid #dce4ef;
-  border-radius: 10px !important;
-  padding: 12px;
-  background: rgba(255, 255, 255, 0.96) !important;
-  box-shadow: 0 8px 22px rgba(20, 35, 65, 0.055) !important;
-  animation: jaCardEnter 620ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
-  transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
-}
-
-.ja-card:hover {
-  transform: translateY(-1px);
-  border-color: #cfd9e8;
-  box-shadow: 0 12px 28px rgba(20, 35, 65, 0.075) !important;
 }
 
 .ja-hero-card,
@@ -280,18 +211,6 @@
   margin-top: 12px;
 }
 
-.ja-hero-summary-grid .ja-note-panel:only-child {
-  grid-column: 1 / -1;
-}
-
-.ja-note-panel {
-  min-width: 0;
-  padding: 10px;
-  border: 1px solid #dfe7f2;
-  border-radius: 8px;
-  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
-}
-
 .ja-overview-style-card {
   background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%) !important;
 }
@@ -318,15 +237,6 @@
   margin-top: 0 !important;
 }
 
-.ja-note-panel .ja-section-title {
-  margin-bottom: 4px;
-}
-
-.ja-note-panel .ja-body-text {
-  margin-top: 0 !important;
-  text-align: left !important;
-}
-
 .ja-manager-priority {
   margin-top: 10px;
   padding-top: 10px;
@@ -350,21 +260,6 @@
   font-weight: 550 !important;
 }
 
-.ja-muted {
-  color: #536383;
-  font-size: 12px !important;
-  line-height: 1.35 !important;
-  font-weight: 450 !important;
-}
-
-.ja-body-text {
-  color: #11182b;
-  font-size: 13px !important;
-  line-height: 1.55 !important;
-  font-weight: 450 !important;
-  margin-top: 8px !important;
-}
-
 .ja-list {
   margin: 8px 0 0 !important;
   padding-left: 18px !important;
@@ -373,31 +268,6 @@
 .ja-list .ja-body-text {
   margin-top: 0 !important;
   display: list-item;
-}
-
-.ja-label {
-  color: #11182b;
-  font-size: 12px !important;
-  font-weight: 550 !important;
-}
-
-.ja-row-value {
-  color: #071127;
-  font-size: 13px !important;
-  line-height: 1.35 !important;
-  font-weight: 550 !important;
-}
-
-.ja-detail-value {
-  display: inline-flex;
-  align-items: center;
-  justify-content: flex-end;
-  min-width: 0;
-  color: #071127;
-  font-size: 13px;
-  line-height: 1.35;
-  font-weight: 550;
-  text-align: right;
 }
 
 .ja-summary-badge-grid {
@@ -419,6 +289,11 @@
   color: #17366d;
   font-size: 12px;
   line-height: 1.25;
+}
+
+.ja-summary-badge[aria-label],
+.MuiTooltip-tooltip + .ja-summary-badge {
+  cursor: help;
 }
 
 .ja-summary-badge span {
@@ -501,47 +376,6 @@
 .ja-divider {
   margin: 10px 0 !important;
   border-color: #dbe3ef !important;
-}
-
-.ja-section-title {
-  margin-bottom: 8px;
-}
-
-.ja-section-title .MuiTypography-root {
-  color: #071127;
-  font-size: 14px !important;
-  line-height: 1.25 !important;
-  font-weight: 550 !important;
-}
-
-.ja-icon-bubble {
-  width: 26px;
-  height: 26px;
-  display: grid;
-  place-items: center;
-  border-radius: 50%;
-  background: #edf3ff;
-  color: #1763e8;
-  position: relative;
-}
-
-.ja-icon-bubble svg {
-  font-size: 16px;
-}
-
-.ja-ai-chip {
-  height: 22px !important;
-  border-radius: 999px !important;
-  background: #edf3ff !important;
-  color: #145ee8 !important;
-  font-size: 11px !important;
-  font-weight: 550 !important;
-  position: relative;
-  overflow: visible !important;
-}
-
-.ja-ai-chip svg {
-  font-size: 14px !important;
 }
 
 .ja-four-grid {

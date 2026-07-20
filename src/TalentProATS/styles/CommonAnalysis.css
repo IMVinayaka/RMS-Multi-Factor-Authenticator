@@ -1,0 +1,221 @@
+.ja-page,
+.ra-page {
+  color: #071127;
+  font-family:
+    Inter,
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif !important;
+}
+
+.ja-page :where(strong, b),
+.ra-page :where(strong, b) {
+  font-weight: 600;
+}
+
+.ja-page .MuiTypography-root,
+.ja-page .MuiButton-root,
+.ja-page .MuiChip-root,
+.ja-page .MuiTableCell-root,
+.ja-page .MuiInputBase-root,
+.ja-page .MuiMenuItem-root,
+.ra-page .MuiTypography-root,
+.ra-page .MuiButton-root,
+.ra-page .MuiChip-root,
+.ra-page .MuiTableCell-root,
+.ra-page .MuiInputBase-root,
+.ra-page .MuiMenuItem-root {
+  font-family: inherit !important;
+}
+
+.ja-page *,
+.ja-page *::before,
+.ja-page *::after,
+.ra-page *,
+.ra-page *::before,
+.ra-page *::after {
+  font-family: inherit !important;
+}
+
+.MuiTooltip-tooltip {
+  border: 1px solid #cfdaf0 !important;
+  border-radius: 7px !important;
+  background: #ffffff !important;
+  color: #071127 !important;
+  box-shadow: 0 10px 28px rgba(20, 35, 65, 0.16) !important;
+  font-family:
+    Inter,
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  line-height: 1.35 !important;
+  max-width: 320px !important;
+  padding: 7px 9px !important;
+}
+
+.MuiTooltip-arrow {
+  color: #ffffff !important;
+}
+
+.ja-card,
+.ra-card {
+  border: 1px solid #dce4ef;
+  border-radius: 10px !important;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.96) !important;
+  box-shadow: 0 8px 22px rgba(20, 35, 65, 0.055) !important;
+  transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
+}
+
+.ra-card {
+  min-width: 0;
+}
+
+.ja-card {
+  animation: jaCardEnter 620ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.ja-card:hover,
+.ra-card:hover {
+  transform: translateY(-1px);
+  border-color: #cfd9e8;
+  box-shadow: 0 12px 28px rgba(20, 35, 65, 0.075) !important;
+}
+
+.ja-section-title,
+.ra-info-title {
+  margin-bottom: 8px;
+}
+
+.ja-section-title .MuiTypography-root,
+.ra-info-title .MuiTypography-root {
+  color: #071127;
+  font-size: 15.5px !important;
+  line-height: 1.25 !important;
+  font-weight: 700 !important;
+}
+
+.ja-icon-bubble,
+.ra-info-title > span {
+  width: 26px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: #edf3ff;
+  color: #1763e8;
+  position: relative;
+}
+
+.ja-icon-bubble svg,
+.ra-info-title svg {
+  font-size: 16px;
+}
+
+.ja-ai-chip,
+.ra-ai-chip {
+  height: 22px !important;
+  border-radius: 999px !important;
+  background: #edf3ff !important;
+  color: #145ee8 !important;
+  font-size: 11px !important;
+  font-weight: 550 !important;
+  position: relative;
+  overflow: visible !important;
+}
+
+.ja-ai-chip svg,
+.ra-ai-chip svg {
+  font-size: 14px !important;
+}
+
+.ja-note-panel,
+.ra-note-panel {
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid #dfe7f2;
+  border-radius: 8px;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%) !important;
+}
+
+.ja-hero-summary-grid .ja-note-panel:only-child,
+.ra-note-grid .ra-note-panel:only-child {
+  grid-column: 1 / -1;
+}
+
+.ja-note-panel .ja-section-title,
+.ra-note-panel .ra-info-title {
+  margin-bottom: 4px;
+}
+
+.ja-note-panel .ja-body-text,
+.ra-note-panel .ra-body-text {
+  margin-top: 0 !important;
+  text-align: left !important;
+}
+
+.ja-muted,
+.ra-muted {
+  color: #536383;
+  font-size: 12px !important;
+  line-height: 1.35 !important;
+  font-weight: 450 !important;
+}
+
+.ja-body-text,
+.ra-body-text {
+  color: #11182b;
+  font-size: 14.5px !important;
+  line-height: 1.55 !important;
+  font-weight: 450 !important;
+  margin-top: 8px !important;
+}
+
+.ja-label,
+.ra-label,
+.ra-card-kicker {
+  color: #11182b;
+  font-size: 12px !important;
+  font-weight: 550 !important;
+}
+
+.ra-card-kicker,
+.ra-label {
+  line-height: 1.3 !important;
+}
+
+.ja-row-value,
+.ra-row-strong {
+  color: #071127;
+  font-size: 13px !important;
+  line-height: 1.35 !important;
+  font-weight: 550 !important;
+}
+
+.ja-detail-value,
+.ra-detail-value {
+  min-width: 0;
+  color: #071127;
+  font-size: 13px;
+  line-height: 1.35;
+  font-weight: 550;
+  text-align: right;
+}
+
+.ja-detail-value {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.ra-detail-value {
+  overflow-wrap: anywhere;
+}

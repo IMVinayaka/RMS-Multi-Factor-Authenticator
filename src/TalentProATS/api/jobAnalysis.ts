@@ -12,10 +12,15 @@ export type SkillValue =
   | string
   | {
       skill?: string | null;
+      Skill?: string | null;
       skillExperienceRequirement?: string | null;
+      SkillExperienceRequirement?: string | null;
       minimumYears?: string | number | null;
+      MinimumYears?: string | number | null;
       tooltip?: string | null;
+      Tooltip?: string | null;
       resumeSynonyms?: string[] | null;
+      ResumeSynonyms?: string[] | null;
     };
 
 export type BooleanSearch = {
@@ -60,6 +65,24 @@ export type JobAnalysisResponse = {
     salaryMax?: number | null;
     salaryType?: string | null;
     currency?: string | null;
+  } | null;
+  MarketSalary?: {
+    SalaryMin?: number | null;
+    SalaryMedian?: number | null;
+    SalaryMax?: number | null;
+    Currency?: string | null;
+    SalaryType?: string | null;
+    Confidence?: string | null;
+    Summary?: string | null;
+  } | null;
+  marketSalary?: {
+    salaryMin?: number | null;
+    salaryMedian?: number | null;
+    salaryMax?: number | null;
+    currency?: string | null;
+    salaryType?: string | null;
+    confidence?: string | null;
+    summary?: string | null;
   } | null;
   experience?: {
     minimumYears?: number | null;
@@ -133,7 +156,9 @@ const JD_ANALYSE_SERVICE_URL =
 const maskPayload = (payload: JobAnalysisRequest) => ({
   jobId: payload.jobId,
   jobInstance: payload.jobInstance,
-  clientReference: payload.clientReference ? "********" : "",
+  ...(payload.clientReference && { clientReference: payload.clientReference }),
+  ...(payload.userId && { userId: payload.userId }),
+  ...(payload.userInstance && { userInstance: payload.userInstance }),
 });
 
 export const analyseJobDescription = async (payload: JobAnalysisRequest) => {
