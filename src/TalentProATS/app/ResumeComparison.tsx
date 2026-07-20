@@ -148,10 +148,16 @@ export function InteractiveResumeViewer({ url, selection }: { url: string; selec
           if (cancelled || !selection) return;
           const aliases = Array.from(new Set(selection.aliases.map((alias) => alias.trim()).filter(Boolean))).sort((a, b) => b.length - a.length);
           if (!aliases.length) return;
-          marker?.mark(aliases, {
+          const phrasePattern = aliases.map((alias) => alias
+            .split(/\s+/)
+            .filter(Boolean)
+            .map((part) => part.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
+            .join("\\s+")
+          ).join("|");
+          const wholeTermPattern = new RegExp(`(^|[^\\p{L}\\p{N}_])(${phrasePattern})(?=$|[^\\p{L}\\p{N}_])`, "giu");
+          marker?.markRegExp(wholeTermPattern, {
             acrossElements: true,
-            separateWordSearch: false,
-            caseSensitive: false,
+            ignoreGroups: 1,
             className: "rc-highlight",
             each: (element) => {
               const match = element as HTMLElement;

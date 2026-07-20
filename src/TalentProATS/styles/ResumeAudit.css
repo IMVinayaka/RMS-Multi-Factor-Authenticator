@@ -23,6 +23,8 @@
 .ra-audit-pane {
   flex: 1 1 auto;
   min-width: 0;
+  container-name: audit-pane;
+  container-type: inline-size;
   transition: flex-basis 220ms ease, max-width 220ms ease, width 220ms ease, margin 220ms ease;
 }
 
@@ -662,6 +664,28 @@
 
 .ra-coverage-grid > .ra-card {
   height: 100%;
+  min-width: 0;
+}
+
+@container audit-pane (max-width: 1050px) {
+  .ra-coverage-grid {
+    grid-template-columns: minmax(220px, 0.8fr) minmax(360px, 1.2fr);
+  }
+
+  .ra-coverage-grid > .ra-screening-card {
+    grid-column: 1 / -1;
+    height: auto;
+  }
+}
+
+@container audit-pane (max-width: 680px) {
+  .ra-coverage-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .ra-coverage-grid > .ra-screening-card {
+    grid-column: auto;
+  }
 }
 
 .ra-bottom-grid {
