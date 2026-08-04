@@ -312,6 +312,7 @@ export const auditResume = async (payload: ResumeAuditRequest) => {
   console.log("[ResumeAudit API] Payload", maskPayload(payload));
 
   const response = await axiosInstance.post<ResumeAuditResponse>(RESUME_AUDIT_SERVICE_URL, payload, {
+    timeout: 200000,
     headers: {
       accept: "*/*",
       "Content-Type": "application/json-patch+json",
