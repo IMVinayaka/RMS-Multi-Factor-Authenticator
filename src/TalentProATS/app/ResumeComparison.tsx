@@ -1,5 +1,5 @@
 import { forwardRef, memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Box, Chip, CircularProgress, IconButton, Paper, Snackbar, Tooltip, Typography } from "@mui/material";
+import { Box, Button, Chip, CircularProgress, IconButton, Paper, Snackbar, Tooltip, Typography } from "@mui/material";
 import ArrowBackIosNewRoundedIcon from "@mui/icons-material/ArrowBackIosNewRounded";
 import ArrowForwardIosRoundedIcon from "@mui/icons-material/ArrowForwardIosRounded";
 import DescriptionOutlinedIcon from "@mui/icons-material/DescriptionOutlined";
@@ -11,6 +11,7 @@ export type ResumeHighlightSelection = { id: string; label: string; aliases: str
 type SearchItem = ResumeHighlightSelection;
 type Section = { title: string; items: SearchItem[] };
 type RenderState = { status: "idle" | "loading" | "ready" | "fallback"; html: string; message?: string };
+const renderedResumeCache = new Map<string, RenderState>();
 
 const queryValue = (query: Record<string, string | string[] | undefined>, ...keys: string[]) => {
   for (const key of keys) {
@@ -87,7 +88,17 @@ const RenderedResumeHtml = memo(forwardRef<HTMLDivElement, { html: string; exten
   return <div ref={ref} className={`rc-document rc-document-${extension}`} dangerouslySetInnerHTML={{ __html: html }} />;
 }));
 
-export function InteractiveResumeViewer({ url, selection }: { url: string; selection: ResumeHighlightSelection | null }) {
+export function InteractiveResumeViewer({
+  url,
+  selection,
+  evidenceTerms = [],
+  onClearSelection,
+}: {
+  url: string;
+  selection: ResumeHighlightSelection | null;
+  evidenceTerms?: string[];
+  onClearSelection?: () => void;
+}) {
   const contentRef = useRef<HTMLDivElement | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
   const matchesRef = useRef<HTMLElement[]>([]);
@@ -95,6 +106,14 @@ export function InteractiveResumeViewer({ url, selection }: { url: string; selec
   const [activeMatch, setActiveMatch] = useState(0);
   const [matchCount, setMatchCount] = useState(0);
   const [noMatch, setNoMatch] = useState(false);
+  const [showAllEvidence, setShowAllEvidence] = useState(false);
+  const [suppressSelection, setSuppressSelection] = useState(false);
+
+  const allEvidenceSelection = useMemo<ResumeHighlightSelection | null>(() => {
+    const aliases = Array.from(new Set(evidenceTerms.map((term) => term.trim()).filter(Boolean)));
+    return aliases.length ? { id: "all-evidence", label: "All evidence", aliases } : null;
+  }, [evidenceTerms]);
+  const activeSelection = showAllEvidence ? allEvidenceSelection : suppressSelection ? null : selection;
 
   const scrollToMatch = useCallback((match: HTMLElement) => {
     const container = scrollContainerRef.current;
@@ -107,6 +126,11 @@ export function InteractiveResumeViewer({ url, selection }: { url: string; selec
 
   useEffect(() => {
     if (!url) return;
+    const cachedRender = renderedResumeCache.get(url);
+    if (cachedRender) {
+      setRender(cachedRender);
+      return;
+    }
     let live = true;
     setRender({ status: "loading", html: "" });
     (async () => {
@@ -123,13 +147,23 @@ export function InteractiveResumeViewer({ url, selection }: { url: string; selec
           const mammoth = await import("mammoth/mammoth.browser");
           html = (await mammoth.convertToHtml({ arrayBuffer: buffer })).value;
         }
-        if (live) setRender({ status: "ready", html });
+        const nextRender: RenderState = { status: "ready", html };
+        renderedResumeCache.set(url, nextRender);
+        if (live) setRender(nextRender);
       } catch (error) {
-        if (live) setRender({ status: "fallback", html: "", message: error instanceof Error ? error.message : "Conversion failed." });
+        const nextRender: RenderState = { status: "fallback", html: "", message: error instanceof Error ? error.message : "Conversion failed." };
+        renderedResumeCache.set(url, nextRender);
+        if (live) setRender(nextRender);
       }
     })();
     return () => { live = false; };
   }, [url]);
+
+  useEffect(() => {
+    if (!selection) return;
+    setShowAllEvidence(false);
+    setSuppressSelection(false);
+  }, [selection]);
 
   useEffect(() => {
     const root = contentRef.current;
@@ -145,8 +179,8 @@ export function InteractiveResumeViewer({ url, selection }: { url: string; selec
       marker = new Mark(root);
       marker.unmark({
         done: () => {
-          if (cancelled || !selection) return;
-          const aliases = Array.from(new Set(selection.aliases.map((alias) => alias.trim()).filter(Boolean))).sort((a, b) => b.length - a.length);
+          if (cancelled || !activeSelection) return;
+          const aliases = Array.from(new Set(activeSelection.aliases.map((alias) => alias.trim()).filter(Boolean))).sort((a, b) => b.length - a.length);
           if (!aliases.length) return;
           const phrasePattern = aliases.map((alias) => alias
             .split(/\s+/)
@@ -183,7 +217,7 @@ export function InteractiveResumeViewer({ url, selection }: { url: string; selec
       cancelled = true;
       marker?.unmark();
     };
-  }, [selection, render, scrollToMatch]);
+  }, [activeSelection, render, scrollToMatch]);
 
   const navigate = useCallback((direction: number) => {
     const matches = matchesRef.current;
@@ -198,7 +232,29 @@ export function InteractiveResumeViewer({ url, selection }: { url: string; selec
 
   return <Box className="rc-resume-panel">
     <Box className="rc-panel-header rc-resume-header">
-      <Typography variant="h6">Interactive Resume</Typography>
+      <Box className="rc-resume-title-actions">
+        <Typography variant="h6">Interactive Resume</Typography>
+        {allEvidenceSelection && (
+          <Button
+            className={showAllEvidence ? "rc-evidence-toggle rc-evidence-toggle-active" : "rc-evidence-toggle"}
+            variant="outlined"
+            size="small"
+            aria-pressed={showAllEvidence}
+            onClick={() => {
+              onClearSelection?.();
+              if (showAllEvidence) {
+                setShowAllEvidence(false);
+                setSuppressSelection(true);
+              } else {
+                setShowAllEvidence(true);
+                setSuppressSelection(false);
+              }
+            }}
+          >
+            {showAllEvidence ? "Hide Evidence" : "Show Evidence"}
+          </Button>
+        )}
+      </Box>
       {matchCount > 1 && <Box className="rc-nav"><IconButton size="small" onClick={() => navigate(-1)} aria-label="Previous occurrence"><ArrowBackIosNewRoundedIcon /></IconButton><span>{activeMatch + 1} of {matchCount}</span><IconButton size="small" onClick={() => navigate(1)} aria-label="Next occurrence"><ArrowForwardIosRoundedIcon /></IconButton></Box>}
     </Box>
     <Box className="rc-document-scroll" ref={scrollContainerRef}>
@@ -250,6 +306,10 @@ export default function ResumeComparison() {
       { title: "Soft Skills", items: addSearchSynonyms(makeItems(job.skills?.softSkills, "soft")) },
     ].filter((section) => section.items.length);
   }, [job]);
+  const allEvidenceTerms = useMemo(
+    () => Array.from(new Set(sections.flatMap((section) => section.items.flatMap((item) => item.aliases)))),
+    [sections]
+  );
 
   const resumeUrl = String(audit?.candidate?.ResumeFileURL || audit?.candidate?.resumeFileURL || audit?.candidate?.resumeFileUrl || "");
   if (loading) return <Box className="rc-page rc-centered"><CircularProgress /><Typography>Loading comparison…</Typography></Box>;
@@ -257,8 +317,8 @@ export default function ResumeComparison() {
   return <Box className="rc-page">
     <Box className="rc-titlebar"><Box><Typography className="rc-eyebrow">JD Analyse vs Resume</Typography><Typography variant="h5">Skill & job title comparison</Typography></Box><DescriptionOutlinedIcon /></Box>
     <Box className="rc-grid">
-      <Paper className="rc-jd-panel" elevation={0}><Box className="rc-panel-header"><Box><Typography className="rc-eyebrow">JD Analyse</Typography><Typography variant="h6">{job?.jobInfo?.jobTitle || "Job requirements"}</Typography></Box></Box><Box className="rc-jd-scroll">{sections.map((section) => <Box className="rc-section" key={section.title}><Typography className="rc-section-title">{section.title}</Typography><Box className="rc-chips">{section.items.map((item) => { const synonyms = item.aliases.filter((alias) => alias.toLowerCase() !== item.label.toLowerCase()); return <Tooltip key={item.id} arrow placement="top" title={<Box><Typography sx={{ fontSize: 12, fontWeight: 700 }}>Resume synonyms</Typography><Typography sx={{ fontSize: 12 }}>{synonyms.length ? synonyms.join(", ") : "No synonyms provided"}</Typography></Box>}><Chip label={item.label} clickable onClick={() => setSelection(item)} className={selection?.id === item.id ? "rc-chip rc-chip-active" : "rc-chip"} /></Tooltip>; })}</Box></Box>)}</Box></Paper>
-      <Paper className="rc-resume-wrap" elevation={0}>{resumeUrl ? <InteractiveResumeViewer url={resumeUrl} selection={selection} /> : <Box className="rc-centered"><Typography>No resume document is available.</Typography></Box>}</Paper>
+      <Paper className="rc-jd-panel" elevation={0}><Box className="rc-panel-header"><Box><Typography className="rc-eyebrow">JD Analyse</Typography><Typography variant="h6">{job?.jobInfo?.jobTitle || "Job requirements"}</Typography></Box></Box><Box className="rc-jd-scroll">{sections.map((section) => <Box className="rc-section" key={section.title}><Typography className="rc-section-title">{section.title}</Typography><Box className="rc-chips">{section.items.map((item) => { const synonyms = item.aliases.filter((alias) => alias.toLowerCase() !== item.label.toLowerCase()); return <Tooltip key={item.id} arrow placement="top" title={<Box><Typography sx={{ fontSize: 12, fontWeight: 700 }}>Resume synonyms</Typography><Typography sx={{ fontSize: 12 }}>{synonyms.length ? synonyms.join(", ") : "No synonyms provided"}</Typography></Box>}><Chip label={item.label} clickable onClick={() => setSelection({ ...item })} className={selection?.id === item.id ? "rc-chip rc-chip-active" : "rc-chip"} /></Tooltip>; })}</Box></Box>)}</Box></Paper>
+      <Paper className="rc-resume-wrap" elevation={0}>{resumeUrl ? <InteractiveResumeViewer url={resumeUrl} selection={selection} evidenceTerms={allEvidenceTerms} onClearSelection={() => setSelection(null)} /> : <Box className="rc-centered"><Typography>No resume document is available.</Typography></Box>}</Paper>
     </Box>
   </Box>;
 }

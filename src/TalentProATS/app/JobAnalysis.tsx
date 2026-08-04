@@ -42,6 +42,7 @@ import { useRouter } from "next/router";
 import { toast } from "react-toastify";
 import { analyseJobDescription, type JobAnalysisRequest, type JobAnalysisResponse, type SkillValue } from "@/TalentProATS/api/jobAnalysis";
 import { decryptJobAnalysisToken, encryptJobAnalysisRequest } from "@/TalentProATS/utils/jobAnalysisUrl";
+import { AnalysisErrorState, getAnalysisErrorDetails, type AnalysisErrorDetails } from "@/TalentProATS/app/AnalysisErrorState";
 
 type PillTone = "blue" | "green" | "purple" | "orange" | "gray";
 type SkillDisplayItem = {
@@ -288,7 +289,7 @@ export default function JobAnalysis() {
   const [data, setData] = useState<JobAnalysisResponse | null>(null);
   const [requestPayload, setRequestPayload] = useState<JobAnalysisRequest | null>(null);
   const [loading, setLoading] = useState(true);
-  const [errorMessage, setErrorMessage] = useState("");
+  const [analysisError, setAnalysisError] = useState<AnalysisErrorDetails | null>(null);
   const [isEmbedded, setIsEmbedded] = useState(false);
   const [questionsOpen, setQuestionsOpen] = useState(false);
   const [activeQuestionGroup, setActiveQuestionGroup] = useState<string | null>(null);
@@ -302,12 +303,12 @@ export default function JobAnalysis() {
     console.log("[JobAnalysis Page] Parsed payload", maskRequest(request));
 
     setRequestPayload(request);
-    setErrorMessage("");
+    setAnalysisError(null);
 
     if (!request) {
       setData(null);
       setLoading(false);
-      setErrorMessage("Missing job analysis request parameters.");
+      setAnalysisError({ message: "The Job Analysis link is missing one or more required request parameters." });
       console.warn("[JobAnalysis Page] Missing parameters. Use ?token=<encrypted-request>");
       return;
     }
@@ -335,9 +336,10 @@ export default function JobAnalysis() {
       } catch (error) {
         if (active) {
           setData(null);
-          setErrorMessage("Unable to load job analysis.");
+          const details = getAnalysisErrorDetails(error, "Unable to load job analysis.");
+          setAnalysisError(details);
           console.error("[JobAnalysis Page] API error", error);
-          toast.error("Unable to load job analysis.");
+          toast.error(details.message);
         }
       } finally {
         if (active) setLoading(false);
@@ -701,13 +703,12 @@ export default function JobAnalysis() {
     return (
       <main className="ja-page">
         <Box className="ja-shell">
-          <Card className="ja-empty-card">
-            <InfoTitle icon={<AutoAwesomeIcon />} title="Job Analysis" />
-            <Typography className="ja-body-text">{errorMessage || "No job analysis data available."}</Typography>
-            <Typography className="ja-muted">
-              Use /job-analysis?token=encryptedRequest.
-            </Typography>
-          </Card>
+          <AnalysisErrorState
+            title="Job Analysis"
+            error={analysisError || { message: "No job analysis data is available for this request." }}
+            guidance="Verify the job details in the link, then try again."
+            onRetry={requestPayload ? () => router.reload() : undefined}
+          />
         </Box>
       </main>
     );

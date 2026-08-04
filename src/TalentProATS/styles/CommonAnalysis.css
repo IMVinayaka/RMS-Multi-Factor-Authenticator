@@ -75,6 +75,41 @@
   transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
 }
 
+.analysis-error-card {
+  width: min(620px, 100%);
+  margin: 48px auto 0;
+  padding: 30px 28px;
+  display: grid;
+  justify-items: center;
+  gap: 16px;
+  border: 1px solid #f3c6c6;
+  border-radius: 14px !important;
+  background: linear-gradient(180deg, #ffffff 0%, #fff9f9 100%) !important;
+  box-shadow: 0 16px 42px rgba(89, 24, 24, 0.09) !important;
+  text-align: center;
+}
+
+.analysis-error-icon {
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: #ffeded;
+  color: #c82626;
+}
+
+.analysis-error-icon svg { font-size: 25px; }
+.analysis-error-title { color: #071127; font-size: 18px !important; font-weight: 750 !important; }
+.analysis-error-message { max-width: 540px; color: #3d4b61; font-size: 13.5px !important; line-height: 1.5 !important; }
+.analysis-error-guidance { max-width: 540px; color: #718096; font-size: 12px !important; line-height: 1.45 !important; }
+.analysis-error-status { height: 22px !important; background: #ffeded !important; color: #a71d2a !important; font-size: 10.5px !important; font-weight: 750 !important; }
+.analysis-error-retry { min-height: 34px !important; border-radius: 8px !important; background: #0d5fec !important; text-transform: none !important; font-size: 12px !important; font-weight: 700 !important; }
+
+@media (max-width: 600px) {
+  .analysis-error-card { margin-top: 20px; padding: 24px 18px; }
+}
+
 .ra-card {
   min-width: 0;
 }

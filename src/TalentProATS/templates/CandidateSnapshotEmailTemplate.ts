@@ -18,10 +18,6 @@ export const CANDIDATE_SNAPSHOT_EMAIL_TEMPLATE = `
         <td style="padding: 9px 12px; border-bottom: 1px solid #edf1f7;">@@JobTitle</td>
       </tr>
       <tr>
-        <td style="padding: 9px 12px; border-bottom: 1px solid #edf1f7; color: #536383; font-weight: 700;">Current Company</td>
-        <td style="padding: 9px 12px; border-bottom: 1px solid #edf1f7;">@@CurrentCompany</td>
-      </tr>
-      <tr>
         <td style="padding: 9px 12px; border-bottom: 1px solid #edf1f7; color: #536383; font-weight: 700;">Total Experience</td>
         <td style="padding: 9px 12px; border-bottom: 1px solid #edf1f7;">@@TotalExperience</td>
       </tr>

@@ -49,6 +49,7 @@ import {
 } from "@/TalentProATS/api/resumeAudit";
 import { CANDIDATE_SNAPSHOT_EMAIL_TEMPLATE } from "@/TalentProATS/templates/CandidateSnapshotEmailTemplate";
 import { InteractiveResumeViewer, type ResumeHighlightSelection } from "@/TalentProATS/app/ResumeComparison";
+import { AnalysisErrorState, getAnalysisErrorDetails, type AnalysisErrorDetails } from "@/TalentProATS/app/AnalysisErrorState";
 
 type Tone = "blue" | "green" | "orange" | "red" | "purple" | "gray";
 type QuestionGroup = {
@@ -61,6 +62,8 @@ type QuestionPopover = {
   title: string;
   groups: QuestionGroup[];
 };
+
+type QuestionSort = "priority" | "difficulty" | "default";
 
 type PopoverPosition = {
   left: number;
@@ -83,6 +86,30 @@ const compactStringList = (value?: string | Array<string | null | undefined> | n
 const valueOrDash = (value?: string | number | null) => {
   if (value === null || value === undefined || value === "") return "-";
   return String(value);
+};
+
+const QUESTION_PAGE_SIZE = 3;
+const priorityOrder: Record<string, number> = { critical: 0, high: 1, medium: 2, low: 3 };
+const difficultyOrder: Record<string, number> = { easy: 0, medium: 1, hard: 2 };
+
+const normalizeQuestionValue = (value?: string | null) => String(value || "").trim().toLowerCase();
+
+const sortQuestions = (items: ResumeAuditQuestion[], sort: QuestionSort) => {
+  if (sort === "default") return items;
+
+  return items
+    .map((item, originalIndex) => ({ item, originalIndex }))
+    .sort((left, right) => {
+      const leftPriority = priorityOrder[normalizeQuestionValue(left.item.priority || left.item.Priority)] ?? 99;
+      const rightPriority = priorityOrder[normalizeQuestionValue(right.item.priority || right.item.Priority)] ?? 99;
+      const leftDifficulty = difficultyOrder[normalizeQuestionValue(left.item.difficulty || left.item.Difficulty)] ?? 99;
+      const rightDifficulty = difficultyOrder[normalizeQuestionValue(right.item.difficulty || right.item.Difficulty)] ?? 99;
+      const primaryDifference = sort === "priority" ? leftPriority - rightPriority : leftDifficulty - rightDifficulty;
+      const secondaryDifference = sort === "priority" ? leftDifficulty - rightDifficulty : leftPriority - rightPriority;
+
+      return primaryDifference || secondaryDifference || left.originalIndex - right.originalIndex;
+    })
+    .map(({ item }) => item);
 };
 
 const escapeHtml = (value?: string | number | null) =>
@@ -217,6 +244,10 @@ const normalizeScorePercentage = (value?: number | null) => {
   const normalized = Number(value);
   return normalized > 0 && normalized <= 1 ? normalized * 100 : normalized;
 };
+
+const getScoreBreakdownMaximum = (
+  item: NonNullable<ResumeAuditResponse["scoreBreakdown"]>[number]
+) => item.maxScore ?? item.MaxScore ?? item.weight ?? item.Weight;
 
 const formatSalaryAssessmentScore = (value?: number | null) => {
   if (value === null || value === undefined || Number.isNaN(Number(value))) return "-";
@@ -423,7 +454,7 @@ export default function ResumeAudit() {
   const [data, setData] = useState<ResumeAuditResponse | null>(null);
   const [requestPayload, setRequestPayload] = useState<ResumeAuditRequest | null>(null);
   const [loading, setLoading] = useState(true);
-  const [errorMessage, setErrorMessage] = useState("");
+  const [analysisError, setAnalysisError] = useState<AnalysisErrorDetails | null>(null);
   const [isEmbedded, setIsEmbedded] = useState(false);
   const [comparisonMode, setComparisonMode] = useState<ComparisonMode>(null);
   const [resumeHighlightSelection, setResumeHighlightSelection] = useState<ResumeHighlightSelection | null>(null);
@@ -432,6 +463,7 @@ export default function ResumeAudit() {
   const [isComparisonResizing, setIsComparisonResizing] = useState(false);
   const [questionPopover, setQuestionPopover] = useState<QuestionPopover | null>(null);
   const [questionPopoverPosition, setQuestionPopoverPosition] = useState<PopoverPosition | null>(null);
+  const [questionSort, setQuestionSort] = useState<QuestionSort>("priority");
 
   useEffect(() => {
     if (!router.isReady) return;
@@ -441,12 +473,12 @@ export default function ResumeAudit() {
     console.log("[ResumeAudit Page] Parsed payload", maskRequest(request));
 
     setRequestPayload(request);
-    setErrorMessage("");
+    setAnalysisError(null);
 
     if (!request) {
       setData(null);
       setLoading(false);
-      setErrorMessage("Missing resume audit request parameters.");
+      setAnalysisError({ message: "The Resume Audit link is missing one or more required request parameters." });
       console.warn("[ResumeAudit Page] Missing required query parameters.");
       return;
     }
@@ -461,9 +493,10 @@ export default function ResumeAudit() {
       } catch (error) {
         if (active) {
           setData(null);
-          setErrorMessage("Unable to load resume audit.");
+          const details = getAnalysisErrorDetails(error, "Unable to load resume audit.");
+          setAnalysisError(details);
           console.error("[ResumeAudit Page] API error", error);
-          toast.error("Unable to load resume audit.");
+          toast.error(details.message);
         }
       } finally {
         if (active) setLoading(false);
@@ -527,6 +560,10 @@ export default function ResumeAudit() {
     if (isEmbedded && comparisonMode) setComparisonMode(null);
   }, [isEmbedded, comparisonMode]);
 
+  useEffect(() => {
+    if (comparisonMode !== "resume") setResumeHighlightSelection(null);
+  }, [comparisonMode]);
+
   const view = useMemo(() => {
     const candidate = data?.candidate;
     const job = data?.job;
@@ -554,7 +591,7 @@ export default function ResumeAudit() {
     const travelDistance = candidateLocation?.TravelDistance ?? candidateLocation?.travelDistance;
     const distanceUnit = candidateLocation?.DistanceUnit || candidateLocation?.distanceUnit;
     const distanceLabel = formatDistanceLabel(travelDistance, distanceUnit);
-    const jobBudgetDisplay = formatMoney(job?.salary?.amount, job?.salary?.currency, job?.salary?.type);
+    const jobBudgetDisplay = formatMoneyWithDecimals(job?.salary?.amount, job?.salary?.currency, job?.salary?.type);
     const currentSalaryDisplay = formatMoney(currentSalary?.Amount ?? currentSalary?.amount, currentSalary?.Currency || currentSalary?.currency, currentSalary?.Type || currentSalary?.type);
     const expectedSalaryCompact = formatMoney(expectedSalary?.Amount ?? expectedSalary?.amount, expectedSalary?.Currency || expectedSalary?.currency, expectedSalary?.Type || expectedSalary?.type);
     const expectedSalaryDetailed = formatMoneyWithDecimals(expectedSalary?.Amount ?? expectedSalary?.amount, expectedSalary?.Currency || expectedSalary?.currency, expectedSalary?.Type || expectedSalary?.type);
@@ -592,7 +629,10 @@ export default function ResumeAudit() {
       interviewProbability: audit?.interviewProbability ?? auditPascal?.InterviewProbability ?? 0,
       summary: valueOrDash(audit?.summary || auditPascal?.Summary),
       decisionReason: valueOrDash(audit?.decisionReason || auditPascal?.DecisionReason),
-      scoreBreakdown: emptyArray(data?.scoreBreakdown).filter((item) => Number(item.maxScore ?? item.MaxScore) !== 0),
+      scoreBreakdown: emptyArray(data?.scoreBreakdown).filter((item) => {
+        const maximum = getScoreBreakdownMaximum(item);
+        return maximum !== null && maximum !== undefined && Number(maximum) !== 0;
+      }),
       mandatorySkills: emptyArray(data?.skillsAnalysis?.mandatorySkills).map((item) => ({ ...item, skillCategory: "Mandatory Skills" as const })),
       preferredSkills: emptyArray(data?.skillsAnalysis?.preferredSkills).map((item) => ({ ...item, skillCategory: "Preferred Skills" as const })),
       softSkills: emptyArray(data?.skillsAnalysis?.softSkills).map((item) => ({ ...item, skillCategory: "Soft Skills" as const })),
@@ -615,7 +655,7 @@ export default function ResumeAudit() {
       salaryMatchTone: getSalaryAssessmentTone(salaryAssessmentScore),
       salaryMatchStatus: valueOrDash(salaryAssessment?.Status || salaryAssessment?.status),
       salaryMatchSummary: salaryAssessmentSummary,
-      salaryMatchTooltip: getSalaryAssessmentTooltip(salaryAssessmentSummary, salaryAssessmentDifference, expectedSalaryCompact, jobBudgetDisplay),
+      salaryMatchTooltip: getSalaryAssessmentTooltip(salaryAssessmentSummary, salaryAssessmentDifference, expectedSalaryDetailed, jobBudgetDisplay),
       availableFrom: formatDate(candidate?.Availability?.AvailableFrom),
       noticePeriod: valueOrDash(candidate?.Availability?.NoticePeriod),
       auditedOn: formatDate(data?.auditMetadata?.auditedOn),
@@ -623,6 +663,13 @@ export default function ResumeAudit() {
   }, [data, requestPayload]);
 
   const improvementSections = getImprovementSections(view.resumeImprovement);
+  const resumeAuditEvidenceTerms = useMemo(
+    () => Array.from(new Set(
+      [...view.mandatorySkills, ...view.preferredSkills]
+        .flatMap((item) => compactStringArray(item.ResumeEvidenceTerms || item.resumeEvidenceTerms))
+    )),
+    [view.mandatorySkills, view.preferredSkills]
+  );
   const canUseComparisonWorkspace = !isEmbedded;
   const isComparisonOpen = canUseComparisonWorkspace && Boolean(comparisonMode);
   const comparisonJobUrl = useMemo(() => buildJobAnalysisComparisonUrl(router.asPath), [router.asPath]);
@@ -866,13 +913,12 @@ export default function ResumeAudit() {
     return (
       <main className="ra-page">
         <Box className="ra-shell">
-          <Card className="ra-empty-card">
-            <InfoTitle icon={<AutoAwesomeIcon />} title="Resume Audit" />
-            <Typography className="ra-body-text">{errorMessage || "No resume audit data available."}</Typography>
-            <Typography className="ra-muted">
-              Use /resume-audit?CandID=2677682&CandInstance=RADIANT&JobID=209965&JobInstance=RADIANT&UserID=40&UserInstance=RADIANT.
-            </Typography>
-          </Card>
+          <AnalysisErrorState
+            title="Resume Audit"
+            error={analysisError || { message: "No resume audit data is available for this request." }}
+            guidance="Verify the candidate, job, and user details in the link, then try again."
+            onRetry={requestPayload ? () => router.reload() : undefined}
+          />
         </Box>
       </main>
     );
@@ -1072,7 +1118,7 @@ export default function ResumeAudit() {
                 <Stack spacing={0.7}>
                   {view.scoreBreakdown.map((item) => (
                     <Typography className="ra-tooltip-text" key={item.displayName || item.DisplayName || item.type || item.Type || item.message || item.Message || "score"}>
-                      {valueOrDash(item.displayName || item.DisplayName || item.type || item.Type)}: {valueOrDash(item.score ?? item.Score)} / {valueOrDash(item.maxScore ?? item.MaxScore)}, Weight {valueOrDash(item.weight ?? item.Weight)}%
+                      {valueOrDash(item.displayName || item.DisplayName || item.type || item.Type)}: {valueOrDash(item.score ?? item.Score)} / {valueOrDash(getScoreBreakdownMaximum(item))}, Weight {valueOrDash(item.weight ?? item.Weight)}%
                     </Typography>
                   ))}
                 </Stack>
@@ -1104,7 +1150,17 @@ export default function ResumeAudit() {
           </Card>}
 
           {view.questionGroups.length > 0 && <Card className="ra-screening-card">
-            <InfoTitle icon={<ManageSearchOutlinedIcon />} title="AI Screening Questions" />
+            <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={1} className="ra-screening-header">
+              <InfoTitle icon={<ManageSearchOutlinedIcon />} title="Screening Questions" />
+              <label className="ra-question-sort">
+                <span>Sort by</span>
+                <select value={questionSort} onChange={(event) => setQuestionSort(event.target.value as QuestionSort)}>
+                  <option value="priority">Priority</option>
+                  <option value="difficulty">Difficulty</option>
+                  <option value="default">Default Order</option>
+                </select>
+              </label>
+            </Stack>
             <Stack spacing={0.8}>
               {view.questionGroups.map((group) => (
                 <Stack className="ra-question-count-row" direction="row" justifyContent="space-between" alignItems="center" key={group.key}>
@@ -1114,7 +1170,7 @@ export default function ResumeAudit() {
                     type="button"
                     onClick={(event) => openQuestionPopover(group.title, [group], event.currentTarget)}
                   >
-                    {group.items.length}
+                    {Math.min(QUESTION_PAGE_SIZE, group.items.length)}
                   </button>
                 </Stack>
               ))}
@@ -1134,7 +1190,7 @@ export default function ResumeAudit() {
                     <CloseOutlinedIcon />
                   </IconButton>
                 </Stack>
-                <QuestionGroupDetail groups={questionPopover.groups} />
+                <QuestionGroupDetail groups={questionPopover.groups} sort={questionSort} />
               </Box>
             )}
           </Card>}
@@ -1225,13 +1281,13 @@ export default function ResumeAudit() {
         {!isEmbedded && (
           <Dialog open={Boolean(questionPopover)} onClose={closeQuestionPopover} fullWidth maxWidth="md">
             <DialogTitle className="ra-dialog-title">
-              {questionPopover?.title || "AI Screening Questions"}
+              {questionPopover?.title || "Screening Questions"}
               <IconButton aria-label="Close screening questions" onClick={closeQuestionPopover}>
                 <CloseOutlinedIcon />
               </IconButton>
             </DialogTitle>
             <DialogContent dividers>
-              {questionPopover && <QuestionGroupDetail groups={questionPopover.groups} />}
+              {questionPopover && <QuestionGroupDetail groups={questionPopover.groups} sort={questionSort} />}
             </DialogContent>
           </Dialog>
         )}
@@ -1250,8 +1306,13 @@ export default function ResumeAudit() {
           resumeUrl={view.resumeFileUrl}
           jobAnalysisUrl={comparisonJobUrl}
           widthPercent={100 - comparisonLeftPercent}
-          onClose={() => setComparisonMode(null)}
+          onClose={() => {
+            setComparisonMode(null);
+            setResumeHighlightSelection(null);
+          }}
           resumeSelection={resumeHighlightSelection}
+          resumeEvidenceTerms={resumeAuditEvidenceTerms}
+          onClearResumeSelection={() => setResumeHighlightSelection(null)}
         />
       )}
       </Box>
@@ -1287,6 +1348,8 @@ function ComparisonPanel({
   widthPercent,
   onClose,
   resumeSelection,
+  resumeEvidenceTerms,
+  onClearResumeSelection,
 }: {
   mode: ComparisonMode;
   resumeUrl: string;
@@ -1294,6 +1357,8 @@ function ComparisonPanel({
   widthPercent: number;
   onClose: () => void;
   resumeSelection: ResumeHighlightSelection | null;
+  resumeEvidenceTerms: string[];
+  onClearResumeSelection: () => void;
 }) {
   const isResume = mode === "resume";
   const title = isResume ? "Resume" : "JD Analysis";
@@ -1324,7 +1389,12 @@ function ComparisonPanel({
       </Box>
       <Box className="ra-comparison-body">
         {isResume && sourceUrl && sourceUrl !== "-" ? (
-          <InteractiveResumeViewer url={sourceUrl} selection={resumeSelection} />
+          <InteractiveResumeViewer
+            url={sourceUrl}
+            selection={resumeSelection}
+            evidenceTerms={resumeEvidenceTerms}
+            onClearSelection={onClearResumeSelection}
+          />
         ) : frameUrl ? (
           <iframe className="ra-comparison-frame" title={`Compare ${title}`} src={frameUrl} />
         ) : (
@@ -1483,7 +1553,7 @@ function ScoreBreakdownRow({ item }: { item: NonNullable<ResumeAuditResponse["sc
   const scorePercentage = normalizeScorePercentage(item.scorePercentage ?? item.ScorePercentage);
   const displayName = item.displayName || item.DisplayName || item.type || item.Type;
   const score = item.score ?? item.Score;
-  const maxScore = item.maxScore ?? item.MaxScore;
+  const maxScore = getScoreBreakdownMaximum(item);
   const tone = getSeverityTone(item.severity || item.Severity);
   const message = item.message || item.Message;
   const tooltipTitle = (
@@ -1649,18 +1719,32 @@ function BulletList({ items, tone, compact = false }: { items: string[]; tone: T
   );
 }
 
-function QuestionGroupDetail({ groups }: { groups: QuestionGroup[] }) {
+function QuestionGroupDetail({ groups, sort }: { groups: QuestionGroup[]; sort: QuestionSort }) {
+  const [visibleCounts, setVisibleCounts] = useState<Record<string, number>>({});
+
+  const showMore = (groupKey: string) => {
+    setVisibleCounts((current) => ({
+      ...current,
+      [groupKey]: (current[groupKey] || QUESTION_PAGE_SIZE) + QUESTION_PAGE_SIZE,
+    }));
+  };
+
   return (
     <Stack spacing={groups.length > 1 ? 1.4 : 0.8}>
-      {groups.map((group) => (
+      {groups.map((group) => {
+        const sortedItems = sortQuestions(group.items, sort);
+        const visibleCount = visibleCounts[group.key] || QUESTION_PAGE_SIZE;
+        const visibleItems = sortedItems.slice(0, visibleCount);
+
+        return (
         <Box className="ra-popup-question-group" key={group.key}>
           {groups.length > 1 && <Typography className="ra-row-strong">{group.title}</Typography>}
           <Stack spacing={0.8} className={groups.length > 1 ? "ra-popup-question-list" : ""}>
-            {group.items.map((item, index) => (
+            {visibleItems.map((item, index) => (
               <Box className="ra-popup-question-item" key={`${group.key}-${item.question || item.Question}-${index}`}>
                 <Stack direction="row" spacing={1} alignItems="flex-start">
                   <span className="ra-question-number">{index + 1}</span>
-                  <Box>
+                  <Box minWidth={0}>
                     <Typography className="ra-body-text">{valueOrDash(item.question || item.Question)}</Typography>
                     <Typography className="ra-muted">{valueOrDash(item.reason || item.Reason)}</Typography>
                     {valueOrDash(item.candidateResponseExpected || item.CandidateResponseExpected) !== "-" && (
@@ -1671,14 +1755,35 @@ function QuestionGroupDetail({ groups }: { groups: QuestionGroup[] }) {
                         </Typography>
                       </Box>
                     )}
-                    <Chip size="small" className={`ra-severity-chip ra-severity-${getSeverityTone(item.priority || item.Priority)}`} label={valueOrDash(item.priority || item.Priority)} />
+                    <Stack direction="row" spacing={0.6} flexWrap="wrap" useFlexGap className="ra-question-badges">
+                      <Tooltip title="Priority — possible values: Critical, High, Medium, Low" arrow placement="top">
+                        <Chip
+                          size="small"
+                          className={`ra-severity-chip ra-priority-${normalizeQuestionValue(item.priority || item.Priority) || "unknown"}`}
+                          label={valueOrDash(item.priority || item.Priority)}
+                        />
+                      </Tooltip>
+                      <Tooltip title="Difficulty — possible values: Easy, Medium, Hard" arrow placement="top">
+                        <Chip
+                          size="small"
+                          className={`ra-severity-chip ra-difficulty-${normalizeQuestionValue(item.difficulty || item.Difficulty) || "unknown"}`}
+                          label={valueOrDash(item.difficulty || item.Difficulty)}
+                        />
+                      </Tooltip>
+                    </Stack>
                   </Box>
                 </Stack>
               </Box>
             ))}
           </Stack>
+          {visibleCount < sortedItems.length && (
+            <Button className="ra-generate-more" variant="outlined" size="small" onClick={() => showMore(group.key)}>
+              Generate More
+            </Button>
+          )}
         </Box>
-      ))}
+        );
+      })}
     </Stack>
   );
 }

@@ -282,6 +282,8 @@ export type ResumeAuditQuestion = {
   CandidateResponseExpected?: string | null;
   priority?: string | null;
   Priority?: string | null;
+  difficulty?: string | null;
+  Difficulty?: string | null;
 };
 
 export type ResumeAuditScreeningQuestions = {
