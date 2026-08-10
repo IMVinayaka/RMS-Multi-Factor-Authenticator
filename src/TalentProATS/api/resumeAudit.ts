@@ -298,6 +298,10 @@ const RESUME_AUDIT_SERVICE_URL =
   process.env.NEXT_PUBLIC_RESUME_AUDIT_SERVICE_URL ||
   "https://intranet.radiants.com/RadAPIs/api/OpenAI/ResumeAuditService";
 
+const RESUME_SUGGESTION_EMAIL_URL =
+  process.env.NEXT_PUBLIC_RESUME_SUGGESTION_EMAIL_URL ||
+  "https://intranet.radiants.com/RadAPIs/api/EmailValidation/SendResumeSuggestionEmail/SendResumeSuggestionEmail";
+
 const maskPayload = (payload: ResumeAuditRequest) => ({
   candidateId: payload.candidateId,
   candidateInstance: payload.candidateInstance,
@@ -322,4 +326,15 @@ export const auditResume = async (payload: ResumeAuditRequest) => {
   console.log("[ResumeAudit API] Response", response.data);
 
   return response.data;
+};
+
+export const sendResumeSuggestionEmail = async (payload: ResumeAuditRequest) => {
+  const response = await axiosInstance.post(RESUME_SUGGESTION_EMAIL_URL, payload, {
+    headers: {
+      accept: "*/*",
+      "Content-Type": "application/json-patch+json",
+    },
+  });
+
+  return response.status;
 };

@@ -630,6 +630,28 @@
   font-size: 16px !important;
 }
 
+.ra-suggestion-email-btn {
+  width: 32px;
+  height: 32px;
+  border: 1px solid #cfe0ff !important;
+  border-radius: 8px !important;
+  background: #f7faff !important;
+  color: #0d5fec !important;
+}
+
+.ra-suggestion-email-btn:hover {
+  border-color: #8fb6ff !important;
+  background: #edf4ff !important;
+}
+
+.ra-suggestion-email-btn.Mui-disabled {
+  opacity: 0.55;
+}
+
+.ra-suggestion-email-btn svg {
+  font-size: 17px;
+}
+
 .ra-snapshot-summary {
   margin-top: 10px !important;
 }

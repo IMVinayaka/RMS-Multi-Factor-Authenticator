@@ -38,6 +38,7 @@ import { useRouter } from "next/router";
 import { toast } from "react-toastify";
 import {
   auditResume,
+  sendResumeSuggestionEmail,
   type ResumeAuditCandidateSnapshot,
   type ResumeAuditEmailContact,
   type ResumeAuditImprovement,
@@ -174,6 +175,11 @@ const formatYears = (value?: number | string | null) => {
 const formatSkillExperience = (value?: string | number | null) => {
   if (value === null || value === undefined || value === "") return "-";
   return String(value);
+};
+
+const formatSkillExperienceColumn = (value: string) => {
+  const duration = value.match(/^.*?\b(?:years?|yrs?)\b/i)?.[0];
+  return duration?.trim() || value;
 };
 
 const formatYearLastUsed = (value?: number | string | null) => {
@@ -464,6 +470,7 @@ export default function ResumeAudit() {
   const [questionPopover, setQuestionPopover] = useState<QuestionPopover | null>(null);
   const [questionPopoverPosition, setQuestionPopoverPosition] = useState<PopoverPosition | null>(null);
   const [questionSort, setQuestionSort] = useState<QuestionSort>("priority");
+  const [sendingSuggestionEmail, setSendingSuggestionEmail] = useState(false);
 
   useEffect(() => {
     if (!router.isReady) return;
@@ -776,6 +783,25 @@ export default function ResumeAudit() {
     } catch (error) {
       console.error(`[ResumeAudit Page] Unable to copy ${label}`, error);
       toast.error(`Unable to copy ${label}.`);
+    }
+  };
+
+  const emailResumeSuggestions = async () => {
+    if (!requestPayload || sendingSuggestionEmail) return;
+
+    try {
+      setSendingSuggestionEmail(true);
+      const status = await sendResumeSuggestionEmail(requestPayload);
+      if (status === 200) {
+        toast.success("Suggestion email sent successfully.");
+      } else {
+        toast.error("Unable to send the suggestion email.");
+      }
+    } catch (error) {
+      console.error("[ResumeAudit Page] Suggestion email error", error);
+      toast.error("Unable to send the suggestion email.");
+    } finally {
+      setSendingSuggestionEmail(false);
     }
   };
 
@@ -1274,7 +1300,21 @@ export default function ResumeAudit() {
         )}
 
         {improvementSections.length > 0 && <Card className="ra-full-section">
-          <InfoTitle icon={<HelpOutlineOutlinedIcon />} title="Resume Improvement Suggestions" />
+          <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={1.2} className="ra-section-title-row">
+            <InfoTitle icon={<HelpOutlineOutlinedIcon />} title="Resume Improvement Suggestions" />
+            <Tooltip title={sendingSuggestionEmail ? "Sending suggestion email…" : "Email resume suggestions to candidate"} arrow placement="top">
+              <span>
+                <IconButton
+                  className="ra-suggestion-email-btn"
+                  aria-label="Email resume improvement suggestions to candidate"
+                  disabled={sendingSuggestionEmail}
+                  onClick={emailResumeSuggestions}
+                >
+                  <MailOutlineOutlinedIcon />
+                </IconButton>
+              </span>
+            </Tooltip>
+          </Stack>
           <ImprovementSections sections={improvementSections} />
         </Card>}
 
@@ -1608,6 +1648,7 @@ function SkillTableRow({ item, highlightingEnabled = false, active = false, onSe
   const evidence = compactStringArray(item.evidence);
   const resumeEvidenceTerms = compactStringArray(item.ResumeEvidenceTerms || item.resumeEvidenceTerms);
   const experience = formatSkillExperience(item.experience || item.Experience);
+  const experienceColumn = formatSkillExperienceColumn(experience);
   const yearLastUsed = formatYearLastUsed(item.YearLastUsed ?? item.yearLastUsed);
   const categoryLabel = item.skillCategory?.replace(/\s+Skills$/, "") || "";
   const categoryTone = item.skillCategory === "Mandatory Skills" ? "red" : item.skillCategory === "Preferred Skills" ? "blue" : "gray";
@@ -1654,7 +1695,7 @@ function SkillTableRow({ item, highlightingEnabled = false, active = false, onSe
       >
         <Typography className="ra-row-strong">{valueOrDash(item.skill)}</Typography>
         <span className={`ra-match-dot ${item.matched ? "ra-match-yes" : "ra-match-no"}`}>{item.matched ? "Yes" : "No"}</span>
-        <Typography className="ra-row-strong">{experience}</Typography>
+        <Typography className="ra-row-strong">{experienceColumn}</Typography>
         <Typography className="ra-row-strong">{yearLastUsed}</Typography>
         <Typography className="ra-row-strong">{formatPercent(item.confidence)}</Typography>
       </Box>
