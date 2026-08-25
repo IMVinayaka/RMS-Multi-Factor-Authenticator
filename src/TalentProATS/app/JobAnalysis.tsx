@@ -233,9 +233,9 @@ const getTalentSearchBaseUrl = (jobInstance?: string | null) => {
       return "https://intranet.radgov.com/AteecaEsign/RMS/SearchCandidate_Adv.aspx";
     case "INDIA":
       return "https://intranet.radiants.com/RadIndEsign/RMS/SearchCandidate_Adv.aspx";
-      case "CANADA":
+    case "CANADA":
       return "https://intranet.radiants.com/RadCAEsign/RMS/SearchCandidate_Adv.aspx";
-      default:
+    default:
       return "";
   }
 };
