@@ -42,6 +42,7 @@ import { useRouter } from "next/router";
 import { toast } from "react-toastify";
 import { analyseJobDescription, type JobAnalysisRequest, type JobAnalysisResponse, type SkillValue } from "@/TalentProATS/api/jobAnalysis";
 import { decryptJobAnalysisToken, encryptJobAnalysisRequest } from "@/TalentProATS/utils/jobAnalysisUrl";
+import { encryptTalentSearchUserId } from "@/TalentProATS/utils/talentSearchEncryption";
 import { AnalysisErrorState, getAnalysisErrorDetails, type AnalysisErrorDetails } from "@/TalentProATS/app/AnalysisErrorState";
 
 type PillTone = "blue" | "green" | "purple" | "orange" | "gray";
@@ -242,15 +243,25 @@ const getTalentSearchBaseUrl = (jobInstance?: string | null) => {
   }
 };
 
+const isIndiaInstance = (jobInstance?: string | null) =>
+  ["INDIA", "RADIANTINDIA", "RADIANT_INDIA"].includes(jobInstance?.trim().toUpperCase() ?? "");
+
 const getTalentSearchUrl = (request: JobAnalysisRequest | null, searchType: BooleanSearchType) => {
   const baseUrl = getTalentSearchBaseUrl(request?.jobInstance);
   if (!baseUrl || !request?.jobId) return "";
+
+  if (isIndiaInstance(request.jobInstance) && (request.userId === undefined || request.userId === null || request.userId === "")) {
+    return "";
+  }
 
   const url = new URL(baseUrl);
   url.searchParams.set("JobID", String(request.jobId));
   url.searchParams.set("UserID", String(request.userId ?? ""));
   url.searchParams.set("RecruiterInstance", String(request.userInstance ?? ""));
   url.searchParams.set("SearchType", searchType);
+  if (isIndiaInstance(request.jobInstance)) {
+    url.searchParams.set("p", encryptTalentSearchUserId(request.userId!));
+  }
 
   return url.toString();
 };
