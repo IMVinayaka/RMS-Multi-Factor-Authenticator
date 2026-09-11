@@ -298,9 +298,30 @@ const RESUME_AUDIT_SERVICE_URL =
   process.env.NEXT_PUBLIC_RESUME_AUDIT_SERVICE_URL ||
   "https://intranet.radiants.com/RadAPIs/api/OpenAI/ResumeAuditService";
 
+const UK_RESUME_AUDIT_SERVICE_URL =
+  process.env.NEXT_PUBLIC_UK_RESUME_AUDIT_SERVICE_URL ||
+  "https://intranet.radiants.uk/RadUKAPIs/api/OpenAI/ResumeAuditService";
+
 const RESUME_SUGGESTION_EMAIL_URL =
   process.env.NEXT_PUBLIC_RESUME_SUGGESTION_EMAIL_URL ||
   "https://intranet.radiants.com/RadAPIs/api/EmailValidation/SendResumeSuggestionEmail/SendResumeSuggestionEmail";
+
+const UK_RESUME_SUGGESTION_EMAIL_URL =
+  process.env.NEXT_PUBLIC_UK_RESUME_SUGGESTION_EMAIL_URL ||
+  "https://intranet.radiants.uk/RadUKAPIs/api/EmailValidation/SendResumeSuggestionEmail/SendResumeSuggestionEmail";
+
+const isUkInstance = (...instances: Array<string | null | undefined>) =>
+  instances.some((instance) => ["UK", "RADIANTUK"].includes(instance?.trim().toUpperCase() ?? ""));
+
+const getResumeAuditServiceUrl = (payload: ResumeAuditRequest) =>
+  isUkInstance(payload.jobInstance, payload.candidateInstance)
+    ? UK_RESUME_AUDIT_SERVICE_URL
+    : RESUME_AUDIT_SERVICE_URL;
+
+const getResumeSuggestionEmailUrl = (payload: ResumeAuditRequest) =>
+  isUkInstance(payload.jobInstance, payload.candidateInstance)
+    ? UK_RESUME_SUGGESTION_EMAIL_URL
+    : RESUME_SUGGESTION_EMAIL_URL;
 
 const maskPayload = (payload: ResumeAuditRequest) => ({
   candidateId: payload.candidateId,
@@ -312,10 +333,12 @@ const maskPayload = (payload: ResumeAuditRequest) => ({
 });
 
 export const auditResume = async (payload: ResumeAuditRequest) => {
-  console.log("[ResumeAudit API] POST", RESUME_AUDIT_SERVICE_URL);
+  const serviceUrl = getResumeAuditServiceUrl(payload);
+
+  console.log("[ResumeAudit API] POST", serviceUrl);
   console.log("[ResumeAudit API] Payload", maskPayload(payload));
 
-  const response = await axiosInstance.post<ResumeAuditResponse>(RESUME_AUDIT_SERVICE_URL, payload, {
+  const response = await axiosInstance.post<ResumeAuditResponse>(serviceUrl, payload, {
     timeout: 200000,
     headers: {
       accept: "*/*",
@@ -329,7 +352,8 @@ export const auditResume = async (payload: ResumeAuditRequest) => {
 };
 
 export const sendResumeSuggestionEmail = async (payload: ResumeAuditRequest) => {
-  const response = await axiosInstance.post(RESUME_SUGGESTION_EMAIL_URL, payload, {
+  const serviceUrl = getResumeSuggestionEmailUrl(payload);
+  const response = await axiosInstance.post(serviceUrl, payload, {
     headers: {
       accept: "*/*",
       "Content-Type": "application/json-patch+json",

@@ -238,6 +238,10 @@ const getTalentSearchBaseUrl = (jobInstance?: string | null) => {
     //  return "https://intranet.radiants.com/RadIndEsign/RMS/SearchCandidate_Adv.aspx";
     case "CANADA":
       return "https://intranet.radiants.com/RadCAEsign/RMS/SearchCandidate_Adv.aspx";
+    // UK Boolean searches are copy-only until a UK Talent Search URL is available.
+    case "UK":
+    case "RADIANTUK":
+      return "";
     default:
       return "";
   }
@@ -285,7 +289,7 @@ const parseJobAnalysisRequest = (query: Record<string, string | string[] | undef
 
   // Support both camelCase and lowercase parameter names
   const jobId = getQueryParam(query, "jobId", "jobid");
-  const jobInstance = getQueryParam(query, "jobInstance", "jobinstance");
+  const jobInstance = getQueryParam(query, "JobInstance", "jobInstance", "jobinstance");
   const clientReference = getQueryParam(query, "clientReference", "clientreference");
   const userId = getQueryParam(query, "userId", "UserID", "userid");
   const userInstance = getQueryParam(query, "userInstance", "UserInstance", "userinstance");
@@ -372,6 +376,7 @@ export default function JobAnalysis() {
     router.isReady,
     router.query.clientReference,
     router.query.jobId,
+    router.query.JobInstance,
     router.query.jobInstance,
     router.query.request,
     router.query.token,

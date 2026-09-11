@@ -153,6 +153,16 @@ const JD_ANALYSE_SERVICE_URL =
   process.env.NEXT_PUBLIC_JD_ANALYSE_SERVICE_URL ||
   "https://intranet.radiants.com/RadAPIs/api/OpenAI/JDAnalyseService";
 
+const UK_JD_ANALYSE_SERVICE_URL =
+  process.env.NEXT_PUBLIC_UK_JD_ANALYSE_SERVICE_URL ||
+  "https://intranet.radiants.uk/RadUKAPIs/api/OpenAI/JDAnalyseService";
+
+const isUkJobInstance = (jobInstance?: string | null) =>
+  ["UK", "RADIANTUK"].includes(jobInstance?.trim().toUpperCase() ?? "");
+
+const getJdAnalyseServiceUrl = (jobInstance?: string | null) =>
+  isUkJobInstance(jobInstance) ? UK_JD_ANALYSE_SERVICE_URL : JD_ANALYSE_SERVICE_URL;
+
 const maskPayload = (payload: JobAnalysisRequest) => ({
   jobId: payload.jobId,
   jobInstance: payload.jobInstance,
@@ -162,10 +172,12 @@ const maskPayload = (payload: JobAnalysisRequest) => ({
 });
 
 export const analyseJobDescription = async (payload: JobAnalysisRequest) => {
-  console.log("[JobAnalysis API] POST", JD_ANALYSE_SERVICE_URL);
+  const serviceUrl = getJdAnalyseServiceUrl(payload.jobInstance);
+
+  console.log("[JobAnalysis API] POST", serviceUrl);
   console.log("[JobAnalysis API] Payload", maskPayload(payload));
 
-  const response = await axiosInstance.post<JobAnalysisResponse>(JD_ANALYSE_SERVICE_URL, payload, {
+  const response = await axiosInstance.post<JobAnalysisResponse>(serviceUrl, payload, {
     headers: {
       accept: "*/*",
       "Content-Type": "application/json-patch+json",
